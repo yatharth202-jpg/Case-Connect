@@ -1,0 +1,236 @@
+# Column Synonyms for Automatic File Type Detection & Mapping
+
+cdr:
+  caller:
+    - caller
+    - calling_number
+    - calling_no
+    - caller_id
+    - a_party
+    - a_party_no
+    - source_number
+    - originating_number
+    - originating_no
+    - mobile_a
+    - phone_a
+    - src_no
+  receiver:
+    - receiver
+    - called_number
+    - called_no
+    - dialed_number
+    - dialed_no
+    - b_party
+    - b_party_no
+    - destination_number
+    - terminating_number
+    - terminating_no
+    - mobile_b
+    - phone_b
+    - dst_no
+  datetime:
+    - datetime
+    - call_datetime
+    - timestamp
+    - start_time
+    - date_time
+  date:
+    - date
+    - call_date
+    - txn_date
+    - dt
+  time:
+    - time
+    - call_time
+    - tm
+  duration:
+    - duration
+    - duration_seconds
+    - dur_sec
+    - call_duration
+    - duration_sec
+    - call_dur
+    - dur
+  call_type:
+    - call_type
+    - direction
+    - call_direction
+    - type
+    - usage_type
+    - moc_mtc
+  imei:
+    - imei
+    - caller_imei
+    - handset_imei
+    - device_imei
+  imsi:
+    - imsi
+    - caller_imsi
+  cell_id:
+    - cell_id
+    - first_cell
+    - last_cell
+    - tower_id
+    - cgi
+
+bank_transactions:
+  txn_id:
+    - txn_id
+    - transaction_id
+    - ref_no
+    - reference_no
+    - utr
+    - txn_ref
+  datetime:
+    - datetime
+    - txn_datetime
+    - transaction_datetime
+    - timestamp
+    - date_time
+  date:
+    - date
+    - txn_date
+    - transaction_date
+    - value_date
+    - transfer_date
+    - posting_date
+    - dt
+  time:
+    - time
+    - txn_time
+    - transaction_time
+    - tm
+  from_account:
+    - from_account
+    - remitter_account
+    - remitter_ac
+    - debit_account
+    - source_account
+    - remitter_a_c
+    - sender_account
+  to_account:
+    - to_account
+    - beneficiary_account
+    - beneficiary_ac
+    - credit_account
+    - dest_account
+    - beneficiary_a_c
+    - receiver_account
+  from_name:
+    - from_name
+    - remitter_name
+    - sender_name
+  to_name:
+    - to_name
+    - beneficiary_name
+    - receiver_name
+  amount:
+    - amount
+    - txn_amount
+    - transfer_amount
+    - amount_inr
+    - transaction_amount
+  debit:
+    - debit
+    - withdrawal
+    - dr
+    - debit_amount
+  credit:
+    - credit
+    - deposit
+    - cr
+    - credit_amount
+  reference:
+    - reference
+    - narration
+    - remarks
+    - description
+    - particulars
+
+bank_statement:
+  date:
+    - date
+    - txn_date
+    - value_date
+    - posting_date
+  narration:
+    - narration
+    - particulars
+    - description
+    - remarks
+    - transaction_details
+  debit:
+    - debit
+    - withdrawal
+    - dr_amount
+    - dr
+  credit:
+    - credit
+    - deposit
+    - cr_amount
+    - cr
+  balance:
+    - balance
+    - closing_balance
+    - bal
+
+identity_table:
+  name:
+    - name
+    - subscriber_name
+    - customer_name
+    - holder_name
+    - owner_name
+    - person_name
+    - full_name
+  phone:
+    - phone
+    - mobile
+    - registered_mobile
+    - contact_no
+    - phone_number
+    - mobile_no
+  account:
+    - account
+    - account_no
+    - account_number
+    - bank_account
+    - acct_no
+  vehicle:
+    - vehicle
+    - vehicle_no
+    - registration
+    - reg_no
+    - vehicle_registration
+  email:
+    - email
+    - email_id
+    - email_address
+  address:
+    - address
+    - permanent_address
+    - residential_address
+    - location
+  dob:
+    - dob
+    - date_of_birth
+    - birth_date
+
+ip_log:
+  identifier:
+    - phone
+    - mobile
+    - account
+    - user_id
+    - username
+  ip:
+    - ip
+    - ip_address
+    - client_ip
+    - source_ip
+    - ipv4
+  datetime:
+    - datetime
+    - timestamp
+    - access_time
+    - login_time

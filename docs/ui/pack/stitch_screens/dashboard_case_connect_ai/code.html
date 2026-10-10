@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Dashboard</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#080c15',
+              surface: '#0d1527',
+              card: '#111b33',
+              cardHover: '#162242',
+              border: '#1c2b4e',
+              borderLight: '#243763',
+              blue: '#2563eb',
+              accentBlue: '#38bdf8',
+              purple: '#7c3aed',
+              accentPurple: '#a855f7',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    /* Custom glow effects and subtle scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080c15;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1c2b4e;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2563eb;
+    }
+
+    .glow-blue {
+      box-shadow: 0 0 25px -5px rgba(37, 99, 235, 0.4);
+    }
+    .glow-purple {
+      box-shadow: 0 0 25px -5px rgba(124, 58, 237, 0.4);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.4);
+    }
+    .glow-red {
+      box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.4);
+    }
+    .card-border {
+      border: 1px solid rgba(36, 55, 99, 0.6);
+    }
+  </style>
+<style data-purpose="canvas-network-styling">
+    /* Subtle background grid pattern for map canvas container */
+    .network-grid-bg {
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 70%),
+        linear-gradient(to right, rgba(28, 43, 78, 0.3) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(28, 43, 78, 0.3) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+    }
+  </style>
+</head>
+<body class="bg-[#080c15] text-slate-200 font-sans antialiased selection:bg-blue-600 selection:text-white flex min-h-screen overflow-hidden">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-[#0a101f] border-r border-[#1a2642] flex flex-col justify-between shrink-0 h-screen overflow-y-auto select-none z-30" data-purpose="main-navigation">
+<div>
+<!-- Brand Logo / Emblem Header -->
+<div class="px-5 py-5 flex items-center gap-3.5 border-b border-[#16223b]">
+<div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-300 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center shrink-0">
+<div class="w-full h-full bg-[#0d162a] rounded-[10px] flex items-center justify-center text-amber-400">
+<!-- Lion Capital / Police Emblem Motif -->
+<i class="fa-solid fa-shield-halved text-2xl text-amber-400"></i>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-extrabold text-base tracking-wide text-white">Case Connect</span>
+<span class="text-xs px-1.5 py-0.2 rounded font-bold bg-blue-600/30 text-blue-400 border border-blue-500/40">AI</span>
+</div>
+<p class="text-[10px] leading-tight text-slate-400 font-medium tracking-tight mt-0.5">AI-Powered Criminal Network Analysis System</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="px-3 py-4 space-y-1">
+<!-- Dashboard (Active Pill with Blue/Purple Glow) -->
+<a class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-md shadow-blue-600/30" href="#">
+<i class="fa-solid fa-table-columns text-base w-5 text-center"></i>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-regular fa-folder-closed text-base w-5 text-center"></i>
+<span>Cases</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-arrow-up-from-bracket text-base w-5 text-center"></i>
+<span>Upload Evidence</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-diagram-project text-base w-5 text-center"></i>
+<span>Investigation Graph</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-coins text-base w-5 text-center"></i>
+<span>Money Trail</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-regular fa-address-card text-base w-5 text-center"></i>
+<span>Master Profiles</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-brain text-base w-5 text-center"></i>
+<span>Lead Advisor</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-regular fa-file-lines text-base w-5 text-center"></i>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-clock-rotate-left text-base w-5 text-center"></i>
+<span>Audit Log</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-user-group text-base w-5 text-center"></i>
+<span>Users &amp; Roles</span>
+</a>
+<a class="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#121c33] transition-colors" href="#">
+<i class="fa-solid fa-gear text-base w-5 text-center"></i>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Bottom Badge & Indian Flag Patriotism banner -->
+<div class="p-3">
+<div class="relative overflow-hidden rounded-xl border border-[#213155] bg-gradient-to-b from-[#13203d]/90 to-[#0c1326] p-3 pt-6 text-center">
+<!-- Silhouette police officer backdrop effect -->
+<div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-blue-500 via-transparent to-transparent flex items-end justify-center">
+<i class="fa-solid fa-user-shield text-7xl text-blue-400 translate-y-3"></i>
+</div>
+<div class="relative z-10">
+<div class="flex items-center justify-center gap-2 mb-1.5">
+<!-- Indian Flag mini indicator -->
+<div class="w-5 h-3 rounded-[2px] overflow-hidden flex flex-col shadow border border-slate-700/60">
+<div class="h-1/3 bg-[#FF9933]"></div>
+<div class="h-1/3 bg-white flex items-center justify-center">
+<div class="w-1 h-1 rounded-full bg-[#000080]"></div>
+</div>
+<div class="h-1/3 bg-[#128807]"></div>
+</div>
+<span class="text-xs font-bold tracking-wide text-slate-200">POLICE</span>
+</div>
+<p class="text-[11px] font-medium text-slate-400">Together for<br/><span class="text-slate-200 font-semibold">Safer India</span></p>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentArea -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto bg-[#080d19]">
+<!-- BEGIN: TopHeader -->
+<header class="h-16 px-6 bg-[#0a1020]/90 backdrop-blur-md border-b border-[#182643] flex items-center justify-between sticky top-0 z-20" data-purpose="top-header">
+<div class="flex items-center gap-4">
+<!-- Toggle button / breadcrumb indicator -->
+<button class="text-slate-400 hover:text-white lg:hidden">
+<i class="fa-solid fa-bars text-lg"></i>
+</button>
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+<div>
+<h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              Dashboard
+            </h1>
+<p class="text-[11px] text-slate-400 -mt-0.5">Overview of investigations, evidence and key insights</p>
+</div>
+</div>
+</div>
+<!-- Center & Right Header Controls -->
+<div class="flex items-center gap-4">
+<!-- Search bar with omni-search placeholder -->
+<div class="relative w-80 md:w-96">
+<i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+<input class="w-full bg-[#10192e] border border-[#1f2f53] rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Search cases, people, phone numbers, accounts..." type="text"/>
+</div>
+<!-- Date indicator tag -->
+<div class="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-[#10192e] border border-[#1e2e50] rounded-lg text-slate-300 text-xs">
+<i class="fa-regular fa-calendar text-blue-400 text-xs"></i>
+<span class="font-medium">Thu, 12 Oct 2026</span>
+<span class="text-slate-500 text-[10px] pl-1 border-l border-slate-700">10:24 AM</span>
+</div>
+<!-- Notification Bell -->
+<button class="relative w-9 h-9 rounded-lg bg-[#111a31] border border-[#1f2f53] flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-500 transition-colors">
+<i class="fa-regular fa-bell text-sm"></i>
+<span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center shadow-md shadow-rose-500/50">3</span>
+</button>
+<!-- User Profile Avatar -->
+<div class="flex items-center gap-3 pl-2 border-l border-[#1a2744]">
+<div class="relative">
+<img alt="Inspector Meera" class="w-9 h-9 rounded-lg object-cover ring-2 ring-blue-500/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFND3SRgud9n1QtbgCj_wI8p54GoL701e4PDlMKkD2m0F_y7si9OPzYr0DQwuAfoYyV9L-asmL26v9V51MaEEgixWYcBiIhouPri5Ly__j_N8pUpbLzpPcs4oEJ07yhrign9QC0GYcFvfAEw7h46sEbVTbpS4XfcjcOoXMTPq7IyDuh_XN8bMp-3MrGsSKVX16MoUl1l6F4dW3nG-nyZ1hIInNmL-EMiVZ2zfxaGhCJXwk_v7EHhU5"/>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0a1020]"></span>
+</div>
+<div class="hidden sm:block text-left">
+<p class="text-xs font-semibold text-white leading-tight">Inspector Meera</p>
+<p class="text-[10px] text-slate-400 leading-tight">Lead Investigator</p>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopHeader -->
+<!-- Main Dashboard Scrollable Content -->
+<div class="p-6 space-y-6 flex-1">
+<!-- BEGIN: TopStatsKpiGrid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="kpi-cards">
+<!-- KPI 1: Total Cases -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex items-center justify-between hover:border-blue-500/50 transition-all">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
+<i class="fa-solid fa-folder-open text-xl"></i>
+</div>
+<div>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold text-white tracking-tight">12</span>
+<span class="text-xs font-semibold text-emerald-400 flex items-center">
+<i class="fa-solid fa-arrow-trend-up text-[10px] mr-1"></i>+20%
+                </span>
+</div>
+<p class="text-xs text-slate-400 font-medium">Total Cases</p>
+</div>
+</div>
+<!-- Mini SVG sparkline -->
+<svg class="w-16 h-8 text-blue-500 stroke-current fill-none stroke-[2] opacity-80" viewbox="0 0 70 30">
+<path d="M0,25 Q15,20 25,12 T50,18 T70,5"></path>
+</svg>
+</div>
+<!-- KPI 2: Active Investigations -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex items-center justify-between hover:border-purple-500/50 transition-all">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-purple-600/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-inner">
+<i class="fa-solid fa-magnifying-glass-chart text-xl"></i>
+</div>
+<div>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold text-white tracking-tight">4</span>
+<span class="text-xs font-semibold text-emerald-400 flex items-center">
+<i class="fa-solid fa-arrow-trend-up text-[10px] mr-1"></i>+33%
+                </span>
+</div>
+<p class="text-xs text-slate-400 font-medium">Active Investigations</p>
+</div>
+</div>
+<!-- Mini SVG sparkline -->
+<svg class="w-16 h-8 text-purple-500 stroke-current fill-none stroke-[2] opacity-80" viewbox="0 0 70 30">
+<path d="M0,22 Q18,25 30,10 T55,16 T70,4"></path>
+</svg>
+</div>
+<!-- KPI 3: People Identified -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex items-center justify-between hover:border-emerald-500/50 transition-all">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-emerald-600/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
+<i class="fa-solid fa-users text-xl"></i>
+</div>
+<div>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold text-white tracking-tight">28</span>
+<span class="text-xs font-semibold text-emerald-400 flex items-center">
+<i class="fa-solid fa-arrow-trend-up text-[10px] mr-1"></i>+15%
+                </span>
+</div>
+<p class="text-xs text-slate-400 font-medium">People Identified</p>
+</div>
+</div>
+<!-- Mini SVG sparkline -->
+<svg class="w-16 h-8 text-emerald-500 stroke-current fill-none stroke-[2] opacity-80" viewbox="0 0 70 30">
+<path d="M0,20 Q20,15 35,22 T55,8 T70,12"></path>
+</svg>
+</div>
+<!-- KPI 4: Bank Accounts -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex items-center justify-between hover:border-amber-500/50 transition-all">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-orange-600/15 border border-orange-500/30 flex items-center justify-center text-orange-400 shadow-inner">
+<i class="fa-solid fa-building-columns text-xl"></i>
+</div>
+<div>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-bold text-white tracking-tight">17</span>
+<span class="text-xs font-semibold text-emerald-400 flex items-center">
+<i class="fa-solid fa-arrow-trend-up text-[10px] mr-1"></i>+21%
+                </span>
+</div>
+<p class="text-xs text-slate-400 font-medium">Bank Accounts</p>
+</div>
+</div>
+<!-- Mini SVG sparkline -->
+<svg class="w-16 h-8 text-orange-500 stroke-current fill-none stroke-[2] opacity-80" viewbox="0 0 70 30">
+<path d="M0,26 Q16,10 32,20 T52,9 T70,3"></path>
+</svg>
+</div>
+</section>
+<!-- END: TopStatsKpiGrid -->
+<!-- BEGIN: MiddleGrid (Map Overview + Quick Actions & System Status) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-5" data-purpose="middle-visuals-grid">
+<!-- Left/Center Card: Investigation Map (Live Overview) -->
+<div class="lg:col-span-8 bg-[#0f172a] card-border rounded-xl p-5 flex flex-col relative overflow-hidden">
+<!-- Map Header & Filter Pills -->
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4 z-10">
+<div>
+<h2 class="text-sm font-bold text-white flex items-center gap-2">
+<span>Investigation Map (Live Overview)</span>
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+</span>
+</h2>
+</div>
+<!-- Category Pills -->
+<div class="flex items-center gap-1.5 bg-[#090f1d] p-1 rounded-lg border border-[#1b2b4e] text-xs">
+<button class="px-2.5 py-1 rounded bg-blue-600 font-semibold text-white shadow-sm">People</button>
+<button class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">Phone Numbers</button>
+<button class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">Bank Accounts</button>
+<button class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">Locations</button>
+</div>
+</div>
+<!-- Network Canvas / Interactive Map Container -->
+<div class="relative w-full h-[330px] rounded-lg overflow-hidden bg-[#0a1122] border border-[#172545] network-grid-bg flex items-center justify-center">
+<!-- Map Legend (Top Left inside canvas) -->
+<div class="absolute top-3 left-3 bg-[#0a1020]/80 backdrop-blur-md p-2.5 rounded-lg border border-[#1b2949] space-y-1.5 text-[11px] z-10">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-sm shadow-sky-400"></span>
+<span class="text-slate-300">Person</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500"></span>
+<span class="text-slate-300">Phone Number</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></span>
+<span class="text-slate-300">Bank Account</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400"></span>
+<span class="text-slate-300">Location</span>
+</div>
+<div class="border-t border-slate-700/60 my-1"></div>
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-0.5 bg-sky-400"></span>
+<span class="text-slate-400">Case Link</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-500/40"></span>
+<span class="text-rose-400 font-medium">High Risk</span>
+</div>
+</div>
+<!-- Map Controls (Zoom / Recenter) -->
+<div class="absolute top-3 right-3 flex flex-col gap-1 z-10">
+<button class="w-7 h-7 rounded bg-[#10192e] border border-[#1e2e50] text-slate-300 hover:text-white flex items-center justify-center text-xs shadow hover:bg-slate-800">
+<i class="fa-solid fa-plus"></i>
+</button>
+<button class="w-7 h-7 rounded bg-[#10192e] border border-[#1e2e50] text-slate-300 hover:text-white flex items-center justify-center text-xs shadow hover:bg-slate-800">
+<i class="fa-solid fa-minus"></i>
+</button>
+<button class="w-7 h-7 rounded bg-[#10192e] border border-[#1e2e50] text-slate-300 hover:text-white flex items-center justify-center text-xs shadow hover:bg-slate-800">
+<i class="fa-solid fa-crosshairs"></i>
+</button>
+</div>
+<!-- SVG Visualised Geospatial Network -->
+<svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<!-- Glowing node filters -->
+<filter height="140%" id="glow-rose" width="140%" x="-20%" y="-20%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<fecomposite in="SourceGraphic" in2="blur" operator="over"></fecomposite>
+</filter>
+<lineargradient id="grad-delhi-mum" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#f43f5e" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#38bdf8" stop-opacity="0.4"></stop>
+</lineargradient>
+<lineargradient id="grad-delhi-kol" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#f43f5e" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#a855f7" stop-opacity="0.4"></stop>
+</lineargradient>
+</defs>
+<!-- Connection Lines with Curve Curvature -->
+<path d="M370,120 Q310,140 260,190" fill="none" opacity="0.8" stroke="url(#grad-delhi-mum)" stroke-dasharray="3,3" stroke-width="2"></path>
+<path d="M370,120 Q440,150 490,200" fill="none" opacity="0.8" stroke="url(#grad-delhi-kol)" stroke-width="2"></path>
+<path d="M370,120 Q360,200 350,260" fill="none" opacity="0.9" stroke="#f43f5e" stroke-width="2.5"></path>
+<path d="M260,190 Q290,230 350,260" fill="none" opacity="0.6" stroke="#38bdf8" stroke-dasharray="4,2" stroke-width="1.5"></path>
+<path d="M350,260 Q430,240 490,200" fill="none" opacity="0.7" stroke="#10b981" stroke-width="1.5"></path>
+<path d="M370,120 Q410,130 435,160" fill="none" stroke="#a855f7" stroke-width="1.5"></path>
+<path d="M260,190 Q300,165 370,120" fill="none" stroke="#38bdf8" stroke-width="1.5"></path>
+<path d="M310,160 Q340,210 395,220" fill="none" stroke="#eab308" stroke-dasharray="2,2" stroke-width="1.2"></path>
+<!-- High-Risk Central Hub (Delhi) -->
+<circle class="animate-pulse" cx="370" cy="120" fill="#f43f5e" fill-opacity="0.25" r="16"></circle>
+<circle cx="370" cy="120" fill="#f43f5e" filter="url(#glow-rose)" r="10"></circle>
+<text fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" x="370" y="146">Delhi</text>
+<!-- Mumbai Node -->
+<circle cx="260" cy="190" fill="#38bdf8" r="6"></circle>
+<circle cx="260" cy="190" fill="#38bdf8" fill-opacity="0.2" r="12"></circle>
+<text fill="#cbd5e1" font-size="11" font-weight="600" text-anchor="middle" x="245" y="208">Mumbai</text>
+<!-- Bengaluru Node -->
+<circle cx="350" cy="260" fill="#10b981" r="7"></circle>
+<circle cx="350" cy="260" fill="#10b981" fill-opacity="0.2" r="14"></circle>
+<text fill="#cbd5e1" font-size="11" font-weight="600" text-anchor="middle" x="350" y="284">Bengaluru</text>
+<!-- Kolkata Node -->
+<circle cx="490" cy="200" fill="#a855f7" r="6"></circle>
+<circle cx="490" cy="200" fill="#a855f7" fill-opacity="0.2" r="12"></circle>
+<text fill="#cbd5e1" font-size="11" font-weight="600" text-anchor="start" x="515" y="205">Kolkata</text>
+<!-- Mid-Network Connected Entity Badges -->
+<!-- Person Node -->
+<g transform="translate(305, 145)">
+<circle cx="8" cy="8" fill="#0284c7" r="9"></circle>
+<path d="M8 5 A2 2 0 1 0 8 9 A2 2 0 1 0 8 5 M5 12 A3 3 0 0 1 11 12" fill="none" stroke="#fff" stroke-width="1"></path>
+</g>
+<!-- Phone Node -->
+<g transform="translate(425, 150)">
+<circle cx="8" cy="8" fill="#9333ea" r="9"></circle>
+<rect fill="none" height="8" rx="1" stroke="#fff" stroke-width="0.8" width="5" x="5.5" y="4"></rect>
+</g>
+<!-- Bank Node -->
+<g transform="translate(390, 210)">
+<circle cx="8" cy="8" fill="#059669" r="9"></circle>
+<path d="M5 7 L8 5 L11 7 M5 11 L11 11 M6 7 L6 10 M8 7 L8 10 M10 7 L10 10" fill="none" stroke="#fff" stroke-width="0.8"></path>
+</g>
+<!-- Location Tag Node -->
+<g transform="translate(325, 225)">
+<circle cx="7" cy="7" fill="#d97706" r="8"></circle>
+<circle cx="7" cy="7" fill="#fff" r="2.5"></circle>
+</g>
+<circle cx="430" cy="100" fill="#38bdf8" r="5"></circle>
+<circle cx="470" cy="140" fill="#f59e0b" r="4"></circle>
+<circle cx="280" cy="235" fill="#a855f7" r="4.5"></circle>
+<circle cx="400" cy="270" fill="#38bdf8" r="4.5"></circle>
+</svg>
+<!-- Bottom Floating Indicator badge -->
+<div class="absolute bottom-3 right-3 bg-[#0a1020]/90 backdrop-blur-md px-3 py-1 rounded-full border border-blue-500/30 flex items-center gap-2 text-[10px] text-slate-300">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+<span>18 Nodes Active • 4 Cross-Jurisdictions</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Quick Actions + System Status -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<!-- Quick Actions Block -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex-1" data-purpose="quick-actions">
+<h2 class="text-sm font-bold text-white mb-3">Quick Actions</h2>
+<div class="space-y-2.5">
+<!-- Action 1: Create New Case -->
+<button class="w-full group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg p-3 flex items-center justify-between text-xs font-semibold shadow-md shadow-blue-600/20 transition-all">
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center">
+<i class="fa-solid fa-plus text-xs"></i>
+</div>
+<span>Create New Case</span>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition-transform text-white/70"></i>
+</button>
+<!-- Action 2: Upload Evidence -->
+<button class="w-full group bg-[#131f38] hover:bg-[#182849] border border-[#1d2f55] text-slate-200 rounded-lg p-3 flex items-center justify-between text-xs font-semibold transition-all">
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-md bg-purple-500/15 text-purple-400 flex items-center justify-center">
+<i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+</div>
+<span>Upload Evidence</span>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition-transform text-slate-400"></i>
+</button>
+<!-- Action 3: Explore Investigation Graph -->
+<button class="w-full group bg-[#131f38] hover:bg-[#182849] border border-[#1d2f55] text-slate-200 rounded-lg p-3 flex items-center justify-between text-xs font-semibold transition-all">
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-md bg-teal-500/15 text-teal-400 flex items-center justify-center">
+<i class="fa-solid fa-network-wired text-xs"></i>
+</div>
+<span>Explore Investigation Graph</span>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition-transform text-slate-400"></i>
+</button>
+<!-- Action 4: Analyse with AI -->
+<button class="w-full group bg-gradient-to-r from-amber-600/30 to-orange-600/20 hover:from-amber-600/40 hover:to-orange-600/30 border border-amber-500/40 text-amber-200 rounded-lg p-3 flex items-center justify-between text-xs font-semibold transition-all">
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-400 flex items-center justify-center">
+<i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+</div>
+<span>Analyse with AI</span>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-0.5 transition-transform text-amber-300"></i>
+</button>
+</div>
+</div>
+<!-- System Status Block -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4" data-purpose="system-status">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-bold text-white">System Status</h2>
+<a class="text-[11px] font-semibold text-blue-400 hover:text-blue-300" href="#">View All</a>
+</div>
+<div class="space-y-2.5 text-xs">
+<div class="flex items-center justify-between">
+<span class="text-slate-400 flex items-center gap-2">
+<i class="fa-solid fa-server text-[10px] text-slate-500"></i> AI Analysis Engine
+                </span>
+<span class="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
+                </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-slate-400 flex items-center gap-2">
+<i class="fa-solid fa-hard-drive text-[10px] text-slate-500"></i> Evidence Processing
+                </span>
+<span class="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
+                </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-slate-400 flex items-center gap-2">
+<i class="fa-solid fa-database text-[10px] text-slate-500"></i> Graph Database
+                </span>
+<span class="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
+                </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-slate-400 flex items-center gap-2">
+<i class="fa-solid fa-file-shield text-[10px] text-slate-500"></i> Report Generation
+                </span>
+<span class="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online
+                </span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: MiddleGrid -->
+<!-- BEGIN: BottomRowColumns (Recent Cases, Recent Activity, AI Insights) -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-5" data-purpose="bottom-details-row">
+<!-- Column 1: Recent Cases Table -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="text-sm font-bold text-white">Recent Cases</h3>
+<a class="text-xs font-semibold text-blue-400 hover:text-blue-300" href="#">View All</a>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="text-slate-400 border-b border-[#1b2b4d] pb-2">
+<th class="font-semibold py-2">Case ID</th>
+<th class="font-semibold py-2">Title</th>
+<th class="font-semibold py-2">Date</th>
+<th class="font-semibold py-2 text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#172545]/60">
+<tr class="hover:bg-[#131f38]/50 transition-colors">
+<td class="py-2.5 font-mono text-slate-300 font-medium">CC-101</td>
+<td class="py-2.5 text-white font-medium">Cyber Fraud Ring</td>
+<td class="py-2.5 text-slate-400 text-[11px]">12 Oct 2026</td>
+<td class="py-2.5 text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+</tr>
+<tr class="hover:bg-[#131f38]/50 transition-colors">
+<td class="py-2.5 font-mono text-slate-300 font-medium">CC-100</td>
+<td class="py-2.5 text-white font-medium">ATM Skimming</td>
+<td class="py-2.5 text-slate-400 text-[11px]">10 Oct 2026</td>
+<td class="py-2.5 text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Analysis</span>
+</td>
+</tr>
+<tr class="hover:bg-[#131f38]/50 transition-colors">
+<td class="py-2.5 font-mono text-slate-300 font-medium">CC-099</td>
+<td class="py-2.5 text-white font-medium">Online Investment Scam</td>
+<td class="py-2.5 text-slate-400 text-[11px]">05 Oct 2026</td>
+<td class="py-2.5 text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-600/30 text-slate-400 border border-slate-600/40">Closed</span>
+</td>
+</tr>
+<tr class="hover:bg-[#131f38]/50 transition-colors">
+<td class="py-2.5 font-mono text-slate-300 font-medium">CC-098</td>
+<td class="py-2.5 text-white font-medium">SIM Card Fraud</td>
+<td class="py-2.5 text-slate-400 text-[11px]">01 Oct 2026</td>
+<td class="py-2.5 text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+</tr>
+<tr class="hover:bg-[#131f38]/50 transition-colors">
+<td class="py-2.5 font-mono text-slate-300 font-medium">CC-097</td>
+<td class="py-2.5 text-white font-medium">Fake Loan App</td>
+<td class="py-2.5 text-slate-400 text-[11px]">28 Sep 2026</td>
+<td class="py-2.5 text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-600/30 text-slate-400 border border-slate-600/40">Closed</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Column 2: Recent Activity Timeline -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4">
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="text-sm font-bold text-white">Recent Activity</h3>
+<a class="text-xs font-semibold text-blue-400 hover:text-blue-300" href="#">View All</a>
+</div>
+<div class="space-y-3.5">
+<!-- Timeline Item 1 -->
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+</div>
+<div class="flex-1">
+<p class="text-xs font-semibold text-white">New evidence uploaded in CC-101</p>
+<p class="text-[11px] text-slate-400">Call detail records attached by Inspector Roy</p>
+<span class="text-[10px] text-slate-500 font-medium mt-0.5 block">2 hours ago</span>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-code-merge text-xs"></i>
+</div>
+<div class="flex-1">
+<p class="text-xs font-semibold text-white">Rohan Sharma linked across 3 cases</p>
+<p class="text-[11px] text-slate-400">Automated identity correlation verified</p>
+<span class="text-[10px] text-slate-500 font-medium mt-0.5 block">5 hours ago</span>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-money-bill-transfer text-xs"></i>
+</div>
+<div class="flex-1">
+<p class="text-xs font-semibold text-white">Bank transaction pattern detected</p>
+<p class="text-[11px] text-slate-400">Suspicious layering in ICICI &amp; HDFC accounts</p>
+<span class="text-[10px] text-slate-500 font-medium mt-0.5 block">7 hours ago</span>
+</div>
+</div>
+<!-- Timeline Item 4 -->
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-regular fa-file-pdf text-xs"></i>
+</div>
+<div class="flex-1">
+<p class="text-xs font-semibold text-white">Report generated for CC-100</p>
+<p class="text-[11px] text-slate-400">Comprehensive charge-sheet addendum</p>
+<span class="text-[10px] text-slate-500 font-medium mt-0.5 block">1 day ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: AI Insights Cards -->
+<div class="bg-[#0f172a] card-border rounded-xl p-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3.5">
+<h3 class="text-sm font-bold text-white">AI Insights</h3>
+<a class="text-xs font-semibold text-blue-400 hover:text-blue-300" href="#">View Details</a>
+</div>
+<div class="space-y-2.5">
+<!-- Insight 1: High-Risk Network -->
+<div class="p-3 rounded-lg bg-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 transition cursor-pointer flex items-center justify-between group">
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-md bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-triangle-exclamation text-xs"></i>
+</div>
+<div>
+<h4 class="text-xs font-bold text-rose-300">High-risk network detected</h4>
+<p class="text-[11px] text-slate-400">3 people, 5 accounts linked across multiple FIRs</p>
+</div>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] text-slate-500 group-hover:text-rose-300 transition-colors"></i>
+</div>
+<!-- Insight 2: Unusual Transaction -->
+<div class="p-3 rounded-lg bg-purple-950/20 border border-purple-500/30 hover:border-purple-500/60 transition cursor-pointer flex items-center justify-between group">
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-chart-line text-xs"></i>
+</div>
+<div>
+<h4 class="text-xs font-bold text-purple-300">Unusual transaction pattern</h4>
+<p class="text-[11px] text-slate-400">₹2.3 Crore routed across 4 bank accounts in 48h</p>
+</div>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] text-slate-500 group-hover:text-purple-300 transition-colors"></i>
+</div>
+<!-- Insight 3: Cross-FIR links -->
+<div class="p-3 rounded-lg bg-teal-950/20 border border-teal-500/30 hover:border-teal-500/60 transition cursor-pointer flex items-center justify-between group">
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-md bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0 mt-0.5">
+<i class="fa-solid fa-users-viewfinder text-xs"></i>
+</div>
+<div>
+<h4 class="text-xs font-bold text-teal-300">2 new cross-FIR links found</h4>
+<p class="text-[11px] text-slate-400">Rohan Sharma and Neha Patel connected</p>
+</div>
+</div>
+<i class="fa-solid fa-chevron-right text-[10px] text-slate-500 group-hover:text-teal-300 transition-colors"></i>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: BottomRowColumns -->
+</div>
+</main>
+<!-- END: MainContentArea -->
+<!-- Interactivity Helper Script -->
+<script data-purpose="interaction-handlers">
+    // Interactive feedback handlers
+    document.addEventListener('DOMContentLoaded', () => {
+      // Map Filter pills toggle
+      const filterButtons = document.querySelectorAll('[data-purpose="middle-visuals-grid"] button');
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.innerText && ['People', 'Phone Numbers', 'Bank Accounts', 'Locations'].includes(btn.innerText.trim())) {
+            filterButtons.forEach(b => {
+              if (['People', 'Phone Numbers', 'Bank Accounts', 'Locations'].includes(b.innerText.trim())) {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('text-slate-400');
+              }
+            });
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('text-slate-400');
+          }
+        });
+      });
+    });
+  </script>
+</body></html>

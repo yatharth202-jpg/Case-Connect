@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Lead Advisor</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- FontAwesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Google Fonts Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Custom Configuration for Tailwind -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#030712',
+              card: '#0B1120',
+              cardBorder: '#1E293B',
+              primary: '#2563EB',
+              accent: '#3B82F6',
+              highlight: '#1D4ED8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars-and-glow">
+    /* Custom refined dark mode scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #060b17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .active-nav-glow {
+      background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%);
+      box-shadow: 0 4px 15px -1px rgba(37, 99, 235, 0.4);
+    }
+    
+    .glow-cyan {
+      box-shadow: 0 0 15px -2px rgba(6, 182, 212, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-[#030712] text-slate-200 font-sans antialiased h-screen flex overflow-hidden text-[13px] select-none">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-[#050B18] border-r border-[#152238] flex flex-col justify-between shrink-0 z-20 overflow-y-auto" data-purpose="main-navigation-sidebar">
+<div>
+<!-- System Logo & Branding -->
+<div class="p-4 flex items-center space-x-3 border-b border-[#152238]/60">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-blue-600 to-indigo-600 p-[1.5px] shadow-lg flex items-center justify-center">
+<div class="w-full h-full bg-[#070f23] rounded-[10px] flex items-center justify-center text-amber-400">
+<i class="fa-solid fa-shield-halved text-xl"></i>
+</div>
+</div>
+<div>
+<h1 class="font-bold text-white text-base leading-tight tracking-wide flex items-center gap-1.5">
+            Case Connect <span class="text-blue-400 font-extrabold text-[12px] bg-blue-950/80 px-1.5 py-0.5 rounded border border-blue-500/30">AI</span>
+</h1>
+<p class="text-[10px] text-slate-400 font-medium">AI-Powered Crime Analytics</p>
+</div>
+</div>
+<!-- Navigation Menu Items -->
+<nav class="p-3 space-y-1" data-purpose="nav-items-container">
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-table-columns w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Dashboard</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-folder-open w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Cases</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-file-arrow-up w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Upload Evidence</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-circle-nodes w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Investigation Graph</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-money-bill-transfer w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Money Trail</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-id-card-clip w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Master Profiles</span>
+</a>
+<!-- Active Item: Lead Advisor -->
+<a class="flex items-center px-3 py-2.5 rounded-lg text-white active-nav-glow font-medium transition-all group shadow-md shadow-blue-900/30" href="#">
+<i class="fa-solid fa-user-secret w-6 text-center text-sm mr-2 text-white"></i>
+<span class="font-medium text-[13px] tracking-wide">Lead Advisor</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-regular fa-file-lines w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Reports</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-clock-rotate-left w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Audit Log</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-users-gear w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Users &amp; Roles</span>
+</a>
+<a class="flex items-center px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1a33] transition-colors group" href="#">
+<i class="fa-solid fa-gear w-6 text-center text-sm mr-2 text-slate-400 group-hover:text-blue-400"></i>
+<span class="font-medium text-[13px]">Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Footer / Police Badge Branding Banner -->
+<div class="p-3 border-t border-[#152238]/60 bg-[#040814]/80">
+<div class="relative rounded-lg overflow-hidden border border-[#1e2e4b] bg-gradient-to-b from-[#0b162c] to-[#040711] p-3 text-center shadow-inner">
+<div class="flex items-center justify-center space-x-2 mb-1.5">
+<span class="text-xl">👮‍♂️</span>
+<span class="text-[12px] font-bold text-white tracking-widest uppercase">POLICE</span>
+</div>
+<p class="text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+          Together for Safer India
+        </p>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentArea -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#02050e] overflow-hidden">
+<!-- BEGIN: TopBar -->
+<header class="h-14 bg-[#050b18] border-b border-[#152238] flex items-center justify-between px-5 shrink-0 z-10" data-purpose="top-navigation-bar">
+<!-- Left: Breadcrumb Navigation -->
+<div class="flex items-center space-x-3 text-[12px]">
+<button class="text-slate-400 hover:text-white">
+<i class="fa-solid fa-bars text-sm"></i>
+</button>
+<div class="flex items-center space-x-1.5 text-slate-400">
+<span class="text-slate-300">Cases</span>
+<i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
+<span class="text-blue-400 font-medium">CC-101</span>
+<i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
+<span class="text-white font-semibold">Lead Advisor</span>
+</div>
+</div>
+<!-- Right: Search Bar, Notifications & User Info -->
+<div class="flex items-center space-x-4">
+<!-- Global Search Input -->
+<div class="relative w-72">
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+<input class="w-full bg-[#0a1224] border border-[#1b2b48] rounded-full text-[12px] pl-8 pr-3 py-1.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Search people, accounts, phone numbers, FIRs..." type="text"/>
+</div>
+<!-- Notification Bell Icon -->
+<button class="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-[#0f1b34] transition">
+<i class="fa-regular fa-bell text-sm"></i>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#050b18]"></span>
+</button>
+<!-- Officer Profile Container -->
+<div class="flex items-center space-x-2.5 pl-2 border-l border-[#152238]">
+<div class="w-8 h-8 rounded-full bg-slate-700 overflow-hidden ring-1 ring-blue-500/50 flex items-center justify-center font-bold text-white text-xs">
+            IM
+          </div>
+<div class="leading-tight text-left">
+<h2 class="text-[12px] font-semibold text-white">Inspector Meera</h2>
+<p class="text-[10px] text-slate-400">Lead Investigator</p>
+</div>
+<i class="fa-solid fa-angle-down text-slate-500 text-xs ml-1 cursor-pointer"></i>
+</div>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: DashboardBody -->
+<main class="flex-1 p-4 overflow-y-auto flex flex-col space-y-4" data-purpose="lead-advisor-main-view">
+<!-- Top Title & Global Action Bar -->
+<div class="flex items-center justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="w-2.5 h-6 bg-blue-500 rounded-sm"></span>
+<h1 class="text-xl font-bold text-white tracking-tight">Lead Advisor – AI Generated Leads</h1>
+</div>
+<p class="text-xs text-slate-400 mt-0.5 ml-4.5">Get intelligent lead suggestions based on analysed evidence, patterns and network connections.</p>
+</div>
+<div class="flex items-center space-x-2.5">
+<button class="px-3 py-1.5 rounded-lg border border-[#1f3256] bg-[#0c162e] hover:bg-[#122248] text-slate-200 text-xs font-medium flex items-center space-x-1.5 shadow-sm transition">
+<i class="fa-solid fa-arrows-rotate text-[11px] text-blue-400"></i>
+<span>Refresh Leads</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg border border-[#1f3256] bg-[#0c162e] hover:bg-[#122248] text-slate-200 text-xs font-medium flex items-center space-x-1.5 shadow-sm transition">
+<i class="fa-solid fa-arrow-down-to-bracket text-[11px] text-emerald-400"></i>
+<span>Export Leads</span>
+</button>
+</div>
+</div>
+<!-- Priority Counters Row -->
+<div class="grid grid-cols-3 gap-3.5" data-purpose="priority-stats-cards">
+<!-- Total Leads Card -->
+<div class="bg-gradient-to-br from-[#12163b] to-[#0c102b] border border-[#232959] p-3.5 rounded-xl flex items-center justify-between shadow-md">
+<div class="flex items-center space-x-3.5">
+<div class="w-11 h-11 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl shadow-inner">
+<i class="fa-regular fa-lightbulb"></i>
+</div>
+<div>
+<p class="text-2xl font-bold text-white tracking-tight leading-none">12</p>
+<p class="text-xs text-slate-400 font-medium mt-1">Total Leads</p>
+</div>
+</div>
+<div class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+<i class="fa-solid fa-arrow-up text-[9px]"></i>
+<span>3 new</span>
+</div>
+</div>
+<!-- High Priority Card -->
+<div class="bg-gradient-to-br from-[#2f1325] to-[#1a0c1b] border border-[#52213d] p-3.5 rounded-xl flex items-center justify-between shadow-md">
+<div class="flex items-center space-x-3.5">
+<div class="w-11 h-11 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl shadow-inner">
+<i class="fa-solid fa-triangle-exclamation"></i>
+</div>
+<div>
+<p class="text-2xl font-bold text-white tracking-tight leading-none">4</p>
+<p class="text-xs text-slate-400 font-medium mt-1">High Priority</p>
+</div>
+</div>
+<div class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+<i class="fa-solid fa-arrow-up text-[9px]"></i>
+<span>1 new</span>
+</div>
+</div>
+<!-- Medium Priority Card -->
+<div class="bg-gradient-to-br from-[#2d1c10] to-[#1a110a] border border-[#53301a] p-3.5 rounded-xl flex items-center justify-between shadow-md">
+<div class="flex items-center space-x-3.5">
+<div class="w-11 h-11 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl shadow-inner">
+<i class="fa-regular fa-clock"></i>
+</div>
+<div>
+<p class="text-2xl font-bold text-white tracking-tight leading-none">5</p>
+<p class="text-xs text-slate-400 font-medium mt-1">Medium Priority</p>
+</div>
+</div>
+<div class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+<i class="fa-solid fa-arrow-up text-[9px]"></i>
+<span>2 new</span>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid: Left (List + Related) & Right (Drawer Panel) -->
+<div class="grid grid-cols-12 gap-4 flex-1 min-h-0">
+<!-- Left Side: Lead Filters, List, & Related Entities Table -->
+<div class="col-span-7 flex flex-col space-y-4">
+<!-- AI Generated Leads List Container -->
+<div class="bg-[#080e1c] border border-[#16233b] rounded-xl p-3.5 flex flex-col flex-1 shadow-md">
+<!-- Filters Row -->
+<div class="flex items-center justify-between mb-3">
+<span class="text-sm font-semibold text-white tracking-wide">AI Generated Leads</span>
+<div class="flex items-center space-x-1.5 bg-[#050914] p-0.5 rounded-lg border border-[#1a2944]">
+<button class="px-2.5 py-1 text-xs font-semibold rounded-md bg-blue-600 text-white shadow">All Leads (12)</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white">High (4)</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white">Medium (5)</button>
+<button class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white">Low (3)</button>
+</div>
+</div>
+<!-- Leads Item List -->
+<div class="space-y-2 overflow-y-auto pr-1" data-purpose="lead-cards-list">
+<!-- Lead Item 1: Active shell company -->
+<div class="bg-[#0e172a] hover:bg-[#131f38] border border-blue-500/50 rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition shadow-sm">
+<div class="flex items-center space-x-3">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<span class="w-6 h-6 rounded-md bg-rose-600 text-white font-bold flex items-center justify-center text-xs">1</span>
+<div>
+<h3 class="text-xs font-semibold text-white">Link to Shell Company</h3>
+<p class="text-[11px] text-slate-400 line-clamp-1">Rohan Sharma linked to M/s Tech Solutions through common bank transactions and shared directors.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<span class="px-2 py-0.5 rounded bg-blue-950/80 border border-blue-800 text-[10px] text-blue-300 font-medium">Banking</span>
+<span class="px-2 py-0.5 rounded bg-indigo-950/80 border border-indigo-800 text-[10px] text-indigo-300 font-medium">Company</span>
+<span class="text-[10px] text-slate-500">12 Oct 2026</span>
+<i class="fa-solid fa-chevron-right text-[11px] text-blue-400"></i>
+</div>
+</div>
+<!-- Lead Item 2: Common Phone Network -->
+<div class="bg-[#0b1222] hover:bg-[#101a30] border border-[#192742] rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition">
+<div class="flex items-center space-x-3">
+<input class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<span class="w-6 h-6 rounded-md bg-amber-600 text-white font-bold flex items-center justify-center text-xs">2</span>
+<div>
+<h3 class="text-xs font-semibold text-white">Common Phone Network</h3>
+<p class="text-[11px] text-slate-400 line-clamp-1">+91 98765 43210 appears in 3 different FIRs with multiple high-risk persons.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-medium">Phone</span>
+<span class="px-2 py-0.5 rounded bg-purple-950/80 border border-purple-800 text-[10px] text-purple-300 font-medium">Cross-FIR</span>
+<span class="text-[10px] text-slate-500">11 Oct 2026</span>
+<i class="fa-solid fa-chevron-right text-[11px] text-slate-600"></i>
+</div>
+</div>
+<!-- Lead Item 3: Large Fund Transfers -->
+<div class="bg-[#0b1222] hover:bg-[#101a30] border border-[#192742] rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition">
+<div class="flex items-center space-x-3">
+<input class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<span class="w-6 h-6 rounded-md bg-amber-600 text-white font-bold flex items-center justify-center text-xs">3</span>
+<div>
+<h3 class="text-xs font-semibold text-white">Large Fund Transfers</h3>
+<p class="text-[11px] text-slate-400 line-clamp-1">₹18.5L transferred from AXIS Bank to HDFC Bank followed by multiple layer transactions.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<span class="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800 text-[10px] text-emerald-300 font-medium">Money Trail</span>
+<span class="px-2 py-0.5 rounded bg-rose-950/80 border border-rose-800 text-[10px] text-rose-300 font-medium">High Value</span>
+<span class="text-[10px] text-slate-500">10 Oct 2026</span>
+<i class="fa-solid fa-chevron-right text-[11px] text-slate-600"></i>
+</div>
+</div>
+<!-- Lead Item 4: Location Pattern -->
+<div class="bg-[#0b1222] hover:bg-[#101a30] border border-[#192742] rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition">
+<div class="flex items-center space-x-3">
+<input class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<span class="w-6 h-6 rounded-md bg-amber-600 text-white font-bold flex items-center justify-center text-xs">4</span>
+<div>
+<h3 class="text-xs font-semibold text-white">Location Pattern</h3>
+<p class="text-[11px] text-slate-400 line-clamp-1">Neha Patel and Vikram Singh present at same locations during key transaction dates.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<span class="px-2 py-0.5 rounded bg-blue-950/80 border border-blue-800 text-[10px] text-blue-300 font-medium">Location</span>
+<span class="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-[10px] text-cyan-300 font-medium">Co-occurrence</span>
+<span class="text-[10px] text-slate-500">09 Oct 2026</span>
+<i class="fa-solid fa-chevron-right text-[11px] text-slate-600"></i>
+</div>
+</div>
+<!-- Lead Item 5: New Associated Person -->
+<div class="bg-[#0b1222] hover:bg-[#101a30] border border-[#192742] rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition">
+<div class="flex items-center space-x-3">
+<input class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<span class="w-6 h-6 rounded-md bg-blue-600 text-white font-bold flex items-center justify-center text-xs">5</span>
+<div>
+<h3 class="text-xs font-semibold text-white">New Associated Person</h3>
+<p class="text-[11px] text-slate-400 line-clamp-1">Amit Verma connected through shared phone numbers and financial transactions.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<span class="px-2 py-0.5 rounded bg-indigo-950/80 border border-indigo-800 text-[10px] text-indigo-300 font-medium">Person</span>
+<span class="px-2 py-0.5 rounded bg-teal-950/80 border border-teal-800 text-[10px] text-teal-300 font-medium">Network Expansion</span>
+<span class="text-[10px] text-slate-500">08 Oct 2026</span>
+<i class="fa-solid fa-chevron-right text-[11px] text-slate-600"></i>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom: Related Entities Table -->
+<div class="bg-[#080e1c] border border-[#16233b] rounded-xl p-3.5 shadow-md" data-purpose="related-entities-section">
+<div class="flex items-center justify-between mb-3">
+<span class="text-sm font-semibold text-white">Related Entities</span>
+<div class="flex items-center space-x-1 bg-[#050914] p-0.5 rounded-lg border border-[#1a2944]">
+<button class="px-2 py-0.5 text-[11px] font-semibold rounded bg-blue-600 text-white shadow">All (4)</button>
+<button class="px-2 py-0.5 text-[11px] text-slate-400 hover:text-white">Persons (2)</button>
+<button class="px-2 py-0.5 text-[11px] text-slate-400 hover:text-white">Accounts (1)</button>
+<button class="px-2 py-0.5 text-[11px] text-slate-400 hover:text-white">Companies (1)</button>
+<button class="px-2 py-0.5 text-[11px] text-slate-400 hover:text-white">Locations (0)</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-[11px] font-medium text-slate-400 border-b border-[#182740]">
+<th class="pb-2 pl-2">Name / Number</th>
+<th class="pb-2">Type</th>
+<th class="pb-2">Relationship</th>
+<th class="pb-2">Risk Score</th>
+<th class="pb-2 text-right pr-2">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#132035] text-[12px]">
+<!-- Entity 1 -->
+<tr>
+<td class="py-2 pl-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
+<i class="fa-solid fa-user"></i>
+</div>
+<span class="font-medium text-white">Rohan Sharma</span>
+</td>
+<td class="py-2 text-slate-400 text-[11px]">Person (P-001)</td>
+<td class="py-2 text-slate-300">Owner / Director</td>
+<td class="py-2">
+<div class="flex items-center space-x-2">
+<span class="text-rose-400 font-bold text-[11px]">92%</span>
+<div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-rose-500 rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</td>
+<td class="py-2 text-right pr-2">
+<button class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium">View</button>
+</td>
+</tr>
+<!-- Entity 2 -->
+<tr>
+<td class="py-2 pl-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded-full bg-purple-900/60 border border-purple-500 flex items-center justify-center text-[10px] text-purple-300">
+<i class="fa-solid fa-building"></i>
+</div>
+<span class="font-medium text-white">M/s Tech Solutions</span>
+</td>
+<td class="py-2 text-slate-400 text-[11px]">Company (C-014)</td>
+<td class="py-2 text-slate-300">Linked Company</td>
+<td class="py-2">
+<div class="flex items-center space-x-2">
+<span class="text-rose-400 font-bold text-[11px]">85%</span>
+<div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-rose-500 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+</td>
+<td class="py-2 text-right pr-2">
+<button class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium">View</button>
+</td>
+</tr>
+<!-- Entity 3 -->
+<tr>
+<td class="py-2 pl-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded-full bg-amber-900/60 border border-amber-500 flex items-center justify-center text-[10px] text-amber-300">
+<i class="fa-solid fa-landmark"></i>
+</div>
+<span class="font-medium text-white">AXIS Bank A/c XXXX3210</span>
+</td>
+<td class="py-2 text-slate-400 text-[11px]">Bank Account</td>
+<td class="py-2 text-slate-300">Fund Transfer</td>
+<td class="py-2">
+<div class="flex items-center space-x-2">
+<span class="text-amber-400 font-bold text-[11px]">78%</span>
+<div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 rounded-full" style="width: 78%"></div>
+</div>
+</div>
+</td>
+<td class="py-2 text-right pr-2">
+<button class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium">View</button>
+</td>
+</tr>
+<!-- Entity 4 -->
+<tr>
+<td class="py-2 pl-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
+<i class="fa-solid fa-user"></i>
+</div>
+<span class="font-medium text-white">Sanjay Mehta</span>
+</td>
+<td class="py-2 text-slate-400 text-[11px]">Person (P-014)</td>
+<td class="py-2 text-slate-300">Common Director</td>
+<td class="py-2">
+<div class="flex items-center space-x-2">
+<span class="text-amber-400 font-bold text-[11px]">74%</span>
+<div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 rounded-full" style="width: 74%"></div>
+</div>
+</div>
+</td>
+<td class="py-2 text-right pr-2">
+<button class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-medium">View</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Side: Detailed Lead Overview Drawer / Panel -->
+<div class="col-span-5 bg-[#080e1c] border border-[#16233b] rounded-xl p-4 flex flex-col justify-between shadow-lg overflow-y-auto" data-purpose="lead-detail-overview-drawer">
+<div>
+<!-- Header with Title & Action Button -->
+<div class="flex items-start justify-between border-b border-[#16233b] pb-3 mb-3">
+<div>
+<span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lead Details</span>
+<div class="flex items-center space-x-2.5 mt-1">
+<span class="w-7 h-7 rounded-lg bg-rose-600 text-white font-bold flex items-center justify-center text-sm shadow">1</span>
+<div>
+<div class="flex items-center space-x-2">
+<h2 class="text-sm font-bold text-white">Link to Shell Company</h2>
+<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-semibold flex items-center gap-1">
+<i class="fa-solid fa-shield-virus text-[9px]"></i> High Priority
+                      </span>
+</div>
+<div class="flex items-center space-x-2 mt-1">
+<span class="text-[11px] text-slate-400 font-medium">Confidence Score: <strong class="text-white font-bold">92%</strong></span>
+<div class="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-rose-500 rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<button class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg shadow-md transition">
+                  Mark as Reviewed
+                </button>
+<span class="text-[10px] text-slate-500 mt-2">Generated on 12 Oct 2026, 10:32 AM</span>
+</div>
+</div>
+<!-- Drawer Tabs -->
+<div class="flex items-center space-x-1 border-b border-[#16233b] pb-2 mb-3">
+<button class="px-3 py-1 text-xs font-semibold bg-blue-600 text-white rounded-md">Summary</button>
+<button class="px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-md">Supporting Evidence (5)</button>
+<button class="px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-md">Related Entities (4)</button>
+<button class="px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-md">Graph View</button>
+</div>
+<!-- AI Analysis Description Box -->
+<div class="bg-[#0b1326] border border-[#1b2a47] rounded-lg p-3 mb-3">
+<div class="flex items-center space-x-2 mb-1.5">
+<span class="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-[10px] text-white font-bold">AI</span>
+<h4 class="text-xs font-semibold text-white">AI Analysis</h4>
+</div>
+<p class="text-[11px] text-slate-300 leading-relaxed">
+                Rohan Sharma is linked to M/s Tech Solutions through common bank transactions, shared directors, and matching addresses. The company also appears in FIRs CC-087 and CC-099, suggesting a possible shell company used for layering funds.
+              </p>
+</div>
+<!-- Key Points & Recommended Actions (2-Col Sub-grid) -->
+<div class="grid grid-cols-2 gap-3 mb-3">
+<!-- Key Points -->
+<div class="bg-[#091122] border border-[#17253e] rounded-lg p-2.5">
+<h5 class="text-[11px] font-bold text-rose-400 flex items-center space-x-1 mb-2">
+<i class="fa-solid fa-list-check"></i>
+<span>Key Points</span>
+</h5>
+<ul class="text-[10px] text-slate-300 space-y-1.5 list-none pl-1">
+<li class="flex items-start space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+<span>₹18.5L transferred from Rohan Sharma to M/s Tech Solutions</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+<span>Same director (Sanjay Mehta) in 2 other companies under investigation</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+<span>Company address matches a location in FIR CC-087</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+<span>Multiple round transactions detected within 7 days</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+<span>Linked to 3 high-risk phone numbers</span>
+</li>
+</ul>
+</div>
+<!-- Recommended Actions -->
+<div class="bg-[#091122] border border-[#17253e] rounded-lg p-2.5">
+<h5 class="text-[11px] font-bold text-emerald-400 flex items-center space-x-1 mb-2">
+<i class="fa-solid fa-clipboard-check"></i>
+<span>Recommended Actions</span>
+</h5>
+<ul class="text-[10px] text-slate-300 space-y-1.5 list-none pl-1">
+<li class="flex items-start space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-500 text-[10px] mt-0.5 shrink-0"></i>
+<span>Verify company registration details</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-500 text-[10px] mt-0.5 shrink-0"></i>
+<span>Check additional bank accounts</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-500 text-[10px] mt-0.5 shrink-0"></i>
+<span>Investigate directors and shareholders</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-500 text-[10px] mt-0.5 shrink-0"></i>
+<span>Cross-check with other linked FIRs</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<i class="fa-solid fa-circle-check text-emerald-500 text-[10px] mt-0.5 shrink-0"></i>
+<span>Conduct site verification at registered address</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Evidence Preview Badges -->
+<div class="mb-3">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-semibold text-white">Evidence Preview</span>
+<a class="text-[11px] text-blue-400 hover:underline" href="#">View All Evidence</a>
+</div>
+<div class="grid grid-cols-4 gap-2">
+<div class="bg-[#0d1629] border border-[#1c2e4f] rounded-lg p-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded bg-rose-600/20 text-rose-400 flex items-center justify-center text-xs">
+<i class="fa-solid fa-file-pdf"></i>
+</div>
+<div class="leading-tight overflow-hidden">
+<p class="text-[10px] font-bold text-white truncate">Bank Statement</p>
+<p class="text-[9px] text-slate-400">12 Oct 2026</p>
+</div>
+</div>
+<div class="bg-[#0d1629] border border-[#1c2e4f] rounded-lg p-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs">
+<i class="fa-solid fa-file-csv"></i>
+</div>
+<div class="leading-tight overflow-hidden">
+<p class="text-[10px] font-bold text-white truncate">Call Records</p>
+<p class="text-[9px] text-slate-400">11 Oct 2026</p>
+</div>
+</div>
+<div class="bg-[#0d1629] border border-[#1c2e4f] rounded-lg p-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded bg-rose-600/20 text-rose-400 flex items-center justify-center text-xs">
+<i class="fa-solid fa-file-pdf"></i>
+</div>
+<div class="leading-tight overflow-hidden">
+<p class="text-[10px] font-bold text-white truncate">FIR CC-087</p>
+<p class="text-[9px] text-slate-400">05 Oct 2026</p>
+</div>
+</div>
+<div class="bg-[#0d1629] border border-[#1c2e4f] rounded-lg p-2 flex items-center space-x-2">
+<div class="w-6 h-6 rounded bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs">
+<i class="fa-solid fa-file-lines"></i>
+</div>
+<div class="leading-tight overflow-hidden">
+<p class="text-[10px] font-bold text-white truncate">Company Docs</p>
+<p class="text-[9px] text-slate-400">10 Oct 2026</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom: Graph Snapshot Network Diagram -->
+<div class="bg-[#050b18] border border-[#16233b] rounded-xl p-3 relative flex flex-col justify-between h-48" data-purpose="graph-snapshot-diagram">
+<div class="flex items-center justify-between mb-1 z-10">
+<span class="text-xs font-semibold text-white">Graph Snapshot</span>
+<div class="flex items-center space-x-1.5">
+<button class="text-[11px] text-blue-400 hover:text-white flex items-center space-x-1 bg-[#0b1428] px-2 py-0.5 rounded border border-[#1c2c4d]">
+<i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+<span>Open in Graph</span>
+</button>
+</div>
+</div>
+<!-- SVG Visual Links Overlay -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+<!-- Center (Rohan Sharma) to Company (Top-Left) -->
+<line stroke="#eab308" stroke-dasharray="3,3" stroke-width="1.5" x1="50%" x2="25%" y1="58%" y2="28%"></line>
+<!-- Center (Rohan Sharma) to Director (Top-Right) -->
+<line stroke="#06b6d4" stroke-width="1.5" x1="50%" x2="75%" y1="58%" y2="28%"></line>
+<!-- Center (Rohan Sharma) to Bank Account (Bottom-Left) -->
+<line stroke="#ef4444" stroke-width="1.5" x1="50%" x2="25%" y1="58%" y2="78%"></line>
+<!-- Center (Rohan Sharma) to FIR (Bottom-Right) -->
+<line stroke="#a855f7" stroke-width="1.5" x1="50%" x2="75%" y1="58%" y2="78%"></line>
+</svg>
+<!-- Graph Entities Layout -->
+<div class="relative w-full h-full flex flex-col justify-between items-center py-2 z-10 text-center">
+<!-- Upper Row: Shell Company & Co-Director -->
+<div class="w-full flex justify-between px-6">
+<!-- Node: M/s Tech Solutions -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-purple-900 border border-purple-400 flex items-center justify-center text-purple-200 text-xs shadow-md">
+<i class="fa-solid fa-building"></i>
+</div>
+<span class="text-[9px] font-semibold text-white mt-1">M/s Tech Solutions</span>
+<span class="text-[8px] text-slate-400">(C-014)</span>
+</div>
+<div class="self-center">
+<span class="text-[8px] bg-[#0c162d] px-1 py-0.5 rounded text-amber-300 border border-amber-600/30">Director</span>
+</div>
+<div class="self-center">
+<span class="text-[8px] bg-[#0c162d] px-1 py-0.5 rounded text-cyan-300 border border-cyan-600/30">Common Director</span>
+</div>
+<!-- Node: Sanjay Mehta -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-blue-900 border border-blue-400 flex items-center justify-center text-blue-200 text-xs shadow-md">
+<i class="fa-solid fa-user"></i>
+</div>
+<span class="text-[9px] font-semibold text-white mt-1">Sanjay Mehta</span>
+<span class="text-[8px] text-slate-400">(P-014)</span>
+</div>
+</div>
+<!-- Center Primary Suspect Node: Rohan Sharma -->
+<div class="flex flex-col items-center -mt-2">
+<div class="w-10 h-10 rounded-full bg-rose-950 border-2 border-rose-500 ring-4 ring-rose-500/20 flex items-center justify-center text-white text-sm shadow-xl font-bold">
+                  RS
+                </div>
+<span class="text-[10px] font-bold text-white mt-1">Rohan Sharma</span>
+<span class="text-[8px] text-slate-400">(P-001)</span>
+</div>
+<!-- Lower Row: Bank Account & FIR Document -->
+<div class="w-full flex justify-between px-6">
+<!-- Node: Axis Bank Account -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-amber-900 border border-amber-400 flex items-center justify-center text-amber-200 text-xs shadow-md">
+<i class="fa-solid fa-landmark"></i>
+</div>
+<span class="text-[9px] font-semibold text-white mt-1">AXIS Bank A/c</span>
+<span class="text-[8px] text-slate-400">XXXX3210</span>
+</div>
+<div class="self-center">
+<span class="text-[8px] bg-[#0c162d] px-1 py-0.5 rounded text-rose-300 border border-rose-600/30">Fund Transfer</span>
+</div>
+<div class="self-center">
+<span class="text-[8px] bg-[#0c162d] px-1 py-0.5 rounded text-purple-300 border border-purple-600/30">Mentioned In</span>
+</div>
+<!-- Node: FIR CC-087 -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-purple-900 border border-purple-400 flex items-center justify-center text-purple-200 text-xs shadow-md">
+<i class="fa-solid fa-file-shield"></i>
+</div>
+<span class="text-[9px] font-semibold text-white mt-1">FIR CC-087</span>
+<span class="text-[8px] text-slate-400">Registered FIR</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: DashboardBody -->
+</div>
+<!-- END: MainContentArea -->
+</body></html>

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Money Trail Explorer - Case CC-101 | Case Connect AI</title>
+<!-- Tailwind CSS CDN with forms & container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#070b19',
+              sidebar: '#080d20',
+              card: '#0c132c',
+              border: '#1a2444',
+              accent: '#3b82f6',
+              purple: '#8b5cf6',
+              danger: '#ef4444',
+              warning: '#f59e0b',
+              success: '#10b981',
+              cyan: '#06b6d4'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles for Scrollbars and Gradients -->
+<style data-purpose="custom-styling">
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080d20;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .glass-card {
+      background-color: rgba(12, 19, 44, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(30, 48, 86, 0.6);
+    }
+
+    .glow-red {
+      box-shadow: 0 0 25px -4px rgba(239, 68, 68, 0.65), 0 0 10px -2px rgba(239, 68, 68, 0.4);
+    }
+    
+    .glow-cyan {
+      box-shadow: 0 0 18px -3px rgba(6, 182, 212, 0.5);
+    }
+
+    .glow-purple {
+      box-shadow: 0 0 18px -3px rgba(168, 85, 247, 0.5);
+    }
+
+    .glow-green {
+      box-shadow: 0 0 18px -3px rgba(16, 185, 129, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-[#050814] text-slate-200 min-h-screen flex text-xs overflow-x-hidden antialiased select-none">
+<!-- BEGIN: Sidebar -->
+<aside class="w-60 bg-[#070c1e] border-r border-[#141e3d] flex flex-col shrink-0 min-h-screen justify-between z-20" data-purpose="sidebar-navigation">
+<div>
+<!-- Platform Logo / Header -->
+<div class="p-4 flex items-center space-x-3 border-b border-[#141e3d]/60">
+<div class="w-10 h-10 rounded-full border border-yellow-500/50 bg-[#0f1738] flex items-center justify-center shadow-lg text-yellow-400">
+<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
+            Case Connect <span class="text-cyan-400 font-extrabold text-[11px] px-1.5 py-0.5 bg-cyan-950/80 border border-cyan-800/60 rounded">AI</span>
+</h1>
+<p class="text-[9.5px] text-slate-400 leading-tight">AI-Powered Criminal Network<br/>Analysis System</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="p-3 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg>
+<span class="text-xs">Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+<span class="text-xs">Cases</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+<span class="text-xs">Upload Evidence</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98"></path></svg>
+<span class="text-xs">Investigation Graph</span>
+</a>
+<!-- Active Link: Money Trail -->
+<a class="flex items-center space-x-3 px-3 py-2.5 text-white font-medium bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md shadow-blue-900/40" href="#">
+<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><path d="M11 8v6M8 11h6"></path></svg>
+<span class="text-xs">Money Trail</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+<span class="text-xs">Master Profiles</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+<span class="text-xs">Lead Advisor</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+<span class="text-xs">Reports</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+<span class="text-xs">Audit Log</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+<span class="text-xs">Users &amp; Roles</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+<span class="text-xs">Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Police Department Banner Footer -->
+<div class="p-3 border-t border-[#141e3d]/80 bg-[#060a1a]">
+<div class="relative rounded-lg overflow-hidden border border-blue-900/40 bg-gradient-to-t from-black/80 to-blue-950/40 p-2 text-center flex flex-col items-center">
+<!-- Officer Silhouette Image -->
+<div class="w-full h-20 relative flex items-center justify-center overflow-hidden mb-1">
+<img alt="Police Badge Silhouette" class="w-full h-full object-cover opacity-30 mix-blend-luminosity filter contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Fs2WT3YX1iXC8Fi8B4A6WPWPmsY-8jSWiI1uDNyzKdY8oMYJQezTw2SIvqPtakX0XUDt4-ulAxMZolNetlezeJ81AilZHNPX0C5TIseC3jE3eg6KIyLmNzirSI3Hwy9bQKCyAdZs5f7mr71ZrJ9uq8dyqX-kQvdJkNVduoG-B5lxuNIuvOQ3EBRPVa4cKp7kB4A9BuTIBxsuYu1CWzP2LLdZZ1nUQZLuXKmhRgkEVng-idDZ3T5J"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#060a1a] via-transparent to-transparent"></div>
+<span class="absolute bottom-1 px-2.5 py-0.5 rounded text-[11px] font-black tracking-widest text-blue-400 bg-blue-950/90 border border-blue-500/40">POLICE</span>
+</div>
+<div class="flex items-center space-x-2 pt-1">
+<!-- Tricolor Flag indicator -->
+<div class="flex flex-col w-4 h-2.5 rounded-[1px] overflow-hidden border border-white/20">
+<div class="bg-[#FF9933] h-1/3"></div>
+<div class="bg-white h-1/3"></div>
+<div class="bg-[#128807] h-1/3"></div>
+</div>
+<span class="text-[10px] text-slate-300 font-semibold tracking-wide">Together for Safer India</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: MainContent -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#050814]" data-purpose="primary-workspace">
+<!-- Top Navigation Bar -->
+<header class="h-14 border-b border-[#141e3d] bg-[#070b1c]/90 px-6 flex items-center justify-between sticky top-0 z-30" data-purpose="top-navbar">
+<div class="flex items-center space-x-3 text-slate-400 text-xs">
+<button class="text-slate-400 hover:text-white mr-1">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+<span class="text-slate-400 hover:underline cursor-pointer">Cases</span>
+<span class="text-slate-600">›</span>
+<span class="text-slate-400 hover:underline cursor-pointer">CC-101</span>
+<span class="text-slate-600">›</span>
+<span class="text-slate-200 font-medium">Money Trail Explorer</span>
+</div>
+<!-- Search Box & User Profile Profile -->
+<div class="flex items-center space-x-4">
+<div class="relative w-80">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+</span>
+<input class="w-full bg-[#0a1128] border border-[#1e2d56] rounded-md py-1.5 pl-8 pr-3 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Search accounts, people, transactions, IFSC, amount..." type="text"/>
+</div>
+<button class="relative p-1.5 text-slate-400 hover:text-white rounded-full bg-[#0a1128] border border-[#1e2d56]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">3</span>
+</button>
+<div class="flex items-center space-x-2 pl-2 border-l border-slate-800">
+<img alt="Inspector Meera" class="w-8 h-8 rounded-full border border-blue-500/60 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEj5XCRej1VktpWU721hFeb2DDLeGlogBFj0c2L_6rTVVcxBu__P0yjHnmps6Sg0QOU7CNp2jqa1k3tac4IYkccxLvg_wYXoPCgibb5tacABIqWVZCIu3VHixXUVfg-S6-TQhvPZW3Lwb3Z6orgHDQYj4sDsIu1D4z8r4_yIbdcXW-TX7vXv2quRPcx6fAOmjWe5L3zcIjRqn3hj5wOFZkSlcu2KHfV7N61SR6nt7eAHH05XOrtTvr"/>
+<div class="leading-tight">
+<span class="block text-xs font-semibold text-white">Inspector Meera</span>
+<span class="block text-[10px] text-slate-400">Investigator</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Subheader: Page Title & Top Actions -->
+<div class="px-6 py-4 flex flex-wrap items-center justify-between border-b border-[#141e3d]/80 bg-[#060a19]">
+<div class="flex items-start space-x-3">
+<div class="w-2.5 h-9 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-sm mt-0.5"></div>
+<div>
+<h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            Money Trail Explorer – Case CC-101
+          </h2>
+<p class="text-[11px] text-slate-400">Track and analyse flow of funds across bank accounts, identify suspicious transactions and hidden links.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 mt-2 sm:mt-0">
+<button class="px-3 py-1.5 bg-[#0e1736] border border-[#203160] hover:border-blue-500/60 text-slate-300 hover:text-white rounded flex items-center space-x-1.5 text-xs transition">
+<svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"></path></svg>
+<span>Switch to Graph View</span>
+</button>
+<button class="px-3 py-1.5 bg-[#0e1736] border border-[#203160] hover:border-blue-500/60 text-slate-300 hover:text-white rounded flex items-center space-x-1.5 text-xs transition">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+<span>Export Report</span>
+</button>
+<button class="p-1.5 bg-[#0e1736] border border-[#203160] hover:border-blue-500/60 text-slate-300 hover:text-white rounded text-xs transition" title="Fullscreen">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+</button>
+</div>
+</div>
+<!-- Main Workspace Grid -->
+<div class="p-4 flex-1 flex flex-col space-y-4 overflow-y-auto">
+<!-- Top Row: Filters (Left), Circular Graph (Center), Account Drawer & AI Insight (Right) -->
+<div class="grid grid-cols-12 gap-4 items-start">
+<!-- BEGIN: LeftFiltersPanel -->
+<section class="col-span-12 lg:col-span-2 glass-card rounded-xl p-3.5 border border-[#1a2850]" data-purpose="filter-sidebar">
+<div class="flex items-center justify-between pb-2 border-b border-[#17254d]">
+<h3 class="font-semibold text-white text-xs tracking-wide">Filters</h3>
+<button class="text-[11px] text-blue-400 hover:underline">Reset</button>
+</div>
+<div class="space-y-3.5 mt-3">
+<!-- Time Range Filter -->
+<div>
+<label class="block text-[10px] font-medium text-slate-400 mb-1">Time Range</label>
+<div class="relative">
+<select class="w-full bg-[#080e24] border border-[#1f2e5a] rounded text-[11px] text-slate-200 py-1 px-2 pr-6 appearance-none focus:outline-none">
+<option>Last 6 months</option>
+<option>Last 3 months</option>
+<option>Last 1 year</option>
+<option>Custom Range</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+</div>
+</div>
+</div>
+<!-- Amount Range -->
+<div>
+<label class="block text-[10px] font-medium text-slate-400 mb-1">Amount Range (₹)</label>
+<div class="grid grid-cols-2 gap-1.5">
+<input class="w-full bg-[#080e24] border border-[#1f2e5a] rounded text-[10px] text-slate-200 py-1 px-1.5 focus:outline-none" placeholder="Min amount" type="text"/>
+<input class="w-full bg-[#080e24] border border-[#1f2e5a] rounded text-[10px] text-slate-200 py-1 px-1.5 focus:outline-none" placeholder="Max amount" type="text"/>
+</div>
+</div>
+<!-- Account Type -->
+<div>
+<label class="block text-[10px] font-medium text-slate-400 mb-1">Account Type</label>
+<div class="relative">
+<select class="w-full bg-[#080e24] border border-[#1f2e5a] rounded text-[11px] text-slate-200 py-1 px-2 pr-6 appearance-none focus:outline-none">
+<option>All Accounts</option>
+<option>Savings Account</option>
+<option>Current Account</option>
+<option>Corporate Account</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+</div>
+</div>
+</div>
+<!-- Transaction Type Checkboxes -->
+<div>
+<label class="block text-[10px] font-medium text-slate-400 mb-1.5">Transaction Type</label>
+<div class="space-y-1.5 text-[11px]">
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="text-slate-300 font-medium">All</span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="text-emerald-400 flex items-center gap-1 font-mono text-[10px]">➔ Incoming</span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="text-rose-400 flex items-center gap-1 font-mono text-[10px]">➔ Outgoing</span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="text-cyan-400 flex items-center gap-1 font-mono text-[10px]">➔ Self Transfer</span>
+</label>
+</div>
+</div>
+<!-- Suspicion Level Checkboxes -->
+<div>
+<label class="block text-[10px] font-medium text-slate-400 mb-1.5">Suspicion Level</label>
+<div class="space-y-1.5 text-[11px]">
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="flex items-center gap-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-red-500"></span> High Risk
+                  </span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="flex items-center gap-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span> Medium Risk
+                  </span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="flex items-center gap-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-yellow-400"></span> Low Risk
+                  </span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#080e24] border-[#1f2e5a] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span class="flex items-center gap-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span> Normal
+                  </span>
+</label>
+</div>
+</div>
+<!-- Apply Filters Button -->
+<button class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded font-medium text-xs shadow-md shadow-blue-900/30 transition">
+              Apply Filters
+            </button>
+</div>
+</section>
+<!-- END: LeftFiltersPanel -->
+<!-- BEGIN: CircularMoneyFlowNetwork -->
+<section class="col-span-12 lg:col-span-7 glass-card rounded-xl p-4 border border-[#1a2850] relative overflow-hidden min-h-[460px] flex flex-col justify-between" data-purpose="circular-flow-graph">
+<!-- Graph Header & Metrics Summary -->
+<div class="flex flex-wrap items-center justify-between z-10">
+<div>
+<div class="flex items-center space-x-2">
+<h3 class="font-bold text-white text-xs tracking-wide">Money Flow Network (Top Accounts)</h3>
+</div>
+<p class="text-[10px] text-slate-400 mt-0.5">
+                Accounts: <span class="text-slate-200 font-semibold">18</span>  |  
+                Transactions: <span class="text-slate-200 font-semibold">124</span>  |  
+                Total Flow: <span class="text-slate-200 font-semibold">₹12.4 Crore</span>
+</p>
+</div>
+<!-- Legend Pills -->
+<div class="flex items-center space-x-2.5 text-[9.5px] mt-1 sm:mt-0">
+<span class="flex items-center space-x-1 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span>Person</span>
+</span>
+<span class="flex items-center space-x-1 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>Bank Account</span>
+</span>
+<span class="flex items-center space-x-1 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-purple-500"></span>
+<span>Company</span>
+</span>
+<span class="flex items-center space-x-1 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-red-500"></span>
+<span>High Risk</span>
+</span>
+</div>
+</div>
+<!-- Canvas / Vector Interactive Network Container -->
+<div class="relative w-full h-[370px] my-auto flex items-center justify-center">
+<!-- SVG Network Graph Lines and Arrows -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="xMidYMid meet" viewbox="0 0 700 400">
+<defs>
+<!-- Arrow Marker Red -->
+<marker id="arrow-red" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="5" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ef4444"></path>
+</marker>
+<!-- Arrow Marker Cyan -->
+<marker id="arrow-cyan" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="5" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#06b6d4"></path>
+</marker>
+<!-- Arrow Marker Purple -->
+<marker id="arrow-purple" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="5" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#c084fc"></path>
+</marker>
+<!-- Arrow Marker Yellow -->
+<marker id="arrow-yellow" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="5" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#eab308"></path>
+</marker>
+</defs>
+<!-- Flow Lines Connected to Central Node (375, 200) -->
+<!-- Top: Rohan Sharma (375, 75) -->
+<line stroke="#ef4444" stroke-dasharray="3,3" stroke-width="1.8" x1="375" x2="375" y1="105" y2="165"></line>
+<!-- Top Left: Vikram Singh (250, 110) -->
+<line marker-end="url(#arrow-red)" stroke="#ef4444" stroke-width="2" x1="265" x2="350" y1="125" y2="185"></line>
+<text fill="#f87171" font-size="9" font-weight="bold" x="295" y="150">₹18.5L</text>
+<!-- Top Right: Neha Patel (500, 110) -->
+<line marker-end="url(#arrow-red)" stroke="#ef4444" stroke-width="2" x1="480" x2="400" y1="125" y2="185"></line>
+<text fill="#f87171" font-size="9" font-weight="bold" x="440" y="150">₹2.3L</text>
+<!-- Middle Left: Sanjay Mehta (210, 200) -->
+<line marker-end="url(#arrow-cyan)" stroke="#06b6d4" stroke-width="2" x1="240" x2="340" y1="200" y2="200"></line>
+<text fill="#38bdf8" font-size="9" font-weight="bold" x="270" y="195">₹9.2L</text>
+<!-- Middle Right: Shree Traders (535, 200) -->
+<line marker-end="url(#arrow-cyan)" stroke="#06b6d4" stroke-width="2" x1="395" x2="495" y1="200" y2="200"></line>
+<text fill="#38bdf8" font-size="9" font-weight="bold" x="445" y="195">₹4.7L</text>
+<!-- Bottom Left Diag: HDFC Bank (270, 290) -->
+<line marker-end="url(#arrow-yellow)" stroke="#eab308" stroke-width="2" x1="285" x2="355" y1="275" y2="215"></line>
+<text fill="#facc15" font-size="9" font-weight="bold" x="310" y="255">₹3.1L</text>
+<!-- Bottom Right Diag: ICICI Bank (480, 290) -->
+<line marker-end="url(#arrow-red)" stroke="#ef4444" stroke-width="2" x1="390" x2="460" y1="215" y2="275"></line>
+<text fill="#f87171" font-size="9" font-weight="bold" x="430" y="255">₹6.4L</text>
+<!-- Bottom Center: M/s Tech Solutions (375, 335) -->
+<line marker-end="url(#arrow-purple)" stroke="#c084fc" stroke-width="2" x1="375" x2="375" y1="235" y2="305"></line>
+<!-- Bottom Far Left: Shell Company A (270, 355) -->
+<line marker-end="url(#arrow-red)" stroke="#ef4444" stroke-width="1.6" x1="340" x2="285" y1="335" y2="345"></line>
+<text fill="#f87171" font-size="8.5" font-weight="bold" x="290" y="338">₹1.8L</text>
+<!-- Bottom Far Right: Cash Withdrawal (480, 355) -->
+<line marker-end="url(#arrow-red)" stroke="#ef4444" stroke-width="1.6" x1="400" x2="465" y1="335" y2="345"></line>
+<text fill="#f87171" font-size="8.5" font-weight="bold" x="420" y="338">₹2.5L</text>
+</svg>
+<!-- Zoom & Pan Overlay Toolbar -->
+<div class="absolute right-2 top-2 flex flex-col space-y-1 bg-[#0b1229]/80 border border-[#1d2b52] rounded p-1">
+<button class="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded font-bold text-sm">+</button>
+<button class="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded font-bold text-sm">−</button>
+<button class="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded text-xs" title="Reset View">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path></svg>
+</button>
+</div>
+<!-- Central Node: AXIS Bank (High Risk) -->
+<div class="absolute flex flex-col items-center z-20" style="top: 48%; left: 53.5%; transform: translate(-50%, -50%);">
+<div class="w-16 h-16 rounded-full bg-red-950/90 border-2 border-red-500 flex items-center justify-center glow-red cursor-pointer transform hover:scale-110 transition duration-200">
+<svg class="w-8 h-8 text-white" fill="currentColor" viewbox="0 0 24 24">
+<path d="M4 10h16v2H4zm0 4h16v2H4zm8-12L1 7h22L12 2zM4 18h16v3H4z"></path>
+</svg>
+</div>
+<div class="text-center mt-1.5 leading-tight">
+<span class="block text-[11px] font-bold text-white tracking-wide">AXIS Bank</span>
+<span class="block text-[9px] text-slate-300 font-mono">A/c XXXX3210</span>
+<span class="block text-[9px] font-bold text-red-400 uppercase tracking-tighter">(High Risk)</span>
+</div>
+</div>
+<!-- Peripheral Node: Rohan Sharma (Top Center) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 8%; left: 53.5%; transform: translate(-50%, 0);">
+<div class="w-10 h-10 rounded-full bg-blue-900/80 border-2 border-blue-400 flex items-center justify-center shadow-md cursor-pointer hover:border-white transition">
+<svg class="w-5 h-5 text-blue-200" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" fill-rule="evenodd"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[10px] font-semibold text-slate-200">Rohan Sharma</span>
+<span class="block text-[8.5px] text-slate-400">(Primary)</span>
+</div>
+</div>
+<!-- Peripheral Node: Vikram Singh (Top Left) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 14%; left: 34%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center cursor-pointer glow-green">
+<svg class="w-4 h-4 text-emerald-300" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">Vikram Singh</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX9876</span>
+</div>
+</div>
+<!-- Peripheral Node: Neha Patel (Top Right) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 14%; left: 71%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center cursor-pointer glow-green">
+<svg class="w-4 h-4 text-emerald-300" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">Neha Patel</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX6543</span>
+</div>
+</div>
+<!-- Peripheral Node: Sanjay Mehta (Middle Left) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 44%; left: 28%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center cursor-pointer glow-green">
+<svg class="w-4 h-4 text-emerald-300" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">Sanjay Mehta</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX1122</span>
+</div>
+</div>
+<!-- Peripheral Node: Shree Traders Pvt Ltd (Middle Right) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 44%; left: 80%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-purple-950/80 border border-purple-400 flex items-center justify-center cursor-pointer glow-purple">
+<svg class="w-4 h-4 text-purple-300" fill="currentColor" viewbox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">Shree Traders Pvt Ltd</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX7788</span>
+</div>
+</div>
+<!-- Peripheral Node: HDFC Bank (Bottom Left) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 68%; left: 39%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center cursor-pointer glow-green">
+<svg class="w-4 h-4 text-emerald-300" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">HDFC Bank</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX8765</span>
+</div>
+</div>
+<!-- Peripheral Node: ICICI Bank (Bottom Right) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 68%; left: 69%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center cursor-pointer glow-green">
+<svg class="w-4 h-4 text-emerald-300" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9.5px] font-medium text-slate-200">ICICI Bank</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX4321</span>
+</div>
+</div>
+<!-- Peripheral Node: M/s Tech Solutions (Bottom Center) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 80%; left: 53.5%; transform: translate(-50%, 0);">
+<div class="w-9 h-9 rounded-full bg-purple-950/80 border border-purple-400 flex items-center justify-center cursor-pointer glow-purple">
+<svg class="w-4 h-4 text-purple-300" fill="currentColor" viewbox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[9px] font-medium text-slate-200">M/s Tech Solutions</span>
+<span class="block text-[8px] text-slate-400 font-mono">A/c XXXX2222</span>
+</div>
+</div>
+<!-- Peripheral Node: Shell Company A (Far Bottom Left) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 82%; left: 36%; transform: translate(-50%, 0);">
+<div class="w-8 h-8 rounded-full bg-purple-950/80 border border-purple-400 flex items-center justify-center cursor-pointer">
+<svg class="w-3.5 h-3.5 text-purple-300" fill="currentColor" viewbox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12z"></path></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[8.5px] font-medium text-slate-300">Shell Company A</span>
+<span class="block text-[7.5px] text-slate-400 font-mono">A/c XXXX1111</span>
+</div>
+</div>
+<!-- Peripheral Node: Cash Withdrawal (Far Bottom Right) -->
+<div class="absolute flex flex-col items-center z-10" style="top: 82%; left: 74%; transform: translate(-50%, 0);">
+<div class="w-8 h-8 rounded-full bg-blue-950/80 border border-blue-400 flex items-center justify-center cursor-pointer">
+<svg class="w-3.5 h-3.5 text-blue-300" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="12" rx="2" width="18" x="3" y="6"></rect><circle cx="12" cy="12" r="2.5"></circle></svg>
+</div>
+<div class="text-center mt-1 leading-tight">
+<span class="block text-[8.5px] font-medium text-slate-300">Cash Withdrawal</span>
+<span class="block text-[7.5px] text-slate-400">(ATM/Branch)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: CircularMoneyFlowNetwork -->
+<!-- BEGIN: RightDetailsPanel -->
+<section class="col-span-12 lg:col-span-3 space-y-3" data-purpose="account-drawer-and-ai">
+<!-- Selected Account Details Drawer Card -->
+<div class="glass-card rounded-xl p-3.5 border border-[#1a2850]">
+<div class="flex items-center justify-between pb-2 border-b border-[#17254d]">
+<h3 class="font-semibold text-white text-xs tracking-wide">Selected Account Details</h3>
+<button class="text-slate-400 hover:text-white">✕</button>
+</div>
+<!-- Target Account Header Info Card -->
+<div class="mt-2.5 p-2 rounded-lg bg-[#0a122e] border border-red-900/50 flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<div class="w-8 h-8 rounded bg-red-950 border border-red-500/70 flex items-center justify-center text-red-400">
+<svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24"><path d="M4 10h16v2H4zm8-8L1 7h22L12 2zM4 14h16v6H4z"></path></svg>
+</div>
+<div>
+<h4 class="font-bold text-white text-xs leading-none">AXIS Bank A/c XXXX3210</h4>
+<span class="text-[9.5px] text-slate-400 leading-tight">AXIS Bank | Savings Account</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-red-950/80 text-red-400 border border-red-700/60 flex items-center gap-1">
+                ★ High Risk
+              </span>
+</div>
+<!-- Drawer Tabs -->
+<div class="flex border-b border-[#18274d] mt-3 text-[10.5px]">
+<button class="pb-1 px-2.5 font-semibold text-blue-400 border-b-2 border-blue-500">Overview</button>
+<button class="pb-1 px-2.5 text-slate-400 hover:text-white">Transactions (24)</button>
+<button class="pb-1 px-2.5 text-slate-400 hover:text-white">Linked Entities (8)</button>
+</div>
+<!-- Drawer Meta Attributes -->
+<div class="mt-2.5 space-y-1.5 text-[10.5px]">
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Account Holder</span>
+<span class="text-slate-200 font-medium">Rohan Sharma</span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Account Type</span>
+<span class="text-slate-200">Savings Account</span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">IFSC Code</span>
+<span class="text-slate-200 font-mono">UTIB0001234</span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Linked Phone Numbers</span>
+<span class="text-slate-200">3 linked <a class="text-blue-400 text-[10px] ml-1 hover:underline" href="#">View</a></span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Linked Persons</span>
+<span class="text-slate-200">5 linked <a class="text-blue-400 text-[10px] ml-1 hover:underline" href="#">View</a></span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Linked Companies</span>
+<span class="text-slate-200">2 linked <a class="text-blue-400 text-[10px] ml-1 hover:underline" href="#">View</a></span>
+</div>
+<div class="flex justify-between py-0.5 border-t border-[#18274d] pt-1">
+<span class="text-slate-400">Total Inflow (6 months)</span>
+<span class="text-emerald-400 font-semibold font-mono">₹8,72,34,500</span>
+</div>
+<div class="flex justify-between py-0.5">
+<span class="text-slate-400">Total Outflow (6 months)</span>
+<span class="text-rose-400 font-semibold font-mono">₹8,55,12,300</span>
+</div>
+<div class="flex justify-between py-0.5 border-t border-[#18274d] pt-1">
+<span class="text-slate-400">Current Balance</span>
+<span class="text-white font-bold font-mono">₹17,22,200</span>
+</div>
+</div>
+</div>
+<!-- AI Insight Summary Box -->
+<div class="glass-card rounded-xl p-3 border border-indigo-900/60 bg-gradient-to-b from-[#0e1333] to-[#0a0f26]" data-purpose="ai-insight-box">
+<div class="flex items-center justify-between pb-1.5 border-b border-indigo-900/40">
+<div class="flex items-center space-x-1.5">
+<span class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black text-white shadow-sm">AI</span>
+<h4 class="font-bold text-white text-xs">AI Insight</h4>
+</div>
+<a class="text-[10px] text-blue-400 hover:underline" href="#">View All</a>
+</div>
+<ul class="mt-2 space-y-1.5 text-[10px] text-slate-300">
+<li class="flex items-start space-x-1.5">
+<span class="text-amber-400 mt-0.5">💡</span>
+<span>Unusually high transfers to multiple shell companies.</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="text-amber-400 mt-0.5">💡</span>
+<span>Multiple round transactions detected (possible layering).</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="text-amber-400 mt-0.5">💡</span>
+<span>Links identified with 3 other FIRs (CC-087, CC-099, CC-106).</span>
+</li>
+<li class="flex items-start space-x-1.5">
+<span class="text-amber-400 mt-0.5">💡</span>
+<span>Frequent cash withdrawals after large incoming transfers.</span>
+</li>
+</ul>
+</div>
+</section>
+<!-- END: RightDetailsPanel -->
+</div>
+<!-- BEGIN: BottomDashboardRow -->
+<div class="grid grid-cols-12 gap-4">
+<!-- Table 1: Recent Transactions Table -->
+<section class="col-span-12 lg:col-span-6 glass-card rounded-xl p-3 border border-[#1a2850]" data-purpose="recent-transactions-table">
+<div class="flex items-center justify-between pb-2 border-b border-[#17254d]">
+<h3 class="font-semibold text-white text-xs">Recent Transactions (AXIS Bank A/c XXXX3210)</h3>
+<a class="text-[11px] text-blue-400 hover:underline" href="#">View All</a>
+</div>
+<div class="mt-2 overflow-x-auto">
+<table class="w-full text-left text-[10px] whitespace-nowrap">
+<thead>
+<tr class="text-slate-400 border-b border-[#142145]">
+<th class="pb-1.5 font-medium">Date &amp; Time</th>
+<th class="pb-1.5 font-medium">From</th>
+<th class="pb-1.5 font-medium">To</th>
+<th class="pb-1.5 font-medium">Amount (₹)</th>
+<th class="pb-1.5 font-medium">Type</th>
+<th class="pb-1.5 font-medium text-right">Risk</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#121c3b]">
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">12 Oct 2026, 10:32</td>
+<td class="py-1.5 text-slate-200">Vikram Singh</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 font-mono text-emerald-400 font-semibold">18,50,000</td>
+<td class="py-1.5 text-emerald-400 font-mono">➔ Incoming</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-red-950 text-red-400 border border-red-800/60">High</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">11 Oct 2026, 16:21</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 text-slate-200">Shree Traders Pvt Ltd</td>
+<td class="py-1.5 font-mono text-rose-400 font-semibold">4,70,000</td>
+<td class="py-1.5 text-rose-400 font-mono">➔ Outgoing</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-amber-950 text-amber-400 border border-amber-800/60">Medium</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">10 Oct 2026, 14:08</td>
+<td class="py-1.5 text-slate-200">Neha Patel</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 font-mono text-emerald-400 font-semibold">2,30,000</td>
+<td class="py-1.5 text-emerald-400 font-mono">➔ Incoming</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-amber-950 text-amber-400 border border-amber-800/60">Medium</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">09 Oct 2026, 11:45</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 text-slate-200">ICICI XXXX4321</td>
+<td class="py-1.5 font-mono text-rose-400 font-semibold">6,40,000</td>
+<td class="py-1.5 text-rose-400 font-mono">➔ Outgoing</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-red-950 text-red-400 border border-red-800/60">High</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">08 Oct 2026, 09:17</td>
+<td class="py-1.5 text-slate-200 font-mono">HDFC XXXX8765</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 font-mono text-emerald-400 font-semibold">3,10,000</td>
+<td class="py-1.5 text-emerald-400 font-mono">➔ Incoming</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-yellow-950 text-yellow-400 border border-yellow-800/60">Low</span></td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 text-slate-400">07 Oct 2026, 13:56</td>
+<td class="py-1.5 text-slate-300 font-mono">AXIS XXXX3210</td>
+<td class="py-1.5 text-slate-200">Cash Withdrawal</td>
+<td class="py-1.5 font-mono text-rose-400 font-semibold">2,50,000</td>
+<td class="py-1.5 text-rose-400 font-mono">➔ Outgoing</td>
+<td class="py-1.5 text-right"><span class="px-1.5 py-0.5 rounded text-[8.5px] font-semibold bg-amber-950 text-amber-400 border border-amber-800/60">Medium</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Chart 2: Flow Over Time Bar / Line Chart -->
+<section class="col-span-12 lg:col-span-3 glass-card rounded-xl p-3 border border-[#1a2850] flex flex-col justify-between" data-purpose="flow-over-time-chart">
+<div>
+<div class="flex items-center justify-between pb-2 border-b border-[#17254d]">
+<h3 class="font-semibold text-white text-xs">Flow Over Time</h3>
+<select class="bg-[#080e24] border border-[#1f2e5a] rounded text-[9.5px] text-slate-300 py-0.5 px-1 focus:outline-none">
+<option>Last 6 months</option>
+<option>Last 3 months</option>
+</select>
+</div>
+<!-- Legend -->
+<div class="flex items-center justify-end space-x-2.5 text-[9px] mt-2 mb-1">
+<span class="flex items-center space-x-1 text-slate-300"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span><span>Inflow</span></span>
+<span class="flex items-center space-x-1 text-slate-300"><span class="w-2 h-2 rounded-sm bg-rose-500"></span><span>Outflow</span></span>
+<span class="flex items-center space-x-1 text-slate-300"><span class="w-2 h-0.5 bg-blue-400"></span><span>Net Flow</span></span>
+</div>
+</div>
+<!-- Stylized Custom Bar/Line Chart Component using Tailwind and SVG -->
+<div class="relative h-28 w-full mt-1 flex items-end">
+<!-- Y-Axis Labels -->
+<div class="absolute left-0 top-0 bottom-4 flex flex-col justify-between text-[8px] text-slate-500 font-mono">
+<span>₹3 Cr</span>
+<span>₹2 Cr</span>
+<span>₹1 Cr</span>
+<span>0</span>
+<span>-₹1 Cr</span>
+</div>
+<!-- SVG Trend Line Chart Overlay -->
+<svg class="absolute inset-x-8 top-0 h-24 w-[calc(100%-2.5rem)] pointer-events-none z-10" preserveaspectratio="none" viewbox="0 0 180 80">
+<!-- Net Flow Line -->
+<path d="M 15 50 Q 45 42 75 35 T 135 25 T 165 48" fill="none" stroke="#38bdf8" stroke-width="1.8"></path>
+<!-- Points -->
+<circle cx="15" cy="50" fill="#38bdf8" r="2.5"></circle>
+<circle cx="45" cy="42" fill="#38bdf8" r="2.5"></circle>
+<circle cx="75" cy="35" fill="#38bdf8" r="2.5"></circle>
+<circle cx="105" cy="30" fill="#38bdf8" r="2.5"></circle>
+<circle cx="135" cy="25" fill="#38bdf8" r="2.5"></circle>
+<circle cx="165" cy="48" fill="#38bdf8" r="2.5"></circle>
+</svg>
+<!-- Bars Grid -->
+<div class="ml-9 mr-1 w-full grid grid-cols-6 gap-2 items-end h-24 border-b border-slate-700/80 pb-1">
+<!-- Month: May -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 35%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 15%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">May</span>
+</div>
+<!-- Month: Jun -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 55%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 20%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">Jun</span>
+</div>
+<!-- Month: Jul -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 65%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 30%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">Jul</span>
+</div>
+<!-- Month: Aug -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 75%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 25%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">Aug</span>
+</div>
+<!-- Month: Sep -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 90%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 35%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">Sep</span>
+</div>
+<!-- Month: Oct -->
+<div class="flex flex-col items-center h-full justify-end">
+<div class="flex items-end space-x-0.5 h-16">
+<div class="w-1.5 bg-emerald-500 rounded-t-sm" style="height: 60%"></div>
+<div class="w-1.5 bg-rose-500 rounded-b-sm" style="height: 28%"></div>
+</div>
+<span class="text-[8px] text-slate-400 mt-1">Oct</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Table 3: Top Receiving Accounts -->
+<section class="col-span-12 lg:col-span-3 glass-card rounded-xl p-3 border border-[#1a2850]" data-purpose="top-receiving-accounts-table">
+<div class="flex items-center justify-between pb-2 border-b border-[#17254d]">
+<h3 class="font-semibold text-white text-xs">Top Receiving Accounts</h3>
+<a class="text-[11px] text-blue-400 hover:underline" href="#">View All</a>
+</div>
+<div class="mt-2 overflow-x-auto">
+<table class="w-full text-left text-[10px] whitespace-nowrap">
+<thead>
+<tr class="text-slate-400 border-b border-[#142145]">
+<th class="pb-1.5 font-medium">Account Number</th>
+<th class="pb-1.5 font-medium">Account Holder</th>
+<th class="pb-1.5 font-medium text-right">Total Received (₹)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#121c3b]">
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 font-mono text-slate-300">XXXX7788</td>
+<td class="py-1.5 text-slate-200">Shree Traders Pvt Ltd</td>
+<td class="py-1.5 font-mono text-slate-200 font-semibold text-right">4,70,000</td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 font-mono text-slate-300">XXXX4321</td>
+<td class="py-1.5 text-slate-200">ICICI Bank</td>
+<td class="py-1.5 font-mono text-slate-200 font-semibold text-right">6,40,000</td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 font-mono text-slate-300">XXXX2222</td>
+<td class="py-1.5 text-slate-200">M/s Tech Solutions</td>
+<td class="py-1.5 font-mono text-slate-200 font-semibold text-right">1,80,000</td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 font-mono text-slate-300">XXXX6543</td>
+<td class="py-1.5 text-slate-200">Neha Patel</td>
+<td class="py-1.5 font-mono text-slate-200 font-semibold text-right">2,30,000</td>
+</tr>
+<tr class="hover:bg-slate-800/30">
+<td class="py-1.5 font-mono text-slate-300">XXXX1111</td>
+<td class="py-1.5 text-slate-200">Shell Company A</td>
+<td class="py-1.5 font-mono text-slate-200 font-semibold text-right">1,80,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- END: BottomDashboardRow -->
+</div>
+</div>
+<!-- END: MainContent -->
+</body></html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Select Your Role</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration for custom colors and theme settings -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#080d1a',
+            brandBlue: '#2563eb',
+            brandNavy: '#0f172a',
+            brandBorder: 'rgba(59, 130, 246, 0.2)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+<!-- Custom Styles for specialized glows and background effects -->
+<style data-purpose="custom-styling">
+    .bg-main-glow {
+      background: radial-gradient(circle at 85% 15%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+                  radial-gradient(circle at 50% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+                  radial-gradient(circle at 10% 70%, rgba(30, 58, 138, 0.25) 0%, transparent 45%),
+                  #070b14;
+    }
+    .selected-card-glow {
+      box-shadow: 0 0 25px -3px rgba(37, 99, 235, 0.6), inset 0 0 15px 0 rgba(37, 99, 235, 0.2);
+    }
+    .badge-icon-shadow {
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-main-glow text-slate-100 min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
+<!-- BEGIN: MainHeader -->
+<header class="w-full px-8 py-5 flex items-center justify-between z-20" data-purpose="header">
+<!-- Brand Logo and Identity -->
+<div class="flex items-center space-x-3.5">
+<div class="w-10 h-10 rounded-full border border-amber-500/40 bg-gradient-to-br from-amber-600/20 to-amber-900/40 flex items-center justify-center p-1.5 shadow-md">
+<svg class="w-full h-full text-amber-400" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v4.66c0 4.12-2.73 7.95-6 8.91-3.27-.96-6-4.79-6-8.91V6.43l6-2.25zM11 7v2h2V7h-2zm0 4v6h2v-6h-2z"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
+          Case Connect <span class="text-blue-400">AI</span>
+</h1>
+<p class="text-[11px] font-medium text-slate-400 tracking-wide">
+          AI-Powered Criminal Network Analysis System
+        </p>
+</div>
+</div>
+<!-- Right Header Actions -->
+<div class="flex items-center space-x-4">
+<button class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-slate-700/80 hover:border-slate-500 text-xs font-medium text-slate-300 hover:text-white transition-colors bg-slate-900/40" type="button">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Need Help?</span>
+</button>
+<button class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full border border-slate-700/80 hover:border-red-500/40 text-xs font-medium text-slate-300 hover:text-red-400 transition-colors bg-slate-900/40" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Logout</span>
+</button>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 w-full max-w-[1520px] mx-auto px-8 pb-8 pt-2 flex flex-col justify-between" data-purpose="main-wrapper">
+<!-- Title and Subtitle Section -->
+<div class="text-center my-3" data-purpose="page-title">
+<h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+        Select <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Your Role</span>
+</h2>
+<p class="text-slate-400 text-sm mt-1.5 font-normal">
+        Access the features and data based on your responsibility
+      </p>
+</div>
+<!-- Content Workspace: Stepper + Role Cards -->
+<div class="flex items-start gap-8 my-auto" data-purpose="role-selection-section">
+<!-- Stepper / Left Navigation Flow -->
+<aside class="w-56 hidden lg:flex flex-col space-y-7 pt-4" data-purpose="stepper">
+<!-- Step 1: Active -->
+<div class="flex items-start gap-3.5 relative">
+<div class="relative z-10 w-7 h-7 rounded-full bg-blue-600 text-white font-semibold text-xs flex items-center justify-center shadow-lg shadow-blue-500/40">
+            1
+          </div>
+<!-- Connector line -->
+<div class="absolute left-3.5 top-7 w-[2px] h-9 bg-slate-700/60 -ml-[1px]"></div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-white tracking-wide leading-tight">Select Role</span>
+<span class="text-[11px] text-blue-400/80 font-normal mt-0.5">Choose your role to access features</span>
+</div>
+</div>
+<!-- Step 2: Pending -->
+<div class="flex items-start gap-3.5 relative">
+<div class="relative z-10 w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center justify-center">
+            2
+          </div>
+<!-- Connector line -->
+<div class="absolute left-3.5 top-7 w-[2px] h-9 bg-slate-700/60 -ml-[1px]"></div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-slate-400 leading-tight">Verify Access</span>
+<span class="text-[11px] text-slate-500 font-normal mt-0.5">Authentication check</span>
+</div>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex items-start gap-3.5">
+<div class="relative z-10 w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center justify-center">
+            3
+          </div>
+<div class="flex flex-col">
+<span class="text-sm font-medium text-slate-400 leading-tight">Go to Dashboard</span>
+<span class="text-[11px] text-slate-500 font-normal mt-0.5">Start your investigation</span>
+</div>
+</div>
+</aside>
+<!-- Roles Container Grid -->
+<section class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6.5" data-purpose="cards-grid">
+<!-- CARD 1: Investigator (Selected State) -->
+<div class="relative rounded-2xl border-2 border-blue-500 bg-[#0b1222]/90 backdrop-blur-md flex flex-col overflow-hidden selected-card-glow transition-all duration-300" data-purpose="card-investigator">
+<!-- Card Image Header -->
+<div class="relative h-48 w-full overflow-hidden bg-slate-900">
+<img alt="Police Investigator analyzing digital forensic cases" class="w-full h-full object-cover object-top opacity-85" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDa1qazpFtuPugV-xg1biTgiYNUVNSJErxRCObmsTBV4hMDIdfe8_yN8rBFxw90LOn-M3PrGpgY_dgY2elSnjCL-QVmK6TxbIdS-xvS2xkyfASJg3_nMd3s25gs2Wqvtf-tnVkaLhkm8JZlo-q3BI77gDQ6pFu9D8Vx6oiKEZLe1XYClfhsAsmN32dAIbznNA9BPKVk4qR1gedUCDlw7ZP5kh5NkYM4mi7T-rEzKG4q_rCN8bGLfTKH"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0b1222] via-[#0b1222]/40 to-transparent"></div>
+<!-- Center Role Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-blue-600 border-2 border-[#0b1222] flex items-center justify-center shadow-lg badge-icon-shadow">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+</div>
+<!-- Card Content Body -->
+<div class="px-6 pt-7 pb-6 flex-1 flex flex-col">
+<h3 class="text-center text-lg font-bold text-white tracking-wide">Investigator</h3>
+<p class="text-center text-xs text-slate-400 mt-1 leading-relaxed min-h-[36px]">
+              View and analyse cases, upload evidence, explore networks and generate leads.
+            </p>
+<!-- Features Checklist -->
+<div class="my-5 space-y-2.5 bg-slate-900/40 p-4 rounded-xl border border-slate-800/80">
+<div class="flex items-center text-xs text-slate-200">
+<div class="w-4 h-4 rounded bg-blue-600/30 text-blue-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Create and manage cases</span>
+</div>
+<div class="flex items-center text-xs text-slate-200">
+<div class="w-4 h-4 rounded bg-blue-600/30 text-blue-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Upload and analyse evidence</span>
+</div>
+<div class="flex items-center text-xs text-slate-200">
+<div class="w-4 h-4 rounded bg-blue-600/30 text-blue-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Explore investigation graph</span>
+</div>
+<div class="flex items-center text-xs text-slate-200">
+<div class="w-4 h-4 rounded bg-blue-600/30 text-blue-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>View money trail and leads</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="mt-auto w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all" type="button">
+<span>Selected</span>
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- CARD 2: Supervisor -->
+<div class="relative rounded-2xl border border-slate-800 bg-[#0b1222]/60 hover:border-slate-700 backdrop-blur-md flex flex-col overflow-hidden transition-all duration-300" data-purpose="card-supervisor">
+<!-- Card Image Header -->
+<div class="relative h-48 w-full overflow-hidden bg-slate-900">
+<img alt="Police Supervisor officer reviewing operational metrics" class="w-full h-full object-cover object-center opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0pAYM53vsyQ2UD7dZJ75fKekL5bZ7fxLxiE9BHM6ETfAUcN4IbrfZIOIMP1UXaFyJC5LAqyjSU1eW2XGg4oWnl1yjh5mdZY2xofLf0n5ZnQ7wyYVyhBW1XF5htEDggxvbZAcEyKZnw_pYSdIgQczEWI2tlXYKhPahdaVyOiF-JpOoHq2UZTv0cP-sLHbYNGyf4BREG25-cJxrVLAmGjXZksMYIa7hjJ-4Tf137phi5Ko67tihG2Bp"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0b1222] via-[#0b1222]/40 to-transparent"></div>
+<!-- Center Role Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-purple-600 border-2 border-[#0b1222] flex items-center justify-center shadow-lg badge-icon-shadow">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<!-- Card Content Body -->
+<div class="px-6 pt-7 pb-6 flex-1 flex flex-col">
+<h3 class="text-center text-lg font-bold text-white tracking-wide">Supervisor</h3>
+<p class="text-center text-xs text-slate-400 mt-1 leading-relaxed min-h-[36px]">
+              Review, approve and monitor investigations. Ensure data quality and team performance.
+            </p>
+<!-- Features Checklist -->
+<div class="my-5 space-y-2.5 bg-slate-900/40 p-4 rounded-xl border border-slate-800/80">
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-purple-600/30 text-purple-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Review and approve cases</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-purple-600/30 text-purple-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Monitor team investigations</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-purple-600/30 text-purple-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Manage cross-FIR links</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-purple-600/30 text-purple-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Generate and share reports</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="mt-auto w-full py-2.5 px-4 bg-transparent border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white rounded-lg font-medium text-xs transition-colors" type="button">
+              Select Role
+            </button>
+</div>
+</div>
+<!-- CARD 3: Admin -->
+<div class="relative rounded-2xl border border-slate-800 bg-[#0b1222]/60 hover:border-slate-700 backdrop-blur-md flex flex-col overflow-hidden transition-all duration-300" data-purpose="card-admin">
+<!-- Card Image Header -->
+<div class="relative h-48 w-full overflow-hidden bg-slate-900">
+<img alt="System administrator working on cyber network infrastructure" class="w-full h-full object-cover object-center opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxUMfQBris_hKGLHVDU2bf7bdFbEhejLkwnGvFmsk2osinxAzzjojUGgSDlvD0EgHSj_63diDljPFfWrYicHN8l8RRR5HqXhv78pcgdJJcLAGiTDCrL_vzLViBMU0SJG6-gmv8ntDI0li7nZVHbTPw_uZa7YW4jEB63XLAdrcZKjpg-EkwywJNPTzWS5-yzLUbXQG2Y6p0usVdcdSTi-VVUWFBqaS0cY_Ef0WMGCQPKcqLp7m9coIW"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0b1222] via-[#0b1222]/40 to-transparent"></div>
+<!-- Center Role Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-emerald-600 border-2 border-[#0b1222] flex items-center justify-center shadow-lg badge-icon-shadow">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<!-- Card Content Body -->
+<div class="px-6 pt-7 pb-6 flex-1 flex flex-col">
+<h3 class="text-center text-lg font-bold text-white tracking-wide">Admin</h3>
+<p class="text-center text-xs text-slate-400 mt-1 leading-relaxed min-h-[36px]">
+              Manage users, data, system settings and overall platform configuration.
+            </p>
+<!-- Features Checklist -->
+<div class="my-5 space-y-2.5 bg-slate-900/40 p-4 rounded-xl border border-slate-800/80">
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-emerald-600/30 text-emerald-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>User and role management</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-emerald-600/30 text-emerald-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>Data source configuration</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-emerald-600/30 text-emerald-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>System settings and security</span>
+</div>
+<div class="flex items-center text-xs text-slate-300">
+<div class="w-4 h-4 rounded bg-emerald-600/30 text-emerald-400 flex items-center justify-center mr-2.5 flex-shrink-0">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<span>View audit logs</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="mt-auto w-full py-2.5 px-4 bg-transparent border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white rounded-lg font-medium text-xs transition-colors" type="button">
+              Select Role
+            </button>
+</div>
+</div>
+</section>
+</div>
+<!-- BEGIN: FooterNotification -->
+<footer class="mt-6 w-full rounded-xl bg-slate-900/60 border border-slate-800/80 px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" data-purpose="security-footer">
+<!-- Info notice -->
+<div class="flex items-center space-x-3 text-slate-300">
+<div class="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<span class="text-[12px] font-normal leading-tight">
+          Your role determines what data you can access and what actions you can perform.<br class="hidden md:inline"/>
+          All activities are logged for security and audit purposes.
+        </span>
+</div>
+<!-- Trust indicator -->
+<div class="flex items-center space-x-2 text-slate-400 text-[11px] font-medium pr-2">
+<svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"></path>
+</svg>
+<span>Secure  |  Trusted  |  For a Safer India</span>
+</div>
+</footer>
+<!-- END: FooterNotification -->
+</main>
+<!-- END: MainContent -->
+</body></html>

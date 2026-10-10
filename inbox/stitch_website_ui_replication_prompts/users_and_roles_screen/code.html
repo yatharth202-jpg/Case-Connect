@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Users &amp; Roles - Case Connect AI</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#070b19',
+              sidebar: '#0b1120',
+              card: '#0f172a',
+              cardBorder: '#1e293b',
+              accentBlue: '#2563eb',
+              accentCyan: '#06b6d4',
+              accentPink: '#ec4899',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Scrollbar & Utility Styles -->
+<style data-purpose="custom-layout">
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d1a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+<style data-purpose="table-styles">
+    .role-badge-admin {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+    .role-badge-investigator {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+    }
+    .role-badge-viewer {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+    .role-badge-analyst {
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      color: #c084fc;
+    }
+  </style>
+</head>
+<body class="bg-[#050814] text-slate-200 antialiased font-sans flex h-screen overflow-hidden selection:bg-blue-600 selection:text-white">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-[#090e1d] border-r border-slate-800/80 flex flex-col justify-between flex-shrink-0 z-20" data-purpose="sidebar-navigation">
+<!-- Brand Logo Section -->
+<div>
+<div class="p-4 border-b border-slate-800/60 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-indigo-600 to-blue-500 flex items-center justify-center p-0.5 shadow-lg shadow-indigo-900/30">
+<div class="w-full h-full bg-[#0b1021] rounded-[10px] flex items-center justify-center">
+<svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 2l7 4v6c0 5.25-3.5 9.75-7 11-3.5-1.25-7-5.75-7-11V6l7-4z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M12 8v4m0 4h.01" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<div>
+<h1 class="text-base font-bold text-white tracking-wide leading-tight">Case Connect <span class="text-blue-500">AI</span></h1>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">AI-Powered Criminal Network</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="p-3 space-y-1 text-sm font-medium" data-purpose="nav-links">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Dashboard
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Cases
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Upload Evidence
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Investigation Graph
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Money Trail
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2H9.17A3.001 3.001 0 0112 14z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Master Profiles
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Lead Advisor
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Reports
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Audit Log
+        </a>
+<!-- Active Link: Users & Roles -->
+<a class="flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/20 text-white rounded-lg border-l-4 border-blue-500 font-semibold shadow-inner" href="#">
+<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Users &amp; Roles
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 rounded-lg transition" href="#">
+<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+          Settings
+        </a>
+</nav>
+</div>
+<!-- Police Badge & Bottom Slogan -->
+<div class="p-4 border-t border-slate-800/60 bg-gradient-to-b from-transparent to-[#050914]" data-purpose="sidebar-footer">
+<div class="relative overflow-hidden rounded-xl border border-blue-900/30 bg-[#0c142c] p-3 text-center mb-2">
+<div class="text-[11px] font-medium text-slate-300">National Police Network</div>
+<div class="flex items-center justify-center gap-1.5 mt-2 text-xs font-semibold text-emerald-400">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Together for Safer India
+        </div>
+</div>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- Main Container -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- BEGIN: TopHeader -->
+<header class="h-16 bg-[#090e1d]/90 backdrop-blur border-b border-slate-800/80 px-6 flex items-center justify-between flex-shrink-0 z-10" data-purpose="top-navigation-bar">
+<div class="flex items-center gap-4 text-sm">
+<button class="text-slate-400 hover:text-white lg:hidden">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<div class="flex items-center gap-2 text-slate-400 text-xs">
+<span class="hover:text-slate-200 cursor-pointer">Settings</span>
+<svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-blue-400 font-medium">Users &amp; Roles</span>
+</div>
+</div>
+<!-- Search and User Profile -->
+<div class="flex items-center gap-4">
+<div class="relative w-80">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+<input class="w-full pl-9 pr-4 py-1.5 bg-[#0e162b] border border-slate-700/80 text-xs rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Search users, roles, cases, permissions..." type="text"/>
+</div>
+<!-- Notification Bell -->
+<button class="relative p-2 rounded-lg bg-[#0e162b] border border-slate-700/80 text-slate-400 hover:text-slate-200">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="absolute 1 top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+</button>
+<!-- Profile Detail -->
+<div class="flex items-center gap-3 pl-3 border-l border-slate-800">
+<div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 p-0.5">
+<div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-white">IM</div>
+</div>
+<div class="text-left hidden md:block">
+<div class="text-xs font-semibold text-slate-200">Inspector Meera</div>
+<div class="text-[10px] text-slate-400">Administrator</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopHeader -->
+<!-- Main Scrollable Content Body -->
+<main class="flex-1 overflow-y-auto p-6 space-y-6" data-purpose="main-dashboard-content">
+<!-- BEGIN: PageTitleRow -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4" data-purpose="title-and-action-bar">
+<div>
+<h2 class="text-2xl font-bold text-white tracking-tight">Users &amp; Roles</h2>
+<p class="text-xs text-slate-400 mt-0.5">Manage system users, roles and permissions to ensure secure and controlled access.</p>
+</div>
+<div>
+<button class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg shadow-lg shadow-blue-600/30 transition" id="openModalBtn">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            Add User
+          </button>
+</div>
+</section>
+<!-- END: PageTitleRow -->
+<!-- BEGIN: RoleStatsCards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="role-metric-cards">
+<!-- Administrator Card -->
+<div class="relative overflow-hidden rounded-xl border border-rose-900/30 bg-gradient-to-br from-rose-950/20 via-[#0d1428] to-[#0d1428] p-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+<svg class="w-6 h-6" fill="currentColor" viewbox="0 0 24 24">
+<path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"></path>
+</svg>
+</div>
+<div>
+<span class="text-xs font-medium text-slate-400">Administrator</span>
+<div class="text-xl font-bold text-white mt-0.5">3 <span class="text-xs font-normal text-slate-400">Users</span></div>
+<p class="text-[10px] text-slate-500">Full system access</p>
+</div>
+</div>
+<!-- Investigator Card -->
+<div class="relative overflow-hidden rounded-xl border border-blue-900/30 bg-gradient-to-br from-blue-950/20 via-[#0d1428] to-[#0d1428] p-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 2l7 4v6c0 5.25-3.5 9.75-7 11-3.5-1.25-7-5.75-7-11V6l7-4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<span class="text-xs font-medium text-slate-400">Investigator</span>
+<div class="text-xl font-bold text-white mt-0.5">12 <span class="text-xs font-normal text-slate-400">Users</span></div>
+<p class="text-[10px] text-slate-500">Case investigation access</p>
+</div>
+</div>
+<!-- Analyst Card -->
+<div class="relative overflow-hidden rounded-xl border border-purple-900/30 bg-gradient-to-br from-purple-950/20 via-[#0d1428] to-[#0d1428] p-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<span class="text-xs font-medium text-slate-400">Analyst</span>
+<div class="text-xl font-bold text-white mt-0.5">8 <span class="text-xs font-normal text-slate-400">Users</span></div>
+<p class="text-[10px] text-slate-500">Data analysis and reporting</p>
+</div>
+</div>
+<!-- Viewer Card -->
+<div class="relative overflow-hidden rounded-xl border border-emerald-900/30 bg-gradient-to-br from-emerald-950/20 via-[#0d1428] to-[#0d1428] p-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<span class="text-xs font-medium text-slate-400">Viewer</span>
+<div class="text-xl font-bold text-white mt-0.5">6 <span class="text-xs font-normal text-slate-400">Users</span></div>
+<p class="text-[10px] text-slate-500">Read-only access</p>
+</div>
+</div>
+</section>
+<!-- END: RoleStatsCards -->
+<!-- BEGIN: SystemUsersAndAddFormGrid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- System Users Data Table (Spans 2 columns) -->
+<section class="lg:col-span-2 rounded-xl border border-slate-800 bg-[#0b1122] flex flex-col overflow-hidden" data-purpose="users-data-table-container">
+<!-- Table Controls Header -->
+<div class="p-4 border-b border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<h3 class="text-sm font-semibold text-white">System Users</h3>
+<span class="px-2 py-0.5 text-[11px] font-medium bg-slate-800 text-slate-400 rounded-full border border-slate-700">29</span>
+</div>
+<div class="flex items-center gap-2.5 w-full sm:w-auto">
+<div class="relative flex-1 sm:w-60">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-500">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+<input class="w-full pl-8 pr-3 py-1.5 bg-[#0f172a] border border-slate-700/80 text-[11px] rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Search users by name, email or designation..." type="text"/>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-[#0f172a] border border-slate-700/80 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                Filters
+              </button>
+</div>
+</div>
+<!-- Users Table -->
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="border-b border-slate-800 text-[11px] text-slate-400 font-medium bg-[#080d1a]/50">
+<th class="py-3 px-3 w-8">#</th>
+<th class="py-3 px-3">Name</th>
+<th class="py-3 px-3">Designation</th>
+<th class="py-3 px-3">Role</th>
+<th class="py-3 px-3">Department</th>
+<th class="py-3 px-3">Email</th>
+<th class="py-3 px-3">Status</th>
+<th class="py-3 px-3">Last Active</th>
+<th class="py-3 px-3 text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800/60 font-normal text-slate-300">
+<!-- User 1 -->
+<tr class="hover:bg-slate-800/20 transition">
+<td class="py-2.5 px-3 text-slate-500">1</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-slate-300 text-[10px]">IM</div>
+<span class="font-medium text-white">Inspector Meera</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Inspector</td>
+<td class="py-2.5 px-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium role-badge-admin">Administrator</span>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Cyber Cell</td>
+<td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">meera@delhipolice.gov.in</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+<td class="py-2.5 px-3 text-[11px] text-slate-400">12 Oct 2026<br/><span class="text-[10px] text-slate-500">10:32 AM</span></td>
+<td class="py-2.5 px-3 text-center">
+<button class="p-1 hover:text-white text-slate-500 rounded"><svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg></button>
+</td>
+</tr>
+<!-- User 2 -->
+<tr class="hover:bg-slate-800/20 transition">
+<td class="py-2.5 px-3 text-slate-500">2</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-slate-300 text-[10px]">AK</div>
+<span class="font-medium text-white">SI Arjun Kumar</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Sub Inspector</td>
+<td class="py-2.5 px-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium role-badge-investigator">Investigator</span>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Cyber Cell</td>
+<td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">arjun@delhipolice.gov.in</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+<td class="py-2.5 px-3 text-[11px] text-slate-400">12 Oct 2026<br/><span class="text-[10px] text-slate-500">09:15 AM</span></td>
+<td class="py-2.5 px-3 text-center">
+<button class="p-1 hover:text-white text-slate-500 rounded"><svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg></button>
+</td>
+</tr>
+<!-- User 3 -->
+<tr class="hover:bg-slate-800/20 transition">
+<td class="py-2.5 px-3 text-slate-500">3</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-slate-300 text-[10px]">CP</div>
+<span class="font-medium text-white">Constable Priya</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Constable</td>
+<td class="py-2.5 px-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium role-badge-viewer">Viewer</span>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Cyber Cell</td>
+<td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">priya@delhipolice.gov.in</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+<td class="py-2.5 px-3 text-[11px] text-slate-400">11 Oct 2026<br/><span class="text-[10px] text-slate-500">05:42 PM</span></td>
+<td class="py-2.5 px-3 text-center">
+<button class="p-1 hover:text-white text-slate-500 rounded"><svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg></button>
+</td>
+</tr>
+<!-- User 4 -->
+<tr class="hover:bg-slate-800/20 transition">
+<td class="py-2.5 px-3 text-slate-500">4</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-slate-300 text-[10px]">AR</div>
+<span class="font-medium text-white">Analyst Rohan</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Data Analyst</td>
+<td class="py-2.5 px-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium role-badge-analyst">Analyst</span>
+</td>
+<td class="py-2.5 px-3 text-slate-400">Economic Offences</td>
+<td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">rohan@delhipolice.gov.in</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+<td class="py-2.5 px-3 text-[11px] text-slate-400">12 Oct 2026<br/><span class="text-[10px] text-slate-500">08:20 AM</span></td>
+<td class="py-2.5 px-3 text-center">
+<button class="p-1 hover:text-white text-slate-500 rounded"><svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg></button>
+</td>
+</tr>
+<!-- User 5 -->
+<tr class="hover:bg-slate-800/20 transition">
+<td class="py-2.5 px-3 text-slate-500">5</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-slate-300 text-[10px]">AR</div>
+<span class="font-medium text-white">Admin Rajesh</span>
+</div>
+</td>
+<td class="py-2.5 px-3 text-slate-400">System Admin</td>
+<td class="py-2.5 px-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium role-badge-admin">Administrator</span>
+</td>
+<td class="py-2.5 px-3 text-slate-400">IT Department</td>
+<td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">rajesh@delhipolice.gov.in</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>
+</td>
+<td class="py-2.5 px-3 text-[11px] text-slate-400">12 Oct 2026<br/><span class="text-[10px] text-slate-500">06:45 AM</span></td>
+<td class="py-2.5 px-3 text-center">
+<button class="p-1 hover:text-white text-slate-500 rounded"><svg class="w-4 h-4" fill="currentColor" viewbox="0 0 20 20"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path></svg></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Add New User Form Drawer/Panel -->
+<section class="rounded-xl border border-slate-800 bg-[#0b1122] p-5 flex flex-col justify-between" data-purpose="add-user-drawer-form">
+<div>
+<div class="border-b border-slate-800/80 pb-3 mb-4">
+<h3 class="text-sm font-semibold text-white">Add New User</h3>
+<p class="text-[11px] text-slate-400 mt-0.5">Provision fresh credentials and role allocations</p>
+</div>
+<form class="space-y-3.5 text-xs">
+<div>
+<label class="block text-slate-300 font-medium mb-1">Full Name <span class="text-rose-500">*</span></label>
+<input class="w-full px-3 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-200 text-xs placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Enter full name" type="text"/>
+</div>
+<div>
+<label class="block text-slate-300 font-medium mb-1">Email Address <span class="text-rose-500">*</span></label>
+<input class="w-full px-3 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-200 text-xs placeholder-slate-500 focus:outline-none focus:border-blue-500" type="email" value="user@delhipolice.gov.in"/>
+</div>
+<div>
+<label class="block text-slate-300 font-medium mb-1">Designation</label>
+<input class="w-full px-3 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-200 text-xs placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Enter designation" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block text-slate-300 font-medium mb-1">Role <span class="text-rose-500">*</span></label>
+<select class="w-full px-2 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-400 text-xs focus:outline-none focus:border-blue-500">
+<option>Select role</option>
+<option>Administrator</option>
+<option>Investigator</option>
+<option>Analyst</option>
+<option>Viewer</option>
+</select>
+</div>
+<div>
+<label class="block text-slate-300 font-medium mb-1">Department <span class="text-rose-500">*</span></label>
+<select class="w-full px-2 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-400 text-xs focus:outline-none focus:border-blue-500">
+<option>Select department</option>
+<option>Cyber Cell</option>
+<option>Special Cell</option>
+<option>Crime Branch</option>
+<option>Economic Offences</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block text-slate-300 font-medium mb-1">Phone Number</label>
+<input class="w-full px-3 py-1.5 bg-[#080d1a] border border-slate-700/80 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-blue-500" type="tel" value="+91 98765 43210"/>
+</div>
+</form>
+</div>
+<!-- Buttons -->
+<div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-end gap-3">
+<button class="px-3.5 py-1.5 rounded-lg border border-slate-700 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition" type="button">Cancel</button>
+<button class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-md shadow-blue-600/30 transition" type="button">Create User</button>
+</div>
+</section>
+</div>
+<!-- END: SystemUsersAndAddFormGrid -->
+<!-- BEGIN: BottomGridRolePermissionsAndActivity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Role Permissions Matrix (Spans 2 columns) -->
+<section class="lg:col-span-2 rounded-xl border border-slate-800 bg-[#0b1122] p-5" data-purpose="permissions-matrix-card">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800/80 gap-3">
+<div>
+<h3 class="text-sm font-semibold text-white">Role Permissions</h3>
+<p class="text-[11px] text-slate-400">Granular module control across all systemic tiers</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400">Select Role:</span>
+<select class="bg-[#080d1a] border border-slate-700 rounded-lg text-xs text-slate-200 px-3 py-1 focus:outline-none focus:border-blue-500">
+<option>Investigator</option>
+<option>Administrator</option>
+<option>Analyst</option>
+<option>Viewer</option>
+</select>
+</div>
+</div>
+<!-- Permissions Matrix Table -->
+<div class="overflow-x-auto mt-2">
+<table class="w-full text-xs text-left">
+<thead>
+<tr class="text-[11px] text-slate-400 border-b border-slate-800/80">
+<th class="py-2.5 px-3">Module / Feature</th>
+<th class="py-2.5 px-3 text-center">Administrator</th>
+<th class="py-2.5 px-3 text-center">Investigator</th>
+<th class="py-2.5 px-3 text-center">Analyst</th>
+<th class="py-2.5 px-3 text-center">Viewer</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800/40 text-slate-300">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Access Cases
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Upload Evidence
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    View Investigation Graph
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Access Money Trail
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    View Master Profiles
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Use Lead Advisor
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Generate Reports
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    View Audit Logs
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 9 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Manage Users &amp; Roles
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+<!-- Row 10 -->
+<tr class="hover:bg-slate-800/10">
+<td class="py-2.5 px-3 font-medium flex items-center gap-2">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    System Settings
+                  </td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-[10px]">✓</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+<td class="py-2.5 px-3 text-center"><span class="inline-flex w-4 h-4 rounded-full bg-rose-500/20 text-rose-400 items-center justify-center text-[10px]">✕</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Right Side: User Activity & Recent Role Changes -->
+<div class="space-y-6">
+<!-- User Activity Overview -->
+<section class="rounded-xl border border-slate-800 bg-[#0b1122] p-5" data-purpose="user-activity-overview-card">
+<div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+<h3 class="text-xs font-semibold text-white">User Activity Overview</h3>
+<select class="bg-[#080d1a] border border-slate-700/80 rounded text-[10px] text-slate-300 px-2 py-0.5">
+<option>Last 30 days</option>
+<option>Last 7 days</option>
+</select>
+</div>
+<div class="space-y-2.5 text-xs">
+<!-- Admin Actions -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">Admin Actions</span>
+<span class="font-medium text-white">156</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-rose-500 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Case Updates -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">Case Updates</span>
+<span class="font-medium text-white">124</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 rounded-full" style="width: 70%"></div>
+</div>
+</div>
+<!-- Evidence Uploads -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">Evidence Uploads</span>
+<span class="font-medium text-white">98</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-indigo-500 rounded-full" style="width: 55%"></div>
+</div>
+</div>
+<!-- Report Generation -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">Report Generation</span>
+<span class="font-medium text-white">62</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500 rounded-full" style="width: 40%"></div>
+</div>
+</div>
+<!-- Graph Analysis -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">Graph Analysis</span>
+<span class="font-medium text-white">54</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 rounded-full" style="width: 32%"></div>
+</div>
+</div>
+<!-- User Management -->
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span class="text-slate-400">User Management</span>
+<span class="font-medium text-white">28</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-sky-400 rounded-full" style="width: 20%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Role Changes -->
+<section class="rounded-xl border border-slate-800 bg-[#0b1122] p-4" data-purpose="recent-role-changes-card">
+<div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-3">
+<h3 class="text-xs font-semibold text-white">Recent Role Changes</h3>
+<a class="text-[11px] text-blue-400 hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-2.5 text-[11px]">
+<!-- Log item 1 -->
+<div class="p-2 rounded-lg bg-[#080d1a] border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-medium text-slate-200">Rohan Mehta</div>
+<div class="text-[10px] text-slate-400">Role Changed: <span class="text-emerald-400">Viewer</span> → <span class="text-purple-400">Analyst</span></div>
+<div class="text-[9px] text-slate-500 mt-0.5">10 Oct 2026, 11:25 AM • by Admin Rajesh</div>
+</div>
+</div>
+<!-- Log item 2 -->
+<div class="p-2 rounded-lg bg-[#080d1a] border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-medium text-slate-200">Neha Patel</div>
+<div class="text-[10px] text-slate-400">Role Changed: <span class="text-blue-400">Investigator</span> → <span class="text-purple-400">Analyst</span></div>
+<div class="text-[9px] text-slate-500 mt-0.5">09 Oct 2026, 04:10 PM • by Inspector Meera</div>
+</div>
+</div>
+<!-- Log item 3 -->
+<div class="p-2 rounded-lg bg-[#080d1a] border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-medium text-slate-200">Vikram Singh</div>
+<div class="text-[10px] text-slate-400">Role Changed: <span class="text-emerald-400">Viewer</span> → <span class="text-blue-400">Investigator</span></div>
+<div class="text-[9px] text-slate-500 mt-0.5">08 Oct 2026, 02:45 PM • by Admin Rajesh</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- END: BottomGridRolePermissionsAndActivity -->
+</main>
+</div>
+<!-- Optional JavaScript Interactivity for Drawer/Toggle Simulation -->
+<script data-purpose="toggle-handler">
+    document.addEventListener('DOMContentLoaded', () => {
+      const openModalBtn = document.getElementById('openModalBtn');
+      if (openModalBtn) {
+        openModalBtn.addEventListener('click', () => {
+          window.scrollTo({ top: 350, behavior: 'smooth' });
+        });
+      }
+    });
+  </script>
+</body></html>

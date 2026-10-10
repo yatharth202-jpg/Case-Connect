@@ -1,0 +1,60 @@
+# Case Connect AI — Global Algorithmic Defaults
+# These defaults can be overridden on a per-case basis via the Case Settings screen.
+
+communication:
+  spike:
+    mad_multiplier: 3.0    # k in: median + k * 1.4826 * MAD
+    baseline_window_days: 14 # Days of historical calls to establish normal baseline
+    min_history_days: 5    # Minimum days required before flagging spikes
+    min_call_floor: 5      # Daily calls required before triggering alert
+  frequent_pair:
+    iqr_multiplier: 1.5    # Q3 + 1.5 * IQR outlier threshold
+  new_connection:
+    window_days: 7         # Days since first seen to consider connection "new"
+    min_early_calls: 5     # Calls within first 3 days to trigger anomaly
+  bridge:
+    min_betweenness_ratio: 0.1 # Minimum normalised betweenness centrality
+
+money:
+  fan_in:
+    min_sources: 3         # Distinct accounts sending funds
+    window_days: 7         # Timeframe in days
+  fan_out:
+    min_destinations: 3    # Distinct destination accounts
+    window_days: 7         # Timeframe in days
+  rapid_pass_through:
+    inflow_percent: 80.0   # Percentage of incoming funds that leave
+    max_hours: 48          # Maximum time window between arrival and departure
+  splitting:
+    reporting_limit_rupees: 0 # 0 means disabled; set in case settings (e.g. 1000000 for 10L)
+    min_transfers: 3       # Number of near-limit transfers
+    window_days: 3         # Days window
+    threshold_ratio: 0.90  # Flag transfers between 90% and 100% of limit
+
+matching:
+  strengths:
+    same_account: 95
+    same_phone: 90
+    same_vehicle: 90
+    same_email: 85
+    same_device_imei: 70
+    dob_plus_similar_name: 60
+    same_address: 35
+    similar_name_only: 25
+    same_ip: 20            # Shared IP alone never suggests an entity merge
+  thresholds:
+    surname_similarity_min: 0.90
+    first_name_similarity_min: 0.85
+    high_level_min: 70
+    medium_level_min: 40
+
+lead_advisor:
+  weights:
+    money_flow: 30
+    bridge: 25
+    unusual_communication: 20
+    timing: 15
+    multi_document: 10
+  levels:
+    high_priority_min: 70
+    medium_priority_min: 40

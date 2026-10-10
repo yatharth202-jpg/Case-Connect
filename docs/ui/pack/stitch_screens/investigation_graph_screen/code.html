@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Investigation Graph</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- FontAwesome Icons for High-Fidelity UI Reproduction -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Inter Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#070b14',
+              card: '#0c1322',
+              border: '#1a2742',
+              blue: '#2563eb',
+              accent: '#6366f1',
+              neonPink: '#e11d48',
+              cyan: '#06b6d4',
+              teal: '#10b981',
+              gold: '#f59e0b',
+              purple: '#8b5cf6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars-and-glows">
+    /* Custom subtle dark scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090e1a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Radial glows for node highlight */
+    .glow-node-red {
+      box-shadow: 0 0 25px 4px rgba(225, 29, 72, 0.65), inset 0 0 10px rgba(225, 29, 72, 0.4);
+    }
+    .glow-node-blue {
+      box-shadow: 0 0 16px 2px rgba(37, 99, 235, 0.6);
+    }
+    .glow-node-purple {
+      box-shadow: 0 0 16px 2px rgba(139, 92, 246, 0.6);
+    }
+    .glow-node-emerald {
+      box-shadow: 0 0 16px 2px rgba(16, 185, 129, 0.6);
+    }
+    .glow-node-orange {
+      box-shadow: 0 0 16px 2px rgba(245, 158, 11, 0.6);
+    }
+    .glow-node-pink {
+      box-shadow: 0 0 16px 2px rgba(236, 72, 153, 0.6);
+    }
+
+    /* Grid & Map vector overlay */
+    .map-grid-bg {
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.12) 0%, transparent 70%),
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px;
+    }
+  </style>
+</head>
+<body class="bg-[#050811] text-slate-200 min-h-screen flex flex-col font-sans overflow-x-hidden antialiased select-none">
+<!-- BEGIN: Application Shell Container -->
+<div class="flex flex-1 w-full min-h-screen">
+<!-- BEGIN: Left Navigation Sidebar -->
+<aside class="w-64 bg-[#080d19] border-r border-[#152238] flex flex-col justify-between shrink-0 select-none z-30" data-purpose="sidebar-navigation">
+<div>
+<!-- Brand Logo & Header -->
+<div class="px-5 py-4 flex items-center space-x-3 border-b border-[#152238]/60">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-indigo-600 to-blue-500 p-[2px] shadow-lg shadow-indigo-950/50 flex items-center justify-center">
+<div class="w-full h-full bg-[#0a1122] rounded-[10px] flex items-center justify-center text-amber-400 text-lg font-bold">
+<i class="fa-solid fa-shield-halved"></i>
+</div>
+</div>
+<div>
+<div class="flex items-center space-x-1.5">
+<span class="font-extrabold text-base tracking-wide bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">Case Connect</span>
+<span class="text-xs font-black px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-400 border border-blue-500/40">AI</span>
+</div>
+<p class="text-[10px] text-slate-400 font-medium tracking-tight">AI-Powered Criminal Network Analysis</p>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav class="p-3 space-y-1 text-[13px] font-medium" data-purpose="sidebar-menu-links">
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-table-columns w-5 text-center text-slate-500"></i>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-folder-closed w-5 text-center text-slate-500"></i>
+<span>Cases</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-cloud-arrow-up w-5 text-center text-slate-500"></i>
+<span>Upload Evidence</span>
+</a>
+<!-- Active Item: Investigation Graph -->
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-md shadow-blue-900/40 relative" href="#">
+<i class="fa-solid fa-diagram-project w-5 text-center text-white"></i>
+<span>Investigation Graph</span>
+<span class="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse"></span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-money-bill-trend-up w-5 text-center text-slate-500"></i>
+<span>Money Trail</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-id-badge w-5 text-center text-slate-500"></i>
+<span>Master Profiles</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-user-tie w-5 text-center text-slate-500"></i>
+<span>Lead Advisor</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-file-invoice w-5 text-center text-slate-500"></i>
+<span>Reports</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-clock-rotate-left w-5 text-center text-slate-500"></i>
+<span>Audit Log</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-users-gear w-5 text-center text-slate-500"></i>
+<span>Users &amp; Roles</span>
+</a>
+<a class="flex items-center space-x-3.5 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-colors" href="#">
+<i class="fa-solid fa-gear w-5 text-center text-slate-500"></i>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom India Police Banner -->
+<div class="p-3 border-t border-[#152238]/60 bg-gradient-to-b from-transparent to-[#0a1226]/80">
+<div class="relative overflow-hidden rounded-xl border border-blue-950/60 bg-[#0c162d] p-3 text-center">
+<div class="flex items-center justify-center space-x-2 mb-1">
+<span class="inline-block w-4 h-2.5 bg-gradient-to-b from-orange-500 via-white to-green-600 rounded-xs shadow"></span>
+<span class="text-[11px] font-bold tracking-wider text-slate-200 uppercase">Together for Safer India</span>
+</div>
+<div class="text-[9px] text-slate-400 flex items-center justify-center gap-1">
+<i class="fa-solid fa-building-shield text-blue-400"></i> Central Crime Branch Network
+          </div>
+</div>
+</div>
+</aside>
+<!-- END: Left Navigation Sidebar -->
+<!-- BEGIN: Main Content Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#060b16]">
+<!-- BEGIN: Top Navigation Header -->
+<header class="h-14 bg-[#080d19] border-b border-[#152238] flex items-center justify-between px-5 shrink-0 z-20" data-purpose="top-navigation-bar">
+<!-- Breadcrumbs & Quick Toggle -->
+<div class="flex items-center space-x-3 text-xs">
+<button class="text-slate-400 hover:text-white p-1 rounded transition-colors" title="Toggle Navigation">
+<i class="fa-solid fa-bars text-sm"></i>
+</button>
+<div class="flex items-center space-x-2 font-medium">
+<span class="text-slate-400 hover:text-slate-200 cursor-pointer">Cases</span>
+<i class="fa-solid fa-angle-right text-[10px] text-slate-600"></i>
+<span class="text-blue-400 font-semibold cursor-pointer">CC-101</span>
+<i class="fa-solid fa-angle-right text-[10px] text-slate-600"></i>
+<span class="text-slate-200">Investigation Graph</span>
+</div>
+</div>
+<!-- Global Search Bar -->
+<div class="w-1/3 max-w-md relative hidden md:block">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+<i class="fa-solid fa-magnifying-glass text-xs"></i>
+</span>
+<input class="w-full bg-[#0d1629] text-xs text-slate-200 placeholder-slate-500 rounded-lg pl-9 pr-4 py-1.5 border border-[#1e2d4a] focus:outline-none focus:border-blue-500 transition-colors" placeholder="Search people, phone numbers, accounts, locations..." type="text"/>
+</div>
+<!-- Top Right Actions & User Profile -->
+<div class="flex items-center space-x-4">
+<button class="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/40 transition">
+<i class="fa-regular fa-bell text-sm"></i>
+<span class="absolute top-1 right-1 w-4 h-4 bg-red-600 text-[10px] text-white font-bold rounded-full flex items-center justify-center border-2 border-[#080d19]">3</span>
+</button>
+<!-- User Info -->
+<div class="flex items-center space-x-3 pl-2 border-l border-[#152238]">
+<div class="relative">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 p-0.5 shadow">
+<div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-200 overflow-hidden">
+<i class="fa-solid fa-user-ninja text-sm"></i>
+</div>
+</div>
+<span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#080d19]"></span>
+</div>
+<div class="text-left hidden lg:block leading-tight">
+<div class="text-xs font-semibold text-slate-200">Inspector Meera</div>
+<div class="text-[10px] text-slate-400">Investigator</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: Top Navigation Header -->
+<!-- BEGIN: Content Body (Graph Viewport + Panels) -->
+<main class="flex-1 flex flex-col p-4 space-y-3.5 overflow-y-auto">
+<!-- Investigation Title & Graph Action Bar -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0" data-purpose="case-action-header">
+<div class="flex items-start space-x-3">
+<div class="w-1.5 h-10 bg-gradient-to-b from-blue-500 via-indigo-500 to-purple-600 rounded-full mt-0.5"></div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                Investigation Graph – Case CC-101
+              </h1>
+<p class="text-xs text-slate-400">Visualize connections between people, phone numbers, bank accounts, locations and organisations.</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 shrink-0">
+<button class="flex items-center space-x-2 px-3 py-1.5 bg-[#0f1b33] hover:bg-[#16274a] text-xs font-medium text-slate-200 border border-[#21355c] rounded-lg transition">
+<i class="fa-solid fa-diagram-nested text-blue-400"></i>
+<span>Graph Analytics</span>
+</button>
+<button class="flex items-center space-x-2 px-3 py-1.5 bg-[#0f1b33] hover:bg-[#16274a] text-xs font-medium text-slate-200 border border-[#21355c] rounded-lg transition">
+<i class="fa-solid fa-arrow-down-to-bracket text-emerald-400"></i>
+<span>Export Graph</span>
+</button>
+<button class="flex items-center space-x-2 px-3 py-1.5 bg-[#0f1b33] hover:bg-[#16274a] text-xs font-medium text-slate-200 border border-[#21355c] rounded-lg transition" title="Toggle Fullscreen">
+<i class="fa-solid fa-expand text-slate-400"></i>
+<span>Fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Upper Work Area: Filter Panel + Interactive Diagram Canvas + Right Detail Inspector -->
+<div class="grid grid-cols-12 gap-3.5 min-h-[580px]">
+<!-- BEGIN: Left Filters Sidebar -->
+<div class="col-span-12 lg:col-span-3 xl:col-span-2 bg-[#0a1120] border border-[#16243f] rounded-xl p-3.5 flex flex-col justify-between shrink-0" data-purpose="graph-filter-panel">
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-[#16243f] pb-2.5">
+<span class="text-xs font-bold text-white tracking-wide uppercase">Graph Filters</span>
+<button class="text-[11px] text-blue-400 hover:text-blue-300 font-medium">Reset</button>
+</div>
+<!-- Filter: Node Types -->
+<div>
+<span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">Node Types</span>
+<div class="space-y-1.5 text-xs">
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0" type="checkbox"/>
+<i class="fa-solid fa-user text-blue-400 text-xs w-3 text-center"></i>
+<span class="text-slate-300 text-xs">Persons</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">24</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0" type="checkbox"/>
+<i class="fa-solid fa-phone text-emerald-400 text-xs w-3 text-center"></i>
+<span class="text-slate-300 text-xs">Phone Numbers</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">18</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0" type="checkbox"/>
+<i class="fa-solid fa-building-columns text-amber-400 text-xs w-3 text-center"></i>
+<span class="text-slate-300 text-xs">Bank Accounts</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">12</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-rose-500 focus:ring-0" type="checkbox"/>
+<i class="fa-solid fa-location-dot text-rose-400 text-xs w-3 text-center"></i>
+<span class="text-slate-300 text-xs">Locations</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">8</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-purple-500 focus:ring-0" type="checkbox"/>
+<i class="fa-solid fa-city text-purple-400 text-xs w-3 text-center"></i>
+<span class="text-slate-300 text-xs">Organisations</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">6</span>
+</label>
+</div>
+</div>
+<!-- Filter: Relationship Types -->
+<div>
+<span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">Relationship Types</span>
+<div class="space-y-1.5 text-xs">
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0" type="checkbox"/>
+<span class="w-2.5 h-0.5 bg-indigo-400 inline-block"></span>
+<span class="text-slate-300 text-xs">Calls</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">52</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0" type="checkbox"/>
+<span class="w-2.5 h-0.5 bg-amber-400 inline-block"></span>
+<span class="text-slate-300 text-xs">Bank Transactions</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">28</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-rose-500 focus:ring-0" type="checkbox"/>
+<span class="w-2.5 h-0.5 bg-rose-400 inline-block"></span>
+<span class="text-slate-300 text-xs">Common Location</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">16</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-purple-500 focus:ring-0" type="checkbox"/>
+<span class="w-2.5 h-0.5 bg-purple-400 inline-block"></span>
+<span class="text-slate-300 text-xs">Co-occurrence (FIR)</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">11</span>
+</label>
+<label class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800/40 cursor-pointer">
+<div class="flex items-center space-x-2">
+<input checked="" class="rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-0" type="checkbox"/>
+<span class="w-2.5 h-0.5 bg-cyan-400 inline-block"></span>
+<span class="text-slate-300 text-xs">Association</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono">9</span>
+</label>
+</div>
+</div>
+<!-- Time Range Dropdown -->
+<div>
+<span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Time Range</span>
+<div class="relative">
+<select class="w-full bg-[#0d1629] border border-[#1e2d4a] rounded-lg text-xs py-2 px-3 text-slate-300 appearance-none focus:outline-none focus:border-blue-500">
+<option>Last 6 months</option>
+<option>Last 30 days</option>
+<option>Last 1 year</option>
+<option>Full Timeline</option>
+</select>
+<i class="fa-regular fa-calendar absolute right-3 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+</div>
+</div>
+</div>
+<!-- Apply Button -->
+<button class="w-full mt-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg text-xs shadow-md shadow-indigo-950/60 transition duration-150">
+              Apply Filters
+            </button>
+</div>
+<!-- END: Left Filters Sidebar -->
+<!-- BEGIN: Center Network Graph Canvas Container -->
+<div class="col-span-12 lg:col-span-6 xl:col-span-7 bg-[#070d1a] border border-[#16243f] rounded-xl relative overflow-hidden flex flex-col" data-purpose="network-graph-viewport">
+<!-- Graph Quick Stats Top Ribbon -->
+<div class="p-3 border-b border-[#14213d] bg-[#091122]/90 backdrop-blur flex flex-wrap items-center justify-between gap-2 z-10">
+<div class="flex items-center space-x-3 text-xs">
+<span class="flex items-center space-x-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span>Nodes: <strong>68</strong></span>
+</span>
+<span class="flex items-center space-x-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span>Edges: <strong>116</strong></span>
+</span>
+<span class="flex items-center space-x-1.5 text-slate-300">
+<span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+<span>Clusters: <strong>5</strong></span>
+</span>
+<span class="flex items-center space-x-1.5 text-red-400 font-semibold bg-red-950/40 px-2 py-0.5 rounded border border-red-800/40">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+<span>High-Risk Nodes: 8</span>
+</span>
+</div>
+<!-- Mini graph search -->
+<div class="relative w-40">
+<i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-[10px] text-slate-500"></i>
+<input class="w-full bg-[#0d172a] text-[11px] text-slate-300 placeholder-slate-500 rounded pl-7 pr-2 py-1 border border-[#1b2b4d] focus:outline-none focus:border-blue-500" placeholder="Search in graph..." type="text"/>
+</div>
+</div>
+<!-- Graph Canvas / SVG Interactive Area -->
+<div class="relative flex-1 map-grid-bg overflow-hidden flex items-center justify-center p-4" id="graph-viewport-area">
+<!-- Subtle World / India Background Map Silhouette (vector simulated) -->
+<svg class="absolute inset-0 w-full h-full opacity-10 pointer-events-none text-blue-400" viewbox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+<path d="M120,40 Q160,20 220,50 T320,60 T420,120 T380,240 T260,320 T150,220 Z" fill="currentColor"></path>
+<path d="M450,150 Q550,120 620,190 T680,310 T560,420 T440,300 Z" fill="currentColor"></path>
+</svg>
+<!-- SVG Connectors & Flow Lines with transaction values -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="edge-red-orange" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#ef4444" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#f59e0b" stop-opacity="0.8"></stop>
+</lineargradient>
+<lineargradient id="edge-blue" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#3b82f6" stop-opacity="0.7"></stop>
+<stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.7"></stop>
+</lineargradient>
+</defs>
+<!-- Center node coordinate reference ~ (50%, 46%) -->
+<!-- Lines from Rohan Sharma (Center) to surrounding nodes -->
+<!-- Center to Amit Verma (Top) -->
+<line opacity="0.8" stroke="#8b5cf6" stroke-dasharray="3,3" stroke-width="1.8" x1="50%" x2="52%" y1="46%" y2="22%"></line>
+<!-- Center to Vikram Singh (Left) -->
+<line opacity="0.9" stroke="#3b82f6" stroke-width="2" x1="50%" x2="38%" y1="46%" y2="35%"></line>
+<!-- Center to Neha Patel (Right) -->
+<line opacity="0.9" stroke="#e11d48" stroke-width="2.2" x1="50%" x2="66%" y1="46%" y2="32%"></line>
+<!-- Center to AXIS Bank (Middle Right) -->
+<line opacity="0.95" stroke="#f59e0b" stroke-width="2.5" x1="50%" x2="72%" y1="46%" y2="45%"></line>
+<!-- Center to Shree Traders Shell Co (Lower Right) -->
+<line opacity="0.85" stroke="#a855f7" stroke-width="1.8" x1="50%" x2="65%" y1="46%" y2="58%"></line>
+<!-- Center to Sanjay Mehta (Suspect - Bottom) -->
+<line opacity="0.8" stroke="#06b6d4" stroke-width="2" x1="50%" x2="54%" y1="46%" y2="62%"></line>
+<!-- Center to HDFC Bank (Lower Left) -->
+<line opacity="0.95" stroke="#f59e0b" stroke-width="2.5" x1="50%" x2="43%" y1="46%" y2="58%"></line>
+<!-- Peripheral inter-connections -->
+<!-- Delhi to Vikram Singh -->
+<line stroke="#ec4899" stroke-dasharray="2,2" stroke-width="1.5" x1="33%" x2="38%" y1="46%" y2="35%"></line>
+<!-- Delhi to HDFC Bank -->
+<line stroke="#ec4899" stroke-dasharray="2,2" stroke-width="1.5" x1="33%" x2="43%" y1="46%" y2="58%"></line>
+<!-- Phone 91234 to Vikram -->
+<line stroke="#10b981" stroke-width="1.5" x1="28%" x2="38%" y1="33%" y2="35%"></line>
+<!-- Phone 98765 to Amit Verma -->
+<line stroke="#10b981" stroke-width="1.5" x1="42%" x2="52%" y1="25%" y2="22%"></line>
+<!-- Phone 96671 to Amit Verma -->
+<line stroke="#10b981" stroke-width="1.5" x1="60%" x2="52%" y1="24%" y2="22%"></line>
+<!-- Neha Patel to Phone 90123 -->
+<line stroke="#10b981" stroke-width="1.5" x1="66%" x2="73%" y1="32%" y2="28%"></line>
+<!-- AXIS Bank to Bengaluru -->
+<line stroke="#ec4899" stroke-width="1.5" x1="72%" x2="74%" y1="45%" y2="62%"></line>
+<!-- HDFC to Mumbai -->
+<line stroke="#ec4899" stroke-width="1.5" x1="43%" x2="44%" y1="58%" y2="69%"></line>
+<!-- Sanjay Mehta to Phone 77788 -->
+<line stroke="#10b981" stroke-width="1.5" x1="54%" x2="52%" y1="62%" y2="72%"></line>
+<!-- Shree Traders to Phone 95566 -->
+<line stroke="#10b981" stroke-width="1.5" x1="65%" x2="65%" y1="58%" y2="70%"></line>
+</svg>
+<!-- Interactive Visual Nodes Overlay -->
+<div class="relative w-full h-full min-h-[460px]">
+<!-- 1. Central Hero Suspect Node: ROHAN SHARMA -->
+<div class="absolute top-[46%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-30" title="Rohan Sharma (Primary Target)">
+<div class="relative">
+<div class="w-14 h-14 rounded-full bg-slate-900 border-2 border-rose-500 glow-node-red flex items-center justify-center p-0.5 transition transform group-hover:scale-110">
+<div class="w-full h-full rounded-full bg-gradient-to-tr from-rose-900/60 to-red-600/40 flex items-center justify-center overflow-hidden">
+<i class="fa-solid fa-user-secret text-2xl text-rose-200"></i>
+</div>
+</div>
+<span class="absolute -top-1 -right-1 bg-red-600 text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-black text-white">HIGH</span>
+</div>
+<div class="mt-1 text-center bg-black/70 backdrop-blur px-2 py-0.5 rounded border border-rose-500/40">
+<span class="text-xs font-bold text-white block leading-tight">Rohan Sharma</span>
+<span class="text-[9px] text-rose-400 font-medium">Prime Target</span>
+</div>
+</div>
+<!-- 2. Node: Amit Verma (Associate - Top) -->
+<div class="absolute top-[22%] left-[52%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#11192d] border border-purple-500 glow-node-purple flex items-center justify-center text-purple-300">
+<i class="fa-solid fa-user text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-slate-200 block">Amit Verma</span>
+<span class="text-[8px] text-purple-400">(Associate)</span>
+</div>
+</div>
+<!-- 3. Node: Vikram Singh (Co-accused - Left) -->
+<div class="absolute top-[35%] left-[38%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#11192d] border border-blue-500 glow-node-blue flex items-center justify-center text-blue-300">
+<i class="fa-solid fa-user text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-slate-200 block">Vikram Singh</span>
+<span class="text-[8px] text-blue-400">(Co-accused)</span>
+</div>
+</div>
+<!-- 4. Node: Neha Patel (Financial Link - Right) -->
+<div class="absolute top-[32%] left-[66%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#11192d] border border-blue-500 glow-node-blue flex items-center justify-center text-blue-300">
+<i class="fa-solid fa-user-check text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-slate-200 block">Neha Patel</span>
+<span class="text-[8px] text-emerald-400">(Financial Link)</span>
+</div>
+</div>
+<!-- Financial Transaction Edge Badge between Rohan and Neha: ₹12.4L -->
+<div class="absolute top-[38%] left-[58%] -translate-x-1/2 -translate-y-1/2 bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-1.5 py-0.2 rounded shadow">
+                  ₹12.4L
+                </div>
+<!-- Financial Transaction Edge Badge: ₹8.7L -->
+<div class="absolute top-[48%] left-[61%] -translate-x-1/2 -translate-y-1/2 bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[9px] font-bold px-1 rounded shadow">
+                  ₹8.7L
+                </div>
+<!-- Financial Transaction Edge Badge: ₹2.3L -->
+<div class="absolute top-[49%] left-[66%] -translate-x-1/2 -translate-y-1/2 bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[9px] font-bold px-1 rounded shadow">
+                  ₹2.3L
+                </div>
+<!-- Financial Transaction Edge Badge to HDFC Bank: ₹18.5L -->
+<div class="absolute top-[51%] left-[46%] -translate-x-1/2 -translate-y-1/2 bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[10px] font-bold px-1.5 py-0.2 rounded shadow">
+                  ₹18.5L
+                </div>
+<!-- 5. Node: AXIS Bank (Bank Account) -->
+<div class="absolute top-[45%] left-[72%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#1b1509] border border-amber-500 glow-node-orange flex items-center justify-center text-amber-400">
+<i class="fa-solid fa-building-columns text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-amber-300 block">AXIS Bank</span>
+<span class="text-[8px] text-slate-400">A/c XXXX3210</span>
+</div>
+</div>
+<!-- 6. Node: HDFC Bank (Bank Account) -->
+<div class="absolute top-[58%] left-[43%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#1b1509] border border-amber-500 glow-node-orange flex items-center justify-center text-amber-400">
+<i class="fa-solid fa-building-columns text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-amber-300 block">HDFC Bank</span>
+<span class="text-[8px] text-slate-400">A/c XXXX9876</span>
+</div>
+</div>
+<!-- 7. Node: Sanjay Mehta (Suspect - Bottom) -->
+<div class="absolute top-[62%] left-[54%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#0d1c2d] border border-cyan-500 flex items-center justify-center text-cyan-300">
+<i class="fa-solid fa-user text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-slate-200 block">Sanjay Mehta</span>
+<span class="text-[8px] text-cyan-400">(Suspect)</span>
+</div>
+</div>
+<!-- 8. Node: Shree Traders Pvt Ltd (Organisation Shell Co) -->
+<div class="absolute top-[58%] left-[65%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-10 h-10 rounded-full bg-[#1f102c] border border-purple-500 glow-node-purple flex items-center justify-center text-purple-300">
+<i class="fa-solid fa-building text-sm"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1.5 py-0.5 rounded text-[10px]">
+<span class="font-medium text-purple-200 block">Shree Traders Pvt Ltd</span>
+<span class="text-[8px] text-pink-400">(Shell Company)</span>
+</div>
+</div>
+<!-- 9. Location Nodes -->
+<!-- Delhi Location -->
+<div class="absolute top-[46%] left-[33%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-8 h-8 rounded-full bg-[#240b15] border border-rose-500 glow-node-pink flex items-center justify-center text-rose-400">
+<i class="fa-solid fa-location-dot text-xs"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1 py-0.5 rounded text-[9px] text-rose-300">
+                    Delhi <span class="text-[8px] text-slate-400 block">(12 events)</span>
+</div>
+</div>
+<!-- Mumbai Location -->
+<div class="absolute top-[69%] left-[44%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-8 h-8 rounded-full bg-[#240b15] border border-rose-500 glow-node-pink flex items-center justify-center text-rose-400">
+<i class="fa-solid fa-location-dot text-xs"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1 py-0.5 rounded text-[9px] text-rose-300">
+                    Mumbai <span class="text-[8px] text-slate-400 block">(8 events)</span>
+</div>
+</div>
+<!-- Bengaluru Location -->
+<div class="absolute top-[62%] left-[74%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-8 h-8 rounded-full bg-[#240b15] border border-rose-500 glow-node-pink flex items-center justify-center text-rose-400">
+<i class="fa-solid fa-location-dot text-xs"></i>
+</div>
+<div class="mt-1 text-center bg-black/60 px-1 py-0.5 rounded text-[9px] text-rose-300">
+                    Bengaluru <span class="text-[8px] text-slate-400 block">(5 events)</span>
+</div>
+</div>
+<!-- 10. Phone Number Nodes -->
+<!-- +91 91234 56789 -->
+<div class="absolute top-[33%] left-[28%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 91234 56789</span>
+</div>
+<!-- +91 98765 43210 -->
+<div class="absolute top-[25%] left-[42%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 98765 43210</span>
+</div>
+<!-- +91 96671 22334 -->
+<div class="absolute top-[24%] left-[60%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 96671 22334</span>
+</div>
+<!-- +91 90123 44556 -->
+<div class="absolute top-[28%] left-[73%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 90123 44556</span>
+</div>
+<!-- +91 77788 99900 -->
+<div class="absolute top-[72%] left-[52%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 77788 99900</span>
+</div>
+<!-- +91 95566 77889 -->
+<div class="absolute top-[70%] left-[65%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20">
+<div class="w-7 h-7 rounded-full bg-[#081f18] border border-emerald-500 glow-node-emerald flex items-center justify-center text-emerald-400 text-[10px]">
+<i class="fa-solid fa-phone"></i>
+</div>
+<span class="mt-1 text-[9px] font-mono text-emerald-300 bg-black/60 px-1 rounded">+91 95566 77889</span>
+</div>
+</div>
+<!-- Canvas Zoom / Reset HUD Controls (Top Right Corner) -->
+<div class="absolute top-3 right-3 flex flex-col space-y-1.5 bg-[#091122]/90 border border-[#1b2b4d] rounded-lg p-1 text-slate-300 z-30 shadow-lg">
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-700/50 hover:text-white transition" title="Zoom In">
+<i class="fa-solid fa-plus text-xs"></i>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-700/50 hover:text-white transition" title="Zoom Out">
+<i class="fa-solid fa-minus text-xs"></i>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-700/50 hover:text-white transition" title="Center Focus">
+<i class="fa-solid fa-crosshairs text-xs"></i>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Center Network Graph Canvas Container -->
+<!-- BEGIN: Right Node Details Drawer -->
+<div class="col-span-12 lg:col-span-3 xl:col-span-3 bg-[#0a1120] border border-[#16243f] rounded-xl p-4 flex flex-col justify-between" data-purpose="node-detail-drawer">
+<div>
+<!-- Header with close button -->
+<div class="flex items-center justify-between border-b border-[#16243f] pb-3">
+<span class="text-xs font-bold text-white tracking-wide">Node Details</span>
+<button class="text-slate-400 hover:text-white p-1" title="Close Panel">
+<i class="fa-solid fa-xmark text-sm"></i>
+</button>
+</div>
+<!-- Suspect Primary Identity Profile Card -->
+<div class="flex items-start space-x-3 mt-4">
+<div class="relative shrink-0">
+<div class="w-13 h-13 w-12 h-12 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 p-0.5 shadow-lg">
+<div class="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center text-slate-200 overflow-hidden font-bold">
+<i class="fa-solid fa-user-secret text-2xl text-rose-400"></i>
+</div>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-white truncate">Rohan Sharma</h2>
+<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
+<i class="fa-solid fa-triangle-exclamation text-[8px]"></i> High Risk
+                    </span>
+</div>
+<div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+<span>Person</span>
+<span class="text-slate-600">•</span>
+<span>ID: P-001</span>
+</div>
+</div>
+</div>
+<!-- Tab Navigation -->
+<div class="flex space-x-1 border-b border-[#16243f] mt-4 text-xs font-medium pb-1.5">
+<button class="px-3 py-1 bg-blue-600 text-white rounded font-semibold text-xs shadow">Overview</button>
+<button class="px-3 py-1 text-slate-400 hover:text-white rounded transition text-xs">Connections (18)</button>
+<button class="px-3 py-1 text-slate-400 hover:text-white rounded transition text-xs">Evidence (7)</button>
+</div>
+<!-- Node Attributes Table -->
+<div class="mt-3.5 space-y-2 text-xs">
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Full Name</span>
+<span class="text-slate-200 font-medium text-[11px]">Rohan Sharma</span>
+</div>
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Aliases</span>
+<span class="text-slate-200 font-medium text-[11px]">R. Sharma, Rohit S.</span>
+</div>
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Phone Numbers</span>
+<div class="text-right">
+<span class="text-slate-200 font-medium text-[11px]">3 linked</span>
+<a class="text-blue-400 text-[10px] ml-1.5 hover:underline" href="#">View</a>
+</div>
+</div>
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Bank Accounts</span>
+<div class="text-right">
+<span class="text-slate-200 font-medium text-[11px]">2 linked</span>
+<a class="text-blue-400 text-[10px] ml-1.5 hover:underline" href="#">View</a>
+</div>
+</div>
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Locations</span>
+<div class="text-right">
+<span class="text-slate-200 font-medium text-[11px]">5 linked</span>
+<a class="text-blue-400 text-[10px] ml-1.5 hover:underline" href="#">View</a>
+</div>
+</div>
+<div class="flex justify-between items-center py-1 border-b border-[#142036]/60">
+<span class="text-slate-400 text-[11px]">Related FIRs</span>
+<div class="text-right">
+<span class="text-slate-200 font-medium text-[11px]">CC-101, CC-099, CC-087</span>
+<a class="text-blue-400 text-[10px] ml-1.5 hover:underline" href="#">View</a>
+</div>
+</div>
+<!-- Risk Score Bar -->
+<div class="py-1.5">
+<div class="flex justify-between items-center text-[11px] mb-1">
+<span class="text-slate-400">Risk Score</span>
+<span class="text-rose-400 font-bold font-mono">92%</span>
+</div>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-amber-500 to-rose-600 rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Summary Intelligence Box -->
+<div class="mt-4 bg-[#0e172a] border border-[#1d2d4d] rounded-lg p-3 relative overflow-hidden" data-purpose="ai-summary-card">
+<div class="flex items-center space-x-2 mb-1.5">
+<span class="w-5 h-5 rounded-md bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300 text-[10px] font-bold">AI</span>
+<span class="text-[11px] font-bold text-purple-300 tracking-wide uppercase">AI Summary</span>
+</div>
+<p class="text-[11px] text-slate-300 leading-relaxed">
+                Rohan Sharma appears to be a key node with multiple financial transactions linked to shell companies. Connected across 3 different FIRs with common phone numbers and locations.
+              </p>
+</div>
+</div>
+<!-- END: Right Node Details Drawer -->
+</div>
+<!-- END: Upper Work Area -->
+<!-- BEGIN: Bottom Connection Summary Metrics Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 shrink-0" data-purpose="bottom-metrics-tables">
+<!-- Table 1: Key Connections -->
+<div class="bg-[#0a1120] border border-[#16243f] rounded-xl p-3.5 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 border-b border-[#16243f]">
+<h3 class="text-xs font-bold text-white tracking-wide">Key Connections</h3>
+<a class="text-[11px] text-blue-400 hover:text-blue-300 font-medium" href="#">View All</a>
+</div>
+<div class="mt-2 text-[11px]">
+<div class="grid grid-cols-12 text-slate-400 font-medium pb-1.5 border-b border-[#142036]/60">
+<div class="col-span-4">Name</div>
+<div class="col-span-3">Type</div>
+<div class="col-span-3">Relationship</div>
+<div class="col-span-2 text-right">Strength</div>
+</div>
+<div class="divide-y divide-[#121c30]/50">
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-4 font-medium truncate text-white">Amit Verma</div>
+<div class="col-span-3 text-slate-400">Person</div>
+<div class="col-span-3 text-slate-400">Calls (42)</div>
+<div class="col-span-2 text-right font-mono text-emerald-400">0.92</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-4 font-medium truncate text-white">Neha Patel</div>
+<div class="col-span-3 text-slate-400">Person</div>
+<div class="col-span-3 text-slate-400">Transactions (18)</div>
+<div class="col-span-2 text-right font-mono text-emerald-400">0.87</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-4 font-medium truncate text-white">AXIS Bank A/c...</div>
+<div class="col-span-3 text-slate-400">Account</div>
+<div class="col-span-3 text-slate-400">Transactions (25)</div>
+<div class="col-span-2 text-right font-mono text-emerald-400">0.85</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-4 font-medium truncate text-white">Vikram Singh</div>
+<div class="col-span-3 text-slate-400">Person</div>
+<div class="col-span-3 text-slate-400">Calls (31)</div>
+<div class="col-span-2 text-right font-mono text-cyan-400">0.78</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-4 font-medium truncate text-white">Shree Traders...</div>
+<div class="col-span-3 text-slate-400">Organisation</div>
+<div class="col-span-3 text-slate-400">Association (12)</div>
+<div class="col-span-2 text-right font-mono text-cyan-400">0.74</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Table 2: Top Locations -->
+<div class="bg-[#0a1120] border border-[#16243f] rounded-xl p-3.5 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 border-b border-[#16243f]">
+<h3 class="text-xs font-bold text-white tracking-wide">Top Locations</h3>
+<a class="text-[11px] text-blue-400 hover:text-blue-300 font-medium" href="#">View All</a>
+</div>
+<div class="mt-2 text-[11px]">
+<div class="grid grid-cols-12 text-slate-400 font-medium pb-1.5 border-b border-[#142036]/60">
+<div class="col-span-6">Location</div>
+<div class="col-span-3 text-center">Connections</div>
+<div class="col-span-3 text-right">Events</div>
+</div>
+<div class="divide-y divide-[#121c30]/50">
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-6 flex items-center space-x-1.5 truncate text-white">
+<i class="fa-solid fa-location-dot text-rose-500 text-[10px]"></i>
+<span>Delhi</span>
+</div>
+<div class="col-span-3 text-center font-mono">18</div>
+<div class="col-span-3 text-right font-mono text-slate-400">12</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-6 flex items-center space-x-1.5 truncate text-white">
+<i class="fa-solid fa-location-dot text-rose-500 text-[10px]"></i>
+<span>Mumbai</span>
+</div>
+<div class="col-span-3 text-center font-mono">14</div>
+<div class="col-span-3 text-right font-mono text-slate-400">8</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-6 flex items-center space-x-1.5 truncate text-white">
+<i class="fa-solid fa-location-dot text-rose-500 text-[10px]"></i>
+<span>Bengaluru</span>
+</div>
+<div class="col-span-3 text-center font-mono">9</div>
+<div class="col-span-3 text-right font-mono text-slate-400">5</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-6 flex items-center space-x-1.5 truncate text-white">
+<i class="fa-solid fa-location-dot text-rose-500 text-[10px]"></i>
+<span>Hyderabad</span>
+</div>
+<div class="col-span-3 text-center font-mono">6</div>
+<div class="col-span-3 text-right font-mono text-slate-400">3</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-6 flex items-center space-x-1.5 truncate text-white">
+<i class="fa-solid fa-location-dot text-rose-500 text-[10px]"></i>
+<span>Chennai</span>
+</div>
+<div class="col-span-3 text-center font-mono">4</div>
+<div class="col-span-3 text-right font-mono text-slate-400">2</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Table 3: Top Phone Numbers -->
+<div class="bg-[#0a1120] border border-[#16243f] rounded-xl p-3.5 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 border-b border-[#16243f]">
+<h3 class="text-xs font-bold text-white tracking-wide">Top Phone Numbers</h3>
+<a class="text-[11px] text-blue-400 hover:text-blue-300 font-medium" href="#">View All</a>
+</div>
+<div class="mt-2 text-[11px]">
+<div class="grid grid-cols-12 text-slate-400 font-medium pb-1.5 border-b border-[#142036]/60">
+<div class="col-span-8">Phone Number</div>
+<div class="col-span-4 text-right">Connections</div>
+</div>
+<div class="divide-y divide-[#121c30]/50">
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 font-mono text-white truncate">
+<i class="fa-solid fa-phone text-emerald-400 text-[9px]"></i>
+<span>+91 98765 43210</span>
+</div>
+<div class="col-span-4 text-right font-mono text-emerald-400 font-semibold">8</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 font-mono text-white truncate">
+<i class="fa-solid fa-phone text-emerald-400 text-[9px]"></i>
+<span>+91 91234 56789</span>
+</div>
+<div class="col-span-4 text-right font-mono text-emerald-400 font-semibold">7</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 font-mono text-white truncate">
+<i class="fa-solid fa-phone text-emerald-400 text-[9px]"></i>
+<span>+91 95566 77889</span>
+</div>
+<div class="col-span-4 text-right font-mono text-emerald-400 font-semibold">6</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 font-mono text-white truncate">
+<i class="fa-solid fa-phone text-emerald-400 text-[9px]"></i>
+<span>+91 90123 44556</span>
+</div>
+<div class="col-span-4 text-right font-mono text-emerald-400 font-semibold">5</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 font-mono text-white truncate">
+<i class="fa-solid fa-phone text-emerald-400 text-[9px]"></i>
+<span>+91 88876 11122</span>
+</div>
+<div class="col-span-4 text-right font-mono text-emerald-400 font-semibold">5</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Table 4: Top Bank Accounts -->
+<div class="bg-[#0a1120] border border-[#16243f] rounded-xl p-3.5 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 border-b border-[#16243f]">
+<h3 class="text-xs font-bold text-white tracking-wide">Top Bank Accounts</h3>
+<a class="text-[11px] text-blue-400 hover:text-blue-300 font-medium" href="#">View All</a>
+</div>
+<div class="mt-2 text-[11px]">
+<div class="grid grid-cols-12 text-slate-400 font-medium pb-1.5 border-b border-[#142036]/60">
+<div class="col-span-8">Account Number</div>
+<div class="col-span-4 text-right">Connections</div>
+</div>
+<div class="divide-y divide-[#121c30]/50">
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 text-white truncate">
+<i class="fa-solid fa-building-columns text-amber-400 text-[9px]"></i>
+<span class="font-medium">AXIS XXXX3210</span>
+</div>
+<div class="col-span-4 text-right font-mono text-amber-400 font-semibold">8</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 text-white truncate">
+<i class="fa-solid fa-building-columns text-amber-400 text-[9px]"></i>
+<span class="font-medium">HDFC XXXX9876</span>
+</div>
+<div class="col-span-4 text-right font-mono text-amber-400 font-semibold">7</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 text-white truncate">
+<i class="fa-solid fa-building-columns text-amber-400 text-[9px]"></i>
+<span class="font-medium">SBI XXXX6543</span>
+</div>
+<div class="col-span-4 text-right font-mono text-amber-400 font-semibold">4</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 text-white truncate">
+<i class="fa-solid fa-building-columns text-amber-400 text-[9px]"></i>
+<span class="font-medium">ICICI XXXX1122</span>
+</div>
+<div class="col-span-4 text-right font-mono text-amber-400 font-semibold">4</div>
+</div>
+<div class="grid grid-cols-12 py-1.5 text-slate-300 items-center">
+<div class="col-span-8 flex items-center space-x-1.5 text-white truncate">
+<i class="fa-solid fa-building-columns text-amber-400 text-[9px]"></i>
+<span class="font-medium">PNB XXXX7788</span>
+</div>
+<div class="col-span-4 text-right font-mono text-amber-400 font-semibold">3</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: Bottom Connection Summary Metrics Cards Grid -->
+</main>
+<!-- END: Content Body -->
+</div>
+<!-- END: Main Content Area -->
+</div>
+<!-- END: Application Shell Container -->
+<!-- Interactivity Script for Canvas Focus & Node Tooltip Feedback -->
+<script data-purpose="node-graph-interactions">
+    document.addEventListener('DOMContentLoaded', () => {
+      // Small visual interactions for node cards
+      const nodes = document.querySelectorAll('#graph-viewport-area .group');
+      nodes.forEach(node => {
+        node.addEventListener('mouseenter', () => {
+          node.style.zIndex = '50';
+        });
+        node.addEventListener('mouseleave', () => {
+          node.style.zIndex = node.classList.contains('z-30') ? '30' : '20';
+        });
+      });
+    });
+  </script>
+</body></html>

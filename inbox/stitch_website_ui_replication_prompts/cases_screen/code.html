@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Criminal Network Analysis System</title>
+<!-- Tailwind CSS CDN with forms and container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Phosphor Icons & Lucide Icons via CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration Script -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            deepNavy: '#070b19',
+            cardBg: '#0b132b',
+            innerCard: '#0f172a',
+            borderGlow: '#1e293b',
+            accentBlue: '#2563eb',
+            neonPurple: '#6366f1',
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="custom-scrollbars-and-glows">
+    body {
+      background-color: #050814;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom subtle dark scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080d1e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    .panel-card {
+      background: linear-gradient(180deg, rgba(13, 21, 41, 0.85) 0%, rgba(9, 14, 30, 0.95) 100%);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      backdrop-filter: blur(12px);
+    }
+    .panel-card-accent {
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      box-shadow: 0 0 20px -5px rgba(37, 99, 235, 0.15);
+    }
+    .btn-gradient {
+      background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
+    }
+    .btn-gradient:hover {
+      background: linear-gradient(90deg, #1d4ed8 0%, #6d28d9 100%);
+    }
+    .sidebar-active {
+      background: linear-gradient(90deg, #2563eb 0%, #8b5cf6 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    }
+    .input-field {
+      background-color: #0b1122;
+      border: 1px solid #1e293b;
+      color: #f1f5f9;
+    }
+    .input-field:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px #3b82f6;
+      outline: none;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="min-h-screen flex bg-[#060a17] text-slate-300 text-xs antialiased overflow-x-hidden">
+<!-- BEGIN: Left Navigation Sidebar -->
+<aside class="w-64 flex-shrink-0 bg-[#080d1c] border-r border-slate-800/80 flex flex-col justify-between select-none min-h-screen" data-purpose="main-sidebar">
+<div>
+<!-- Brand Logo & Header -->
+<div class="px-5 py-4 border-b border-slate-800/50 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center p-0.5 shadow-md shadow-yellow-500/20">
+<div class="w-full h-full bg-[#0a1128] rounded-[6px] flex items-center justify-center">
+<i class="fa-solid fa-shield-halved text-amber-400 text-base"></i>
+</div>
+</div>
+<div>
+<h1 class="text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
+            Case Connect AI
+          </h1>
+<p class="text-[9px] text-slate-400 font-medium tracking-tight">AI-Powered Criminal Network Analysis</p>
+</div>
+</div>
+<!-- Main Navigation Menu -->
+<nav class="p-3 space-y-1">
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-table-columns text-sm w-6"></i>
+<span>Dashboard</span>
+</a>
+<!-- Active Menu Item: Cases -->
+<a class="sidebar-active flex items-center px-3.5 py-2.5 rounded-lg font-semibold text-xs transition-all" href="#">
+<i class="fa-regular fa-folder-open text-sm w-6"></i>
+<span>Cases</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-upload text-sm w-6"></i>
+<span>Upload Evidence</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-circle-nodes text-sm w-6"></i>
+<span>Investigation Graph</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-magnifying-glass-dollar text-sm w-6"></i>
+<span>Money Trail</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-regular fa-id-badge text-sm w-6"></i>
+<span>Master Profiles</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-user-astronaut text-sm w-6"></i>
+<span>Lead Advisor</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-regular fa-file-lines text-sm w-6"></i>
+<span>Reports</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-list-check text-sm w-6"></i>
+<span>Audit Log</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-users-gear text-sm w-6"></i>
+<span>Users &amp; Roles</span>
+</a>
+<a class="flex items-center px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all font-medium text-xs" href="#">
+<i class="fa-solid fa-gear text-sm w-6"></i>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Bottom Badge / Indian Police Emblem Motif -->
+<div class="p-4 relative overflow-hidden bg-gradient-to-t from-black/80 via-blue-950/20 to-transparent">
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-20 h-20 mb-2 rounded-full overflow-hidden border border-blue-500/30 flex items-center justify-center bg-blue-950/40 shadow-inner">
+<img alt="Police Operative" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvrb4ww-ACIdCrWGKfuBrrEFd4RUImMPxOkozql0d5R0ArnKzlRdMRpAPaDVQIUmykF6XyV6BH_LGnUoUJ5VK5kzlaVIZ3tRL250oe_6V8zBC9r8759DhRJaLyWDVRUMJweiduolKJ60qv88PEcNl137PTEEB8uQO5CWwDX-emjvsvc985-SK-LcpskG8tJGqvwi0fJ2eRI-kvpdUy8p3JP9hTjKreIBfBZ52Le-u0ZGpKsUxkAUY7"/>
+</div>
+<div class="flex items-center space-x-1.5 mt-1">
+<div class="w-4 h-2.5 rounded-sm flex flex-col overflow-hidden border border-slate-700">
+<span class="h-1 bg-amber-500 w-full"></span>
+<span class="h-1 bg-white w-full"></span>
+<span class="h-1 bg-green-600 w-full"></span>
+</div>
+<span class="text-[10px] font-semibold text-slate-300">Together for Safer India</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: Left Navigation Sidebar -->
+<!-- BEGIN: Main Page Content -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- Top Application Bar -->
+<header class="h-14 bg-[#080d1c] border-b border-slate-800/80 px-6 flex items-center justify-between" data-purpose="top-navbar">
+<div class="flex items-center space-x-4 flex-1">
+<button class="text-slate-400 hover:text-white lg:hidden">
+<i class="fa-solid fa-bars text-base"></i>
+</button>
+<!-- Global Search Bar -->
+<div class="relative w-full max-w-md">
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+<input class="w-full pl-9 pr-4 py-1.5 bg-[#0e162b] border border-slate-700/80 rounded-md text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Search cases, FIR number, person, phone, account..." type="text"/>
+</div>
+</div>
+<!-- Right Header Actions / User Details -->
+<div class="flex items-center space-x-4">
+<button class="relative p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800">
+<i class="fa-regular fa-bell text-sm"></i>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+</button>
+<div class="flex items-center space-x-2.5 border-l border-slate-800 pl-4">
+<img alt="Inspector Meera" class="w-8 h-8 rounded-full border border-blue-400/40 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEk_KighMPCXmDk8tpeuNxz5R0CBdcRtMpKIN-dxg3RU5RvNdfT0F6GL84td_BOC4j0PBX278OvdbE44ccj8WIRfXJc30K5gcQCUk1lUnpj08AonqCk6K6N36dFFTUQIeElcTovrhRHrqSFZH3rg04ZtOihO7Ikt7Uj4tWAKjRnjyWZBmqlIb_20j2mJx028l9ttxdOSd6l_HcvlplX1tcox5_7ispgxWtYoBRzRP6SgQPGfaBX15i"/>
+<div>
+<p class="text-xs font-semibold text-white leading-tight">Inspector Meera</p>
+<p class="text-[10px] text-slate-400">Investigator</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Workspace Body -->
+<main class="flex-1 p-5 overflow-y-auto space-y-5">
+<!-- Page Title & Breadcrumb -->
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<div class="w-1.5 h-6 bg-blue-500 rounded-full"></div>
+<div>
+<h2 class="text-lg font-bold text-white tracking-wide">Cases</h2>
+<p class="text-[11px] text-slate-400">Create a new case or open an existing one to start your investigation.</p>
+</div>
+</div>
+<nav class="flex items-center space-x-2 text-[11px] text-slate-400">
+<a class="hover:text-blue-400" href="#"><i class="fa-solid fa-house mr-1"></i>Dashboard</a>
+<span>&gt;</span>
+<span class="text-slate-200 font-medium">Cases</span>
+</nav>
+</div>
+<!-- Two-Column Section: Create New Case & Open Existing Case -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<!-- BEGIN: Create New Case Form -->
+<section class="panel-card panel-card-accent rounded-xl p-5 flex flex-col justify-between" data-purpose="create-case-form">
+<div>
+<!-- Header -->
+<div class="flex items-start space-x-3 pb-3 border-b border-slate-800/80">
+<div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 text-sm">
+<i class="fa-solid fa-folder-plus"></i>
+</div>
+<div>
+<h3 class="text-sm font-bold text-white">Create New Case</h3>
+<p class="text-[11px] text-slate-400">Enter basic details and upload initial evidence files to create a new investigation.</p>
+</div>
+</div>
+<!-- Form Body -->
+<form class="mt-4 space-y-3.5">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<!-- Case Title -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Case Title <span class="text-rose-500">*</span></label>
+<input class="input-field w-full px-2.5 py-1.5 rounded text-xs placeholder-slate-500" placeholder="e.g., Cyber Fraud Ring" type="text"/>
+</div>
+<!-- FIR Number -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">FIR Number</label>
+<input class="input-field w-full px-2.5 py-1.5 rounded text-xs placeholder-slate-500" placeholder="e.g., FIR/2026/00123" type="text"/>
+</div>
+<!-- Case Type -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Case Type <span class="text-rose-500">*</span></label>
+<select class="input-field w-full px-2 py-1.5 rounded text-xs">
+<option disabled="" selected="" value="">Select case type</option>
+<option value="cyber">Cyber Crime</option>
+<option value="financial">Financial Fraud</option>
+<option value="narcotics">Narcotics</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<!-- Police Station -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Police Station</label>
+<select class="input-field w-full px-2 py-1.5 rounded text-xs">
+<option disabled="" selected="" value="">Select police station</option>
+<option>Cyber Cell</option>
+<option>MG Road PS</option>
+<option>City PS</option>
+</select>
+</div>
+<!-- District -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">District</label>
+<select class="input-field w-full px-2 py-1.5 rounded text-xs">
+<option disabled="" selected="" value="">Select district</option>
+<option>New Delhi</option>
+<option>South Delhi</option>
+</select>
+</div>
+<!-- Case Date -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Case Date <span class="text-rose-500">*</span></label>
+<div class="relative">
+<input class="input-field w-full px-2.5 py-1.5 rounded text-xs" type="text" value="12 Oct 2026"/>
+<i class="fa-regular fa-calendar absolute right-2.5 top-2.5 text-slate-400 pointer-events-none"></i>
+</div>
+</div>
+</div>
+<!-- Case Description -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Case Description <span class="text-rose-500">*</span></label>
+<textarea class="input-field w-full px-2.5 py-1.5 rounded text-xs placeholder-slate-500 resize-none" placeholder="Brief description of the case..." rows="2"></textarea>
+</div>
+<!-- Initial Evidence Upload Zone -->
+<div>
+<label class="block text-[11px] font-medium text-slate-300 mb-1">Initial Evidence Upload (Optional)</label>
+<div class="grid grid-cols-3 gap-3">
+<div class="col-span-2 border border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-3.5 flex flex-col items-center justify-center text-center cursor-pointer bg-[#090e21] transition-all">
+<i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-400 mb-1"></i>
+<p class="text-[11px] font-medium text-slate-200">Drag and drop files here or <span class="text-blue-400 underline">click to browse</span></p>
+<p class="text-[9px] text-slate-500 mt-0.5">Supported formats: PDF, CSV, Excel, Images (JPG, PNG), Text files<br/>Max file size: 50 MB per file</p>
+</div>
+<!-- Uploaded Files Preview Box -->
+<div class="col-span-1 border border-slate-800 bg-[#070c1a] rounded-lg p-3 flex flex-col items-center justify-center text-center">
+<span class="text-[10px] text-slate-400 font-semibold mb-2">Uploaded Files (0)</span>
+<i class="fa-regular fa-file text-slate-600 text-2xl mb-1"></i>
+<span class="text-[10px] text-slate-500">No files uploaded yet.</span>
+</div>
+</div>
+</div>
+</form>
+</div>
+<!-- Form Actions -->
+<div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center space-x-3">
+<button class="w-1/3 py-2 px-4 rounded-md border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-semibold text-xs transition" type="button">
+              Reset
+            </button>
+<button class="w-2/3 py-2 px-4 rounded-md btn-gradient text-white font-semibold text-xs shadow-md shadow-blue-600/30 transition hover:brightness-110" type="submit">
+              Create Case
+            </button>
+</div>
+</section>
+<!-- END: Create New Case Form -->
+<!-- BEGIN: Open Existing Case Explorer -->
+<section class="panel-card panel-card-accent rounded-xl p-5 flex flex-col justify-between" data-purpose="open-existing-case">
+<div>
+<!-- Header -->
+<div class="flex items-start space-x-3 pb-3 border-b border-slate-800/80">
+<div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 text-sm">
+<i class="fa-solid fa-folder"></i>
+</div>
+<div>
+<h3 class="text-sm font-bold text-white">Open Existing Case</h3>
+<p class="text-[11px] text-slate-400">Search and open a case to view details, evidence and analysis.</p>
+</div>
+</div>
+<!-- Search Bar in Section -->
+<div class="mt-4 flex gap-2">
+<div class="relative flex-1">
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+<input class="input-field w-full pl-9 pr-3 py-1.5 rounded text-xs placeholder-slate-500" placeholder="Search case ID, title, FIR number, person, phone, account..." type="text"/>
+</div>
+<button class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold shadow">Search</button>
+</div>
+<!-- Filter Badges & Dropdown -->
+<div class="mt-3 flex items-center justify-between gap-2 overflow-x-auto">
+<div class="flex items-center space-x-1.5">
+<button class="px-3 py-1 rounded bg-blue-600 text-white font-medium text-[11px]">All Cases</button>
+<button class="px-3 py-1 rounded bg-slate-800/70 border border-slate-700 hover:bg-slate-700 text-slate-300 font-medium text-[11px]">Active</button>
+<button class="px-3 py-1 rounded bg-slate-800/70 border border-slate-700 hover:bg-slate-700 text-slate-300 font-medium text-[11px]">Under Analysis</button>
+<button class="px-3 py-1 rounded bg-slate-800/70 border border-slate-700 hover:bg-slate-700 text-slate-300 font-medium text-[11px]">Closed</button>
+</div>
+<select class="input-field px-2.5 py-1 rounded text-[11px] text-slate-300">
+<option>All Case Types</option>
+<option>Cyber Crime</option>
+<option>Financial Fraud</option>
+</select>
+</div>
+<!-- Existing Cases Table -->
+<div class="mt-3 overflow-x-auto border border-slate-800 rounded-lg bg-[#090f23]">
+<table class="w-full text-left text-[11px] border-collapse">
+<thead>
+<tr class="bg-slate-900/80 text-slate-400 border-b border-slate-800 font-semibold">
+<th class="py-2 px-2.5">Case ID</th>
+<th class="py-2 px-2.5">Title</th>
+<th class="py-2 px-2.5">Police Station</th>
+<th class="py-2 px-2.5">Date</th>
+<th class="py-2 px-2.5">Status</th>
+<th class="py-2 px-2.5 text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800/60 text-slate-300">
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-101</td>
+<td class="py-2 px-2.5">Cyber Fraud Ring</td>
+<td class="py-2 px-2.5 text-slate-400">Cyber Cell</td>
+<td class="py-2 px-2.5 text-slate-400">12 Oct 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-100</td>
+<td class="py-2 px-2.5">ATM Skimming</td>
+<td class="py-2 px-2.5 text-slate-400">MG Road PS</td>
+<td class="py-2 px-2.5 text-slate-400">10 Oct 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Analysis</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-099</td>
+<td class="py-2 px-2.5">Online Investment Scam</td>
+<td class="py-2 px-2.5 text-slate-400">Cyber Cell</td>
+<td class="py-2 px-2.5 text-slate-400">05 Oct 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/20 text-rose-400 border border-rose-500/30">Closed</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-098</td>
+<td class="py-2 px-2.5">SIM Card Fraud</td>
+<td class="py-2 px-2.5 text-slate-400">City PS</td>
+<td class="py-2 px-2.5 text-slate-400">01 Oct 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-097</td>
+<td class="py-2 px-2.5">Fake Loan App</td>
+<td class="py-2 px-2.5 text-slate-400">Cyber Cell</td>
+<td class="py-2 px-2.5 text-slate-400">28 Sep 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/20 text-rose-400 border border-rose-500/30">Closed</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-096</td>
+<td class="py-2 px-2.5">Credit Card Fraud</td>
+<td class="py-2 px-2.5 text-slate-400">MG Road PS</td>
+<td class="py-2 px-2.5 text-slate-400">20 Sep 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Analysis</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+<tr class="hover:bg-blue-950/20">
+<td class="py-2 px-2.5 font-medium text-white">CC-095</td>
+<td class="py-2 px-2.5">Hawala Network</td>
+<td class="py-2 px-2.5 text-slate-400">Economic Offences</td>
+<td class="py-2 px-2.5 text-slate-400">15 Sep 2026</td>
+<td class="py-2 px-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/20 text-rose-400 border border-rose-500/30">Closed</span></td>
+<td class="py-2 px-2.5 text-center"><button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px]">Open</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Table Pagination Footer -->
+<div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+<span>Showing 1-7 of 32 cases</span>
+<div class="flex items-center space-x-1">
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400"><i class="fa-solid fa-angle-left text-[10px]"></i></button>
+<button class="w-6 h-6 flex items-center justify-center rounded bg-blue-600 text-white font-semibold">1</button>
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400">2</button>
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400">3</button>
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400">4</button>
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400">5</button>
+<button class="w-6 h-6 flex items-center justify-center rounded border border-slate-800 hover:bg-slate-800 text-slate-400"><i class="fa-solid fa-angle-right text-[10px]"></i></button>
+</div>
+</div>
+</section>
+<!-- END: Open Existing Case Explorer -->
+</div>
+<!-- BEGIN: Case Overview Section (CC-101) -->
+<section class="panel-card panel-card-accent rounded-xl p-5" data-purpose="case-overview-panel">
+<!-- Sub Header & Tabs -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+<div class="flex items-center space-x-2">
+<h3 class="text-sm font-bold text-white tracking-wide">Case Overview – CC-101</h3>
+</div>
+<!-- Sub Tabs Navigation -->
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold flex items-center space-x-1.5 text-xs shadow">
+<i class="fa-regular fa-folder-open"></i>
+<span>Overview</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-medium flex items-center space-x-1.5 text-xs transition">
+<i class="fa-regular fa-file-lines"></i>
+<span>Evidence</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-medium flex items-center space-x-1.5 text-xs transition">
+<i class="fa-solid fa-circle-nodes"></i>
+<span>Investigation Graph</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-medium flex items-center space-x-1.5 text-xs transition">
+<i class="fa-solid fa-magnifying-glass-dollar"></i>
+<span>Money Trail</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-medium flex items-center space-x-1.5 text-xs transition">
+<i class="fa-solid fa-brain"></i>
+<span>AI Insights</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-medium flex items-center space-x-1.5 text-xs transition">
+<i class="fa-regular fa-chart-bar"></i>
+<span>Reports</span>
+</button>
+<!-- Case Status Badge Dropdown -->
+<div class="ml-2 pl-2 border-l border-slate-800">
+<span class="inline-flex items-center px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+                Active <i class="fa-solid fa-chevron-down ml-1 text-[9px]"></i>
+</span>
+</div>
+</div>
+</div>
+<!-- 3-Column Layout: Basic Information, Key Statistics, Recent Updates -->
+<div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-5">
+<!-- Column 1: Basic Information -->
+<div class="md:col-span-3 space-y-2 border-r border-slate-800/70 pr-4">
+<h4 class="text-xs font-bold text-white mb-2 tracking-wide">Basic Information</h4>
+<div class="space-y-1.5 text-[11px]">
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-id-card w-4 text-blue-400"></i> Case ID</span>
+<span class="text-white font-medium">: CC-101</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-bookmark w-4 text-blue-400"></i> Title</span>
+<span class="text-white font-medium">: Cyber Fraud Ring</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-file-lines w-4 text-blue-400"></i> FIR Number</span>
+<span class="text-white font-medium">: FIR/2026/00123</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-solid fa-shield-virus w-4 text-blue-400"></i> Case Type</span>
+<span class="text-white font-medium">: Cyber Crime</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-building w-4 text-blue-400"></i> Police Station</span>
+<span class="text-white font-medium">: Cyber Cell, Delhi</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-solid fa-location-dot w-4 text-blue-400"></i> District</span>
+<span class="text-white font-medium">: New Delhi</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-calendar-days w-4 text-blue-400"></i> Date</span>
+<span class="text-white font-medium">: 12 Oct 2026</span>
+</div>
+<div class="flex items-start">
+<span class="w-24 text-slate-400 flex items-center"><i class="fa-regular fa-note-sticky w-4 text-blue-400"></i> Description</span>
+<span class="text-slate-300 leading-tight">: Online fraud involving multiple bank accounts and shell companies.</span>
+</div>
+</div>
+</div>
+<!-- Column 2: Key Statistics 6 Cards Grid -->
+<div class="md:col-span-5">
+<h4 class="text-xs font-bold text-white mb-2 tracking-wide">Key Statistics</h4>
+<div class="grid grid-cols-3 gap-2.5">
+<!-- Evidence Files -->
+<div class="bg-[#0b132a] border border-blue-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-sm">
+<i class="fa-regular fa-folder-open"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">12</p>
+<p class="text-[10px] text-slate-400">Evidence Files</p>
+</div>
+</div>
+<!-- Persons Identified -->
+<div class="bg-[#0b132a] border border-purple-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-sm">
+<i class="fa-solid fa-users"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">8</p>
+<p class="text-[10px] text-slate-400">Persons Identified</p>
+</div>
+</div>
+<!-- Phone Numbers -->
+<div class="bg-[#0b132a] border border-emerald-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-sm">
+<i class="fa-regular fa-address-book"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">15</p>
+<p class="text-[10px] text-slate-400">Phone Numbers</p>
+</div>
+</div>
+<!-- Bank Accounts -->
+<div class="bg-[#0b132a] border border-amber-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center text-sm">
+<i class="fa-solid fa-building-columns"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">6</p>
+<p class="text-[10px] text-slate-400">Bank Accounts</p>
+</div>
+</div>
+<!-- Locations -->
+<div class="bg-[#0b132a] border border-rose-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-rose-600/20 text-rose-400 flex items-center justify-center text-sm">
+<i class="fa-solid fa-location-dot"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">4</p>
+<p class="text-[10px] text-slate-400">Locations</p>
+</div>
+</div>
+<!-- Cross-FIR Links -->
+<div class="bg-[#0b132a] border border-teal-600/30 rounded-lg p-2.5 flex items-center space-x-3">
+<div class="w-9 h-9 rounded-lg bg-teal-600/20 text-teal-400 flex items-center justify-center text-sm">
+<i class="fa-solid fa-link"></i>
+</div>
+<div>
+<p class="text-base font-bold text-white leading-tight">11</p>
+<p class="text-[10px] text-slate-400">Cross-FIR Links</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Recent Updates Activity Stream -->
+<div class="md:col-span-4 border-l border-slate-800/70 pl-4">
+<div class="flex items-center justify-between mb-2">
+<h4 class="text-xs font-bold text-white tracking-wide">Recent Updates</h4>
+<a class="text-[11px] text-blue-400 hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-2 text-[11px]">
+<!-- Activity Item 1 -->
+<div class="flex items-start space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
+</div>
+<div>
+<p class="text-slate-200 font-medium">New evidence uploaded</p>
+<p class="text-[10px] text-slate-400 leading-tight">2 hours ago by Inspector Meera</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="flex items-start space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-purple-600/20 text-purple-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-solid fa-circle-nodes text-[10px]"></i>
+</div>
+<div>
+<p class="text-slate-200 font-medium">Rohan Sharma linked to CC-099</p>
+<p class="text-[10px] text-slate-400 leading-tight">5 hours ago</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="flex items-start space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-amber-600/20 text-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-solid fa-chart-line text-[10px]"></i>
+</div>
+<div>
+<p class="text-slate-200 font-medium">Bank transaction pattern detected</p>
+<p class="text-[10px] text-slate-400 leading-tight">7 hours ago</p>
+</div>
+</div>
+<!-- Activity Item 4 -->
+<div class="flex items-start space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-teal-600/20 text-teal-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-solid fa-lightbulb text-[10px]"></i>
+</div>
+<div>
+<p class="text-slate-200 font-medium">AI generated new lead</p>
+<p class="text-[10px] text-slate-400 leading-tight">12 hours ago</p>
+</div>
+</div>
+<!-- Activity Item 5 -->
+<div class="flex items-start space-x-2.5">
+<div class="w-6 h-6 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-regular fa-circle-check text-[10px]"></i>
+</div>
+<div>
+<p class="text-slate-200 font-medium">Case status changed to Active</p>
+<p class="text-[10px] text-slate-400 leading-tight">1 day ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Case Overview Section (CC-101) -->
+</main>
+<!-- END: Main Page Content -->
+</div>
+<!-- Client-side Interaction JavaScript -->
+<script data-purpose="tab-and-interaction-handlers">
+    // Lightweight toggle scripts or handlers can be wired here
+    document.addEventListener('DOMContentLoaded', () => {
+      // Setup interactive active state switching for simple navigation
+      const filterButtons = document.querySelectorAll('[data-purpose="open-existing-case"] button');
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.innerText.includes('All Cases') || btn.innerText.includes('Active') || btn.innerText.includes('Analysis') || btn.innerText.includes('Closed')) {
+            filterButtons.forEach(b => {
+              if (b.classList.contains('bg-blue-600')) {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('bg-slate-800/70', 'border', 'border-slate-700', 'text-slate-300');
+              }
+            });
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-slate-800/70', 'border', 'border-slate-700', 'text-slate-300');
+          }
+        });
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Select Your Role</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style data-purpose="custom-theme">
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+    }
+
+    /* Radial and Mesh Background Gradients */
+    .bg-cyber-radial {
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(29, 78, 216, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 15%, rgba(139, 92, 246, 0.18) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.75) 0%, #030712 100%);
+    }
+
+    /* Glowing Card Styles */
+    .card-selected-glow {
+      border: 1.5px solid #2563eb;
+      box-shadow: 0 0 25px -4px rgba(37, 99, 235, 0.5), inset 0 0 15px -2px rgba(37, 99, 235, 0.2);
+    }
+    
+    .card-normal {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(13, 19, 33, 0.75);
+      backdrop-filter: blur(12px);
+    }
+
+    .card-normal:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Subtle custom scrollbar if needed */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-[#040814] text-slate-100 min-h-screen relative overflow-x-hidden select-none bg-cyber-radial">
+<!-- BEGIN: Constellation & Cyber Map Background Overlay -->
+<div class="absolute inset-0 pointer-events-none opacity-40 z-0 overflow-hidden">
+<!-- Top Right Node Graphic Simulator -->
+<svg class="absolute top-0 right-0 w-[550px] h-[450px]" fill="none" viewbox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+<circle cx="420" cy="80" fill="#a855f7" r="4"></circle>
+<circle cx="360" cy="140" fill="#3b82f6" r="5"></circle>
+<circle cx="480" cy="170" fill="#ec4899" r="3"></circle>
+<circle cx="390" cy="220" fill="#6366f1" r="4"></circle>
+<line stroke="#8b5cf6" stroke-dasharray="3 3" stroke-width="0.75" x1="420" x2="360" y1="80" y2="140"></line>
+<line stroke="#3b82f6" stroke-width="0.75" x1="360" x2="480" y1="140" y2="170"></line>
+<line stroke="#818cf8" stroke-width="0.75" x1="360" x2="390" y1="140" y2="220"></line>
+<circle cx="360" cy="140" opacity="0.4" r="16" stroke="#3b82f6" stroke-width="0.5"></circle>
+<circle cx="420" cy="80" opacity="0.3" r="22" stroke="#a855f7" stroke-width="0.5"></circle>
+</svg>
+</div>
+<!-- END: Constellation & Cyber Map Background Overlay -->
+<!-- BEGIN: MainContainer -->
+<div class="relative z-10 flex flex-col min-h-screen px-6 py-4 lg:px-10 lg:py-6 max-w-[1750px] mx-auto justify-between">
+<!-- BEGIN: TopHeader -->
+<header class="flex items-center justify-between pb-4 border-b border-white/5">
+<!-- Left: Logo & National Emblem -->
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-full bg-gradient-to-tr from-amber-600/30 to-amber-300/10 border border-amber-500/30 flex items-center justify-center p-1.5 shadow-lg shadow-amber-950/20">
+<!-- Police Crest / Emblem representation -->
+<i class="fa-solid fa-shield-halved text-amber-400 text-xl"></i>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
+            Case Connect <span class="text-blue-500">AI</span>
+</h1>
+<p class="text-[11px] text-slate-400 tracking-wide font-normal">
+            AI-Powered Criminal Network Analysis System
+          </p>
+</div>
+</div>
+<!-- Right: Action Buttons -->
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-300 bg-slate-900/80 border border-slate-700/60 hover:bg-slate-800/80 transition-all hover:text-white" type="button">
+<i class="fa-regular fa-circle-question text-slate-400"></i>
+<span>Need Help?</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-300 bg-slate-900/80 border border-slate-700/60 hover:bg-slate-800/80 transition-all hover:text-white" type="button">
+<i class="fa-solid fa-arrow-right-from-bracket text-slate-400"></i>
+<span>Logout</span>
+</button>
+</div>
+</header>
+<!-- END: TopHeader -->
+<!-- BEGIN: ContentArea -->
+<div class="grid grid-cols-12 gap-8 my-auto py-6">
+<!-- BEGIN: LeftStepperColumn -->
+<aside class="col-span-12 lg:col-span-3 flex flex-col justify-between relative rounded-2xl overflow-hidden p-6 border border-white/5 bg-slate-950/40 min-h-[580px]">
+<!-- Background Scene: Police vehicle with city night lights -->
+<div class="absolute inset-0 z-0">
+<img alt="Police precinct and vehicle backdrop" class="w-full h-full object-cover object-left opacity-20 filter contrast-125 brightness-75" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3oEEn2L0kDs79T4KXfPY4srwLFBiu3ELTfMs-W67MVWUYDXUbBV34M36mOI7wbBbK_XmBomM9GlarUl0al-EYtpODhWNeUqRqJnYdlLsu5K4hjsKtvaUJdufzXRaN51vgS8i6RQtb6V_ZRCNEKX1AKR-mnClyOPyttmxKFuIsShHLEvH_RuDDof654YxTwi7MsICD1PPzvrLJS8pkBSkPskghChZ5pMnBqeIkRyfXmbHSDubTygQv"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#040814] via-[#040814]/80 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-transparent to-[#040814]"></div>
+<!-- Vehicle red-blue flasher glow simulation -->
+<div class="absolute bottom-16 left-6 w-16 h-3 bg-red-600/70 blur-md rounded-full"></div>
+<div class="absolute bottom-16 left-24 w-16 h-3 bg-blue-600/70 blur-md rounded-full"></div>
+</div>
+<!-- Stepper Navigation -->
+<div class="relative z-10 space-y-7">
+<!-- Step 1: Active -->
+<div class="flex items-start gap-4">
+<div class="relative flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-[0_0_12px_rgba(37,99,235,0.7)] ring-2 ring-blue-400/40">
+                1
+              </div>
+<div class="w-[2px] h-10 bg-slate-700/60 mt-2"></div>
+</div>
+<div class="pt-1">
+<h3 class="text-sm font-semibold text-white tracking-wide">Select Role</h3>
+<p class="text-xs text-blue-400/90 mt-0.5 font-normal">Choose your role to access features</p>
+</div>
+</div>
+<!-- Step 2: Pending -->
+<div class="flex items-start gap-4">
+<div class="relative flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-400 flex items-center justify-center font-medium text-xs">
+                2
+              </div>
+<div class="w-[2px] h-10 bg-slate-700/60 mt-2"></div>
+</div>
+<div class="pt-1">
+<h3 class="text-sm font-medium text-slate-300 tracking-wide">Verify Access</h3>
+<p class="text-xs text-slate-400 mt-0.5">Authentication check</p>
+</div>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex items-start gap-4">
+<div class="w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-400 flex items-center justify-center font-medium text-xs">
+              3
+            </div>
+<div class="pt-1">
+<h3 class="text-sm font-medium text-slate-300 tracking-wide">Go to Dashboard</h3>
+<p class="text-xs text-slate-400 mt-0.5">Start your investigation</p>
+</div>
+</div>
+</div>
+<!-- Silhouette watermark text badge at the bottom of left panel -->
+<div class="relative z-10 pt-16">
+<div class="text-[28px] font-extrabold tracking-widest text-slate-700/20 select-none uppercase">
+            POLICE
+          </div>
+</div>
+</aside>
+<!-- END: LeftStepperColumn -->
+<!-- BEGIN: RoleCardsSection -->
+<main class="col-span-12 lg:col-span-9 flex flex-col justify-center">
+<!-- Title & Subtitle -->
+<div class="text-center mb-7">
+<h2 class="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            Select <span class="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Your Role</span>
+</h2>
+<p class="text-sm text-slate-400 mt-1.5 font-normal">
+            Access the features and data based on your responsibility
+          </p>
+</div>
+<!-- 3 Horizontal Role Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<!-- Card 1: Investigator (SELECTED) -->
+<div class="card-selected-glow bg-[#0b1329]/95 rounded-2xl overflow-hidden flex flex-col transition-all relative">
+<!-- Header Image -->
+<div class="relative h-44 w-full overflow-hidden bg-slate-900">
+<img alt="Investigator analyzing data" class="w-full h-full object-cover object-top opacity-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwfCj8uB1dwMMGLTVKsuJbICj0BLac0JbqE6-Ce96wBSuOnBeqrjKhdFaTSfl1REUuEHCr7GqmNQCIo8nTLTCoRQyv5NuPWxo8SeH-S863HB9aGorWpUfg8OWpa7jYXAorzSR_YpfJ3yK5-0vHiLzxcY12ni3SklGcPFeUWHiz47WUzrC6DPoTsUL1Yoay7x3eQOEEgGBvllY1S6nxm_OnpJvNXNZvW-WYjP_DQbL-aKCLMczHuWk-"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0b1329] via-[#0b1329]/40 to-transparent"></div>
+<!-- Center Round Badge Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 ring-4 ring-[#0b1329]">
+<i class="fa-solid fa-magnifying-glass text-sm"></i>
+</div>
+</div>
+<!-- Card Content -->
+<div class="p-5 pt-8 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-lg font-bold text-center text-white">Investigator</h3>
+<p class="text-[12px] text-center text-slate-300/80 mt-1.5 leading-relaxed min-h-[36px]">
+                  View and analyse cases, upload evidence, explore networks and generate leads.
+                </p>
+<!-- Features Checklist -->
+<div class="mt-4 p-3 rounded-xl bg-slate-900/60 border border-blue-900/30 space-y-2">
+<div class="flex items-center gap-2.5 text-xs text-slate-200">
+<span class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Create and manage cases</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-200">
+<span class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Upload and analyse evidence</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-200">
+<span class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Explore investigation graph</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-200">
+<span class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>View money trail and leads</span>
+</div>
+</div>
+</div>
+<!-- Button -->
+<div class="mt-5">
+<button class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/40 flex items-center justify-center gap-1.5 transition-all" type="button">
+<span>Selected</span>
+<i class="fa-solid fa-check text-xs"></i>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Supervisor -->
+<div class="card-normal rounded-2xl overflow-hidden flex flex-col transition-all">
+<!-- Header Image -->
+<div class="relative h-44 w-full overflow-hidden bg-slate-900">
+<img alt="Supervisor reviewing investigations" class="w-full h-full object-cover object-top opacity-80 filter brightness-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA91VSjJ7w6vziPIJfcj9Tiu8YEQjHgPLClTW3R6UEgX9DpAQf7JF-1cYBY0AJAyRVwdAHIqSBPjMGZdLqC-1toCoDimHWnoUe2fj6FrF8DPORC1ZXeoGuO2lCDjultguCRHrENOVJ-Xei-zjSHsGHzvOc19eLjRwwxXVnYSAlx695d8UNPO2NsEvdIrTlhMgtRqfm6O36nabgQj3YIzg2m6wIUHP5vJLy9XWTB_pXLks3r4j3-VkS"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0e1628] via-[#0e1628]/40 to-transparent"></div>
+<!-- Center Round Badge Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/30 ring-4 ring-[#0e1628]">
+<i class="fa-solid fa-users text-sm"></i>
+</div>
+</div>
+<!-- Card Content -->
+<div class="p-5 pt-8 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-lg font-bold text-center text-white">Supervisor</h3>
+<p class="text-[12px] text-center text-slate-400 mt-1.5 leading-relaxed min-h-[36px]">
+                  Review, approve and monitor investigations. Ensure data quality and team performance.
+                </p>
+<!-- Features Checklist -->
+<div class="mt-4 p-3 rounded-xl bg-slate-900/40 border border-purple-900/20 space-y-2">
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Review and approve cases</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Monitor team investigations</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Manage cross-FIR links</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Generate and share reports</span>
+</div>
+</div>
+</div>
+<!-- Button -->
+<div class="mt-5">
+<button class="w-full py-2.5 px-4 rounded-xl font-medium text-xs text-slate-300 bg-slate-900/80 border border-slate-700/60 hover:bg-slate-800 hover:text-white transition-all text-center" type="button">
+                  Select Role
+                </button>
+</div>
+</div>
+</div>
+<!-- Card 3: Admin -->
+<div class="card-normal rounded-2xl overflow-hidden flex flex-col transition-all">
+<!-- Header Image -->
+<div class="relative h-44 w-full overflow-hidden bg-slate-900">
+<img alt="System Administrator" class="w-full h-full object-cover object-center opacity-80 filter brightness-90 contrast-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_m2ll1nnz4SFaUIogRMrXCfGrBJQ3nZgT9l5nYYDoAMQq80uf1-XGLi-yqqfo-Q0-wWTXzasI_J3Jm8eO-mXl7eFtdUUHeCEEX4S8VeTKVYKlTh8AvooLv5nBmyKgH51o7N4_acBMa9Phf3R3MXNWDBAQd_ZVw_JkNYV4RQLlRJ5ipo_BFCp1F7JAU2Duf2G5Ax7aDhGW05qDMvyNwTgjX5CABOiBa4dVw4My8zJNrtq_SVpQ7jE1"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0e1628] via-[#0e1628]/40 to-transparent"></div>
+<!-- Center Round Badge Icon -->
+<div class="absolute -bottom-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 ring-4 ring-[#0e1628]">
+<i class="fa-solid fa-gear text-sm"></i>
+</div>
+</div>
+<!-- Card Content -->
+<div class="p-5 pt-8 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-lg font-bold text-center text-white">Admin</h3>
+<p class="text-[12px] text-center text-slate-400 mt-1.5 leading-relaxed min-h-[36px]">
+                  Manage users, data, system settings and overall platform configuration.
+                </p>
+<!-- Features Checklist -->
+<div class="mt-4 p-3 rounded-xl bg-slate-900/40 border border-emerald-900/20 space-y-2">
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>User and role management</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>Data source configuration</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>System settings and security</span>
+</div>
+<div class="flex items-center gap-2.5 text-xs text-slate-300">
+<span class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-[10px] text-white shrink-0">
+<i class="fa-solid fa-check"></i>
+</span>
+<span>View audit logs</span>
+</div>
+</div>
+</div>
+<!-- Button -->
+<div class="mt-5">
+<button class="w-full py-2.5 px-4 rounded-xl font-medium text-xs text-slate-300 bg-slate-900/80 border border-slate-700/60 hover:bg-slate-800 hover:text-white transition-all text-center" type="button">
+                  Select Role
+                </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: RoleCardsSection -->
+</div>
+<!-- END: ContentArea -->
+<!-- BEGIN: BottomInfoBanner -->
+<footer class="mt-2 bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-xl px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+<!-- Left Info Message -->
+<div class="flex items-center gap-3 text-slate-400">
+<div class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+<i class="fa-solid fa-info text-[11px]"></i>
+</div>
+<p class="leading-tight">
+          Your role determines what data you can access and what actions you can perform. 
+          <span class="text-slate-500 hidden md:inline">All activities are logged for security and audit purposes.</span>
+</p>
+</div>
+<!-- Right Trust Badge -->
+<div class="flex items-center gap-2 text-slate-400 shrink-0">
+<i class="fa-solid fa-shield text-blue-500 text-xs"></i>
+<span class="text-slate-400 font-medium">Secure</span>
+<span class="text-slate-600">|</span>
+<span class="text-slate-400 font-medium">Trusted</span>
+<span class="text-slate-600">|</span>
+<span class="text-slate-300 font-semibold tracking-wide">For a Safer India</span>
+</div>
+</footer>
+<!-- END: BottomInfoBanner -->
+</div>
+<!-- END: MainContainer -->
+</body></html>

@@ -1,0 +1,25 @@
+# Regex Patterns for Parsing Bank Statement Narrations
+# Matches extract counterparty account, VPA handle, or counterparty name from unstructured transaction remarks.
+
+patterns:
+  - name: upi_standard
+    type: upi
+    regex: "(?i)UPI/(?P<ref>\\d{12})/(?P<name>[^/]+)/(?P<vpa>[a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+)"
+  - name: upi_vpa_simple
+    type: upi
+    regex: "(?i)UPI/(?P<vpa>[a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+)/(?P<ref>\\d{12})"
+  - name: neft_standard
+    type: neft
+    regex: "(?i)NEFT-(?P<ref>[A-Z0-9]+)-(?P<name>[^-]+)-(?P<account>[A-Z0-9]+)"
+  - name: imps_standard
+    type: imps
+    regex: "(?i)IMPS/(?P<ref>\\d+)/(?P<name>[^/]+)/(?P<account>[A-Z0-9]+)"
+  - name: imps_short
+    type: imps
+    regex: "(?i)IMPS/(?P<ref>\\d+)/(?P<name>[^/]+)"
+  - name: rtgs_standard
+    type: rtgs
+    regex: "(?i)RTGS/(?P<ref>[A-Z0-9]+)/(?P<name>[^/]+)/(?P<account>[A-Z0-9]+)"
+  - name: cash_atm_unlinked
+    type: cash_atm
+    regex: "(?i)(ATM WDL|CASH WDL|ATM-WDL|CASH DEP|POS |BY CASH|TO CASH)"

@@ -1,0 +1,80 @@
+# Case Connect AI — Investigative Pattern Library for Lead Advisor
+# Defines rule-based anomaly archetypes, required evidentiary data, and legal next steps.
+
+patterns:
+  - id: mule_account_network
+    name: "Mule Account Network"
+    description: "Funds rapidly pooled from multiple sources and immediately forwarded to intermediate or shell accounts."
+    signals_required:
+      - "fan_in"
+      - "rapid_pass_through"
+    required_data:
+      - "Full KYC documents of beneficiary account"
+      - "30-day transactional bank statement"
+      - "IP access logs for internet banking sessions"
+    suggested_next_steps:
+      - "Submit formal Section 91 CrPC notice to bank requesting beneficiary KYC details."
+      - "Request bank freeze on remaining funds in primary collection accounts."
+      - "Trace destination accounts through FIU-IND reporting portal."
+
+  - id: communication_ring
+    name: "Organised Communication Bridge"
+    description: "An entity with high betweenness centrality bridging two disconnected operational sub-groups."
+    signals_required:
+      - "bridge"
+      - "unusual_communication"
+    required_data:
+      - "Subscriber Detail Record (SDR) with customer acquisition form (CAF)"
+      - "Cell Tower Dump corresponding to crime incident timestamp"
+      - "IMEI / Handset history records"
+    suggested_next_steps:
+      - "Requisition SDR and CAF from telecom service provider."
+      - "Cross-reference handset IMEI with CEIR database for active SIM swaps."
+      - "Review timeline of calls relative to earliest complaint date."
+
+  - id: new_sim_spike
+    name: "Burner SIM Activation & Surge"
+    description: "A newly activated SIM card showing anomalous call surges immediately preceding crime events."
+    signals_required:
+      - "sudden_spike"
+      - "sudden_new_connection"
+    required_data:
+      - "Point of sale (POS) SIM retailer details"
+      - "Tower location tracking for peak call dates"
+    suggested_next_steps:
+      - "Investigate retail agent who issued the SIM card."
+      - "Analyze geo-location movements around peak call days."
+
+  - id: hawala_layering_network
+    name: "Hawala & Angadia Cash Pooling Syndicate"
+    description: "Funds systematically collected via mule accounts, layered through shell companies, and settled via cash courier vehicles and secret Hawala token parchis."
+    signals_required:
+      - "fan_in"
+      - "rapid_pass_through"
+      - "money_flow"
+    required_data:
+      - "Substantiated Angadia token / currency serial numbers (Parchi)"
+      - "Cash withdrawal ledger and RTGS outward clearing logs"
+      - "ANPR toll transit logs matching cash carrier vehicles"
+      - "CDR co-location at bullion/Angadia trading hubs"
+    suggested_next_steps:
+      - "Execute immediate search and seizure at Angadia commercial hubs under PMLA 2002."
+      - "Interrogate courier drivers with seized vehicle GPS logs and token slips."
+      - "Issue formal debit freeze order on shell pass-through accounts under Section 102 CrPC / BNSS."
+      - "Liaise with Enforcement Directorate (ED) and FIU-IND for international Hawala remitter linkage."
+
+  - id: vehicle_courier_nexus
+    name: "Cash Courier & ANPR Vehicle Movement Nexus"
+    description: "Suspect vehicle sighted repeatedly traversing toll corridors between money collection points and cash distribution hubs in coordination with telephonic wiretaps."
+    signals_required:
+      - "bridge"
+      - "timing"
+    required_data:
+      - "Vahan portal registration & chassis validation"
+      - "FASTag toll transaction timestamps and plaza CCTV footage"
+      - "Mobile CDR tower alignment with toll passage timestamps"
+    suggested_next_steps:
+      - "Impound suspect courier vehicle under Section 106 BNSS / Motor Vehicles Act."
+      - "Extract onboard infotainment GPS data and dashcam storage."
+      - "Confront driver with ANPR toll crossing timestamps and wiretapped audio records."
+

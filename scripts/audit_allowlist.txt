@@ -1,0 +1,3 @@
+# Audit allowlist file for Case Connect AI
+# Format: <relative_path>:<line_number_or_pattern> # Reason
+# Exemption requires a written reason explaining why it is safe.
