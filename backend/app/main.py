@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from backend.app.config import settings
-from backend.app.db.sql import get_db
+from backend.app.db.sql import Base, engine, SessionLocal, User, get_db
 from backend.app.db.neo4j import check_neo4j_health
 
 app = FastAPI(
@@ -32,20 +32,45 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;"
     return response
 
-# Strict CORS configuration
+# Strict CORS configuration supporting Local, Docker and Cloud Deployments
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://localhost:80",
+    "http://localhost",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com|https://.*\.railway\.app|http://localhost:.*|http://127\.0\.0\.1:.*",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+def on_startup_lifecycle():
+    """Ensure database tables and initial officer credentials exist automatically."""
+    try:
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            from scripts.seed_users import hash_password
+            users_to_seed = [
+                ("admin", "admin", "AdminPass1234!"),
+                ("investigator1", "investigator", "OfficerPass1234!"),
+                ("viewer1", "viewer", "ViewerPass1234!")
+            ]
+            for uname, urole, upass in users_to_seed:
+                if not db.query(User).filter(User.username == uname).first():
+                    db.add(User(username=uname, role=urole, password_hash=hash_password(upass), is_active=True))
+            db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[STARTUP WARNING] DB init/seed exception: {e}")
 
 @app.get("/")
 def read_root():

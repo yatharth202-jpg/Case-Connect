@@ -1,12 +1,13 @@
 version: '3.8'
 
 services:
+  # 1. Neo4j Graph Database
   neo4j:
     image: neo4j:5-community
     container_name: case_connect_neo4j
     restart: unless-stopped
     ports:
-      - "7474:7474" # HTTP Browser
+      - "7474:7474" # Neo4j Browser UI
       - "7687:7687" # Bolt Protocol
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-caseconnect2026}
@@ -17,7 +18,58 @@ services:
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+    networks:
+      - case_connect_net
+
+  # 2. FastAPI Backend & Forensic Engine
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: case_connect_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - DEBUG=False
+      - DATABASE_URL=sqlite:///./app.db
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-caseconnect2026}
+      - JWT_SECRET=${JWT_SECRET:-supersecret-case-connect-jwt-key-2026-sih}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_HOURS=8
+      - UPLOAD_DIR=./uploads
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=gemini-3.5-flash
+    volumes:
+      - ./app.db:/app/app.db
+      - ./uploads:/app/uploads
+    depends_on:
+      - neo4j
+    networks:
+      - case_connect_net
+
+  # 3. React Frontend & Visual Intelligence Suite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: case_connect_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - case_connect_net
 
 volumes:
   neo4j_data:
   neo4j_logs:
+
+networks:
+  case_connect_net:
+    driver: bridge
