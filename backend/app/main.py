@@ -72,8 +72,15 @@ def on_startup_lifecycle():
     except Exception as e:
         print(f"[STARTUP WARNING] DB init/seed exception: {e}")
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
 @app.get("/")
 def read_root():
+    if frontend_dist.exists() and (frontend_dist / "index.html").exists():
+        return FileResponse(str(frontend_dist / "index.html"))
     return {
         "project": "Case Connect AI",
         "description": "Crime Network Analysis System",
@@ -123,18 +130,46 @@ from backend.app.services.analytics.router import router as analytics_router
 from backend.app.services.matching.router import router as matching_router
 from backend.app.services.ai.router import router as ai_router
 
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-app.include_router(cases_router, prefix="/cases", tags=["Cases"])
-app.include_router(evidence_router, tags=["Evidence"])
-app.include_router(audit_router, prefix="/audit", tags=["Audit"])
-app.include_router(ingestion_router, tags=["Ingestion"])
-app.include_router(graph_router, tags=["Graph"])
-app.include_router(money_router, tags=["Money Trail"])
-app.include_router(extraction_router, tags=["Document Extraction"])
-app.include_router(reports_router, tags=["Reports & Dossier"])
-app.include_router(analytics_router, tags=["Analytics & Lead Advisor"])
-app.include_router(matching_router, tags=["Entity Matching & Master Profiles"])
-app.include_router(ai_router, tags=["AI & Gemini Copilot"])
+feature_routers = [
+    (auth_router, "/auth", ["Auth"]),
+    (cases_router, "/cases", ["Cases"]),
+    (evidence_router, "", ["Evidence"]),
+    (audit_router, "/audit", ["Audit"]),
+    (ingestion_router, "", ["Ingestion"]),
+    (graph_router, "", ["Graph"]),
+    (money_router, "", ["Money Trail"]),
+    (extraction_router, "", ["Document Extraction"]),
+    (reports_router, "", ["Reports & Dossier"]),
+    (analytics_router, "", ["Analytics & Lead Advisor"]),
+    (matching_router, "", ["Entity Matching & Master Profiles"]),
+    (ai_router, "", ["AI & Gemini Copilot"]),
+]
+
+for rtr, pfx, tags in feature_routers:
+    app.include_router(rtr, prefix=pfx, tags=tags)
+    api_pfx = f"/api{pfx}" if pfx else "/api"
+    app.include_router(rtr, prefix=api_pfx, tags=[f"API - {tags[0]}"])
+
+# Unified Frontend SPA Serving for Render/Production Single-Service Deployments
+if frontend_dist.exists() and (frontend_dist / "index.html").exists():
+    assets_dir = frontend_dist / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa_frontend(full_path: str):
+        if (
+            full_path.startswith("api/") or
+            full_path.startswith("docs") or
+            full_path.startswith("openapi.json") or
+            full_path.startswith("health")
+        ):
+            return Response(status_code=404)
+        target = frontend_dist / full_path
+        if target.exists() and target.is_file():
+            return FileResponse(str(target))
+        return FileResponse(str(frontend_dist / "index.html"))
+
 
 
 
