@@ -38,6 +38,13 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
+  const quickLogin = async (role = 'investigator') => {
+    const data = await authApi.quickLogin(role);
+    setToken(data.access_token);
+    setUser(data.user);
+    return data.user;
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -62,6 +69,7 @@ export const AuthProvider = ({ children }) => {
         isViewer: user?.role === 'viewer',
         loading,
         login,
+        quickLogin,
         logout,
       }}
     >

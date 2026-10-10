@@ -39,6 +39,14 @@ export const authApi = {
     }
     return res.data;
   },
+  quickLogin: async (role = 'investigator') => {
+    const res = await api.post('/auth/quick-login', { role });
+    if (res.data.access_token) {
+      sessionStorage.setItem('case_connect_token', res.data.access_token);
+      sessionStorage.setItem('case_connect_user', JSON.stringify(res.data.user));
+    }
+    return res.data;
+  },
   getMe: async () => {
     const res = await api.get('/auth/me');
     return res.data;
