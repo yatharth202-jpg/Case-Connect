@@ -15,29 +15,7 @@ Case Connect AI is an enterprise-grade forensic investigation platform engineere
 - Docker Desktop (or Neo4j Community Server 5.x)
 - Git
 
-```bash
-# 1. Clone repository
-git clone https://github.com/unitx/case-connect-ai.git
-cd case-connect-ai
 
-# 2. Run system preflight validator
-python scripts/preflight.py
-
-# 3. Setup backend environment and install dependencies
-python -m venv .venv
-.venv\Scripts\activate  # Linux/macOS: source .venv/bin/activate
-pip install -r backend/requirements.txt
-
-# 4. Setup frontend dependencies
-cd frontend && npm install && cd ..
-
-# 5. Initialize database, seed schema & test accounts
-python scripts/reset_db.py --force
-python scripts/seed_users.py
-
-# 6. Launch platform servers (FastAPI backend + Vite frontend)
-python scripts/start.py
-```
 
 Open browser to **`http://localhost:5173`**  
 - **Admin**: `admin` / `AdminPass1234!`
