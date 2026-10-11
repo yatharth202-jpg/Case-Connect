@@ -110,20 +110,8 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
     );
 
     try {
-      setTimeout(() => {
-        setProgress(35);
-        setCurrentStep('Running optical character recognition & multi-modal text extraction...');
-      }, 400);
-
-      setTimeout(() => {
-        setProgress(65);
-        setCurrentStep('Extracting named entities, telecom records & financial transactions...');
-      }, 800);
-
-      setTimeout(() => {
-        setProgress(85);
-        setCurrentStep('Correlating multi-source graph topology & re-evaluating network hierarchy...');
-      }, 1200);
+      setProgress(40);
+      setCurrentStep('Correlating multi-source graph topology & extracting entities...');
 
       const result = await dynamicAnalysisApi.analyseFile(
         file,
@@ -167,7 +155,7 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
     setError('');
     setSuccessToast('');
     setAnalyzing(true);
-    setProgress(25);
+    setProgress(35);
     setCurrentStep(
       targetCaseId
         ? 'Appending narrative & cross-referencing existing case nodes...'
@@ -175,15 +163,8 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
     );
 
     try {
-      setTimeout(() => {
-        setProgress(60);
-        setCurrentStep('Extracting named accused, phones, bank accounts & vehicles...');
-      }, 500);
-
-      setTimeout(() => {
-        setProgress(85);
-        setCurrentStep('Building directed multi-layer graph & running PageRank centrality...');
-      }, 1000);
+      setProgress(60);
+      setCurrentStep('Extracting named entities, telecom links & building network topology...');
 
       const result = await dynamicAnalysisApi.analyseText(
         textToSubmit,

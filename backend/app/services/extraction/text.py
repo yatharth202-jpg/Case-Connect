@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import pdfplumber
 import docx
 
@@ -41,11 +41,14 @@ def run_rapid_ocr(img_input) -> str:
     except Exception:
         return ""
 
+_DOC_TEXT_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
 def read_document_text(file_path: str) -> Dict[str, Any]:
     """
     Extracts text from PDF, DOCX, TXT narrative documents, or image photos (JPG/PNG).
     Preserves page numbers (PDF) or paragraph indices (DOCX/TXT).
     Performs OCR for scanned PDFs and image files via RapidOCR.
+    Cached in-memory by file mtime for instant document text retrieval.
     """
     p = Path(file_path)
     if not p.exists():
@@ -55,6 +58,16 @@ def read_document_text(file_path: str) -> Dict[str, Any]:
             "warning": None,
             "error": f"File not found: {file_path}"
         }
+
+    mtime = 0.0
+    try:
+        mtime = p.stat().st_mtime
+        if file_path in _DOC_TEXT_CACHE:
+            cached_mtime, cached_res = _DOC_TEXT_CACHE[file_path]
+            if cached_mtime == mtime:
+                return cached_res
+    except Exception:
+        pass
 
     ext = p.suffix.lower()
     pages_data: List[Dict[str, Any]] = []
@@ -207,9 +220,12 @@ def read_document_text(file_path: str) -> Dict[str, Any]:
     if DEVANAGARI_REGEX.search(full_text):
         warning = "partially supported: Devanagari text ignored"
 
-    return {
+    res = {
         "pages": pages_data,
         "full_text": full_text,
         "warning": warning,
         "error": None
     }
+    if mtime > 0:
+        _DOC_TEXT_CACHE[file_path] = (mtime, res)
+    return res

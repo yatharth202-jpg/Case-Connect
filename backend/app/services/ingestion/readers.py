@@ -11,16 +11,27 @@ CONFIG_DIR = Path(__file__).resolve().parents[3] / "config"
 if not CONFIG_DIR.exists():
     CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
+_SYNONYMS_CACHE: Optional[Dict[str, Dict[str, List[str]]]] = None
+_FLAT_SYNONYMS_CACHE: Optional[set] = None
+
 def load_column_synonyms() -> Dict[str, Dict[str, List[str]]]:
-    """Load column synonyms dictionary from yaml."""
+    """Load column synonyms dictionary from yaml (cached in-memory)."""
+    global _SYNONYMS_CACHE
+    if _SYNONYMS_CACHE is not None:
+        return _SYNONYMS_CACHE
     syn_file = CONFIG_DIR / "column_synonyms.yaml"
     if syn_file.exists():
         with open(syn_file, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-    return {}
+            _SYNONYMS_CACHE = yaml.safe_load(f) or {}
+            return _SYNONYMS_CACHE
+    _SYNONYMS_CACHE = {}
+    return _SYNONYMS_CACHE
 
 def get_all_synonyms_flat() -> set:
-    """Return flat set of all known synonym tokens for fast header scanning."""
+    """Return flat set of all known synonym tokens for fast header scanning (cached)."""
+    global _FLAT_SYNONYMS_CACHE
+    if _FLAT_SYNONYMS_CACHE is not None:
+        return _FLAT_SYNONYMS_CACHE
     syn_dict = load_column_synonyms()
     flat = set()
     for category in syn_dict.values():
@@ -29,7 +40,8 @@ def get_all_synonyms_flat() -> set:
                 if isinstance(synonyms, list):
                     for s in synonyms:
                         flat.add(re.sub(r"[^\w]+", "_", str(s).strip().lower()).strip("_"))
-    return flat
+    _FLAT_SYNONYMS_CACHE = flat
+    return _FLAT_SYNONYMS_CACHE
 
 def detect_header_row(rows: List[List[Any]]) -> Tuple[int, List[str], List[str]]:
     """

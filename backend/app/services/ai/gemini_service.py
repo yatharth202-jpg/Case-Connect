@@ -1,5 +1,6 @@
 import json
 import logging
+import hashlib
 from typing import Dict, Any, List, Optional
 import httpx
 from backend.app.config import settings
@@ -7,6 +8,7 @@ from backend.app.config import settings
 logger = logging.getLogger(__name__)
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+_GEMINI_CACHE: Dict[str, str] = {}
 
 def is_gemini_configured() -> bool:
     """Returns True if a valid GEMINI_API_KEY is configured in settings or environment."""
@@ -89,18 +91,23 @@ def call_gemini_sync(
     prompt: str,
     system_prompt: Optional[str] = None,
     json_mode: bool = False,
-    timeout_seconds: float = 6.0
+    timeout_seconds: float = 3.5
 ) -> Optional[str]:
     """
     Direct synchronous HTTP execution to prevent event loop deadlocks.
     Fast failover between active Gemini models without lingering sleeps.
+    Results are cached in memory by hash of prompt + system_prompt.
     """
     api_key = settings.GEMINI_API_KEY
     if not api_key or not api_key.strip():
         return None
 
+    cache_key = hashlib.sha256(f"{prompt}|{system_prompt or ''}".encode("utf-8")).hexdigest()
+    if cache_key in _GEMINI_CACHE:
+        return _GEMINI_CACHE[cache_key]
+
     configured_model = getattr(settings, "GEMINI_MODEL", "gemini-2.0-flash") or "gemini-2.0-flash"
-    models_to_try = list(dict.fromkeys([configured_model] + ACTIVE_MODELS))
+    models_to_try = list(dict.fromkeys([configured_model, "gemini-2.0-flash", "gemini-1.5-flash"]))[:2]
 
     contents = []
     if system_prompt:
@@ -134,11 +141,17 @@ def call_gemini_sync(
                         if candidates:
                             parts = candidates[0].get("content", {}).get("parts", [])
                             if parts:
-                                return parts[0].get("text", "").strip()
+                                out_text = parts[0].get("text", "").strip()
+                                _GEMINI_CACHE[cache_key] = out_text
+                                return out_text
+                    elif resp.status_code in [400, 401, 403]:
+                        # Invalid key or bad request: abort immediately, do not retry other models
+                        return None
                     elif resp.status_code in [404, 429]:
                         continue
                 except (httpx.TimeoutException, httpx.RequestError):
-                    continue
+                    # Network offline or timeout: abort immediately to keep pipeline responsive
+                    return None
         return None
     except Exception as e:
         logger.error(f"Exception during Gemini sync call: {e}")
@@ -244,33 +257,9 @@ Write a professional forensic synthesis."""
 
 async def generate_case_modus_operandi(case_context: Dict[str, Any]) -> str:
     """
-    Async wrapper for legacy callers.
+    Async wrapper for callers.
     """
     return generate_case_modus_operandi_sync(case_context)
-
-
-    system_instruction = (
-        "You are a Senior Digital Forensics & Financial Intelligence Analyst. "
-        "Review the evidence facts for this case and generate a concise, court-ready, "
-        "Section 63 BSA 2023 compliant Modus Operandi & Crime Nexus Brief. "
-        "Be factual, precise, cite specific entity IDs, amounts, and dates where available. "
-        "Structure with: 1. Executive Summary, 2. Financial Layering & Flow, "
-        "3. Telecommunication Coordination, 4. Prime Suspect Attribution."
-    )
-
-    prompt = f"""Case Facts and Forensic Correlation Overview:
-Case Title: {case_context.get('title')}
-Total Money Volume: {case_context.get('total_money_volume', 'N/A')}
-Total Transactions: {case_context.get('total_txns', 0)}
-Total Calls Ingested: {case_context.get('total_calls', 0)}
-Tracked Vehicles: {case_context.get('vehicles', [])}
-Top Scored Target Leads: {case_context.get('leads', [])}
-Algorithmic Pattern Alerts: {case_context.get('alerts', [])}
-
-Write a professional forensic synthesis."""
-
-    res = await call_gemini_api(prompt, system_prompt=system_instruction)
-    return res or "Unable to generate AI narrative at this time."
 
 
 async def answer_investigation_copilot_query(query: str, case_context: Dict[str, Any]) -> str:

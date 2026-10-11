@@ -149,7 +149,7 @@ def get_spacy_nlp():
     if _nlp is None:
         try:
             import spacy
-            _nlp = spacy.load("en_core_web_sm")
+            _nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger", "lemmatizer"])
         except Exception:
             _nlp = False
     return _nlp if _nlp is not False else None

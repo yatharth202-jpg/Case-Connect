@@ -236,7 +236,16 @@ def process_dynamic_file_analysis(
     elif ext in [".csv", ".xlsx"]:
         # Tabular Ingestion (Bank transactions or Telecom CDRs)
         try:
-            df = pd.read_csv(str(saved_path)) if ext == ".csv" else pd.read_excel(str(saved_path))
+            if ext == ".csv":
+                try:
+                    df = pd.read_csv(str(saved_path), encoding="utf-8")
+                except Exception:
+                    try:
+                        df = pd.read_csv(str(saved_path), encoding="cp1252")
+                    except Exception:
+                        df = pd.read_csv(str(saved_path), encoding="latin-1")
+            else:
+                df = pd.read_excel(str(saved_path))
             df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
 
             # Detect Bank or CDR
