@@ -68,7 +68,8 @@ def normalize_amount(raw: Any) -> Optional[int]:
     """
     Parses currency amounts into integer PAISE using Decimal (NEVER float).
     1 Rupee = 100 Paise.
-    Handles Indian formatted numbers ('5,00,000.00'), accounting negatives ('(1,200)'), currency symbols.
+    Handles Indian formatted numbers ('5,00,000.00'), units ('38.5 lakh', '1.8 crore'),
+    accounting negatives ('(1,200)'), currency symbols (Rs., INR, ₹, /-).
     """
     if raw is None:
         return None
@@ -82,20 +83,31 @@ def normalize_amount(raw: Any) -> Optional[int]:
         is_negative = True
         s = s[1:-1].strip()
 
-    # Strip currency symbols and letters (Rs, INR, ₹)
-    s = re.sub(r"[₹$€£\s]|rs\.?|inr", "", s, flags=re.IGNORECASE)
-    # Remove commas
-    s = s.replace(",", "")
+    s_lower = s.lower()
 
-    # Check Dr / Cr indicator
-    if s.lower().endswith("cr"):
-        s = s[:-2].strip()
-    elif s.lower().endswith("dr"):
-        s = s[:-2].strip()
+    # Detect Indian financial multiplier units
+    multiplier = Decimal(1)
+    if "crore" in s_lower or " cr" in s_lower:
+        multiplier = Decimal(10000000)
+    elif "lakh" in s_lower or "lac" in s_lower:
+        multiplier = Decimal(100000)
+
+    # Check accounting Dr / Cr indicator if not a crore multiplier
+    if multiplier == Decimal(1) and s_lower.endswith("dr"):
         is_negative = True
 
+    # Strip currency words, symbols, and trailing slashes
+    s_cleaned = re.sub(r"[₹$€£\s]|rs\.?|inr|cash|rupees|lakh|lac|crore|cr|dr|\/-|\/", "", s, flags=re.IGNORECASE)
+    # Remove commas
+    s_cleaned = s_cleaned.replace(",", "")
+
+    # Extract first valid numeric float/int from the cleaned string
+    num_match = re.search(r"[-+]?\d*\.?\d+", s_cleaned)
+    if not num_match:
+        return None
+
     try:
-        d = Decimal(s)
+        d = Decimal(num_match.group(0)) * multiplier
         if is_negative:
             d = -abs(d)
         # Convert to paise

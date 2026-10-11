@@ -105,23 +105,35 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
     # 2. Officer & staged entity links
     links = db.query(EntityLink).filter(EntityLink.case_id == case_id).all()
     for link in links:
-        owner_key = f"{case_id}|Person|{link.source_entity_id}"
+        # Resolve source key across all entity labels
+        source_key = None
+        for candidate_label in ["Person", "Organization", "Phone", "BankAccount", "Vehicle", "FIR", "IP"]:
+            sk = f"{case_id}|{candidate_label}|{link.source_entity_id}"
+            if g.has_node(sk):
+                source_key = sk
+                break
+        if not source_key:
+            source_key = f"{case_id}|Person|{link.source_entity_id}"
+            g.add_node(source_key, case_id=case_id, label="Person", id=link.source_entity_id, name=link.source_entity_id, shared=False)
+
+        # Resolve target key across all entity labels
         target_key = None
-        for candidate_label in ["Phone", "BankAccount", "Vehicle", "Person"]:
+        for candidate_label in ["Phone", "BankAccount", "Vehicle", "Person", "Organization", "FIR", "IP"]:
             ck = f"{case_id}|{candidate_label}|{link.target_entity_id}"
             if g.has_node(ck):
                 target_key = ck
                 break
         if not target_key:
-            target_label = "Phone" if link.relationship_type == "USES" else ("Vehicle" if link.relationship_type == "DRIVES" else "BankAccount")
+            target_label = "Phone" if link.relationship_type == "USES" else (
+                "Vehicle" if link.relationship_type == "DRIVES" else (
+                    "FIR" if link.relationship_type == "MENTIONED_IN" else "BankAccount"
+                )
+            )
             target_key = f"{case_id}|{target_label}|{link.target_entity_id}"
             g.add_node(target_key, case_id=case_id, label=target_label, id=link.target_entity_id, name=link.target_entity_id, shared=False)
-        
-        if not g.has_node(owner_key):
-            g.add_node(owner_key, case_id=case_id, label="Person", id=link.source_entity_id, name=link.source_entity_id, shared=False)
-        
+
         g.add_edge(
-            owner_key, target_key,
+            source_key, target_key,
             key=f"link_{link.id}",
             type=link.relationship_type,
             method=link.method or "officer",

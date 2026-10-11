@@ -28,8 +28,13 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; "
+        "img-src 'self' data: blob: https:; "
+        "font-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https:; "
+        "connect-src 'self' ws: wss: https: http:;"
+    )
     return response
 
 # Strict CORS configuration supporting Local, Docker and Cloud Deployments
@@ -78,8 +83,10 @@ from fastapi.responses import FileResponse
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 @app.get("/")
-def read_root():
-    if frontend_dist.exists() and (frontend_dist / "index.html").exists():
+def read_root(request: Request):
+    accept = request.headers.get("accept", "")
+    is_browser = "text/html" in accept or request.headers.get("sec-fetch-dest") == "document"
+    if is_browser and frontend_dist.exists() and (frontend_dist / "index.html").exists():
         return FileResponse(str(frontend_dist / "index.html"))
     return {
         "project": "Case Connect AI",

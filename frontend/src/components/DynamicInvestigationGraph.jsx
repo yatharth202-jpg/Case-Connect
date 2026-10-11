@@ -72,6 +72,11 @@ export default function DynamicInvestigationGraph({
   useEffect(() => {
     if (!containerRef.current || !nodes || nodes.length === 0) return;
 
+    const nodeIds = new Set(nodes.map((n) => n.data?.id).filter(Boolean));
+    const validEdges = (edges || []).filter(
+      (e) => e.data?.source && e.data?.target && nodeIds.has(e.data.source) && nodeIds.has(e.data.target)
+    );
+
     const elements = [
       ...nodes.map((n) => {
         const isPrime = n.data?.id === primeSuspectId || n.data?.is_prime;
@@ -83,7 +88,7 @@ export default function DynamicInvestigationGraph({
             type: n.data.type || 'Entity',
             is_prime: isPrime,
             degree: n.data.degree || 1,
-            role: n.data.role || (isPrime ? 'Prime Suspect' : `${n.data.type || 'Entity'}`),
+            role: n.data.role || (isPrime ? 'Primary Focal Entity' : `${n.data.type || 'Entity'}`),
             risk_score: n.data.risk_score || (isPrime ? 95 : 50),
             threat_level: n.data.threat_level || (isPrime ? 'CRITICAL' : 'NORMAL'),
             rationale: n.data.rationale || [
@@ -92,7 +97,7 @@ export default function DynamicInvestigationGraph({
           }
         };
       }),
-      ...edges.map((e, idx) => ({
+      ...validEdges.map((e, idx) => ({
         group: 'edges',
         data: {
           id: e.data.id || `edge_${idx}`,
@@ -351,7 +356,7 @@ export default function DynamicInvestigationGraph({
         <div className="flex flex-wrap items-center gap-1.5 bg-[#080d1d]/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-[#1b2b48] shadow-lg pointer-events-auto">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono text-rose-300 bg-rose-950/70 border border-rose-800 font-semibold shadow-sm">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            Prime Suspect
+            Primary Focal Entity
           </div>
           <div className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-blue-300 bg-blue-950/50 border border-blue-900/40">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
@@ -461,7 +466,7 @@ export default function DynamicInvestigationGraph({
                       : 'bg-blue-950 text-blue-300 border border-blue-800'
                   }`}
                 >
-                  {selectedNode.is_prime ? 'PRIME CRIMINAL TARGET' : selectedNode.type}
+                  {selectedNode.is_prime ? 'PRIMARY FOCAL TARGET' : selectedNode.type}
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">
                   {selectedNode.role}

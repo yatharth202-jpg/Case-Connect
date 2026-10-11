@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI | Crime Network &amp; Evidence Dissection Platform</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Font Awesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Google Fonts: Inter & Rajdhani for Cyber/Defense styling -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Rajdhani:wght@500;600;700&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            deepNavy: '#040711',
+            panelNavy: '#080E1E',
+            cardBg: '#091124',
+            cyberCyan: '#00F0FF',
+            cyberViolet: '#8B5CF6',
+            cyberEmerald: '#10B981',
+            neonBlue: '#38BDF8',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            cyber: ['Rajdhani', 'sans-serif'],
+            mono: ['Share Tech Mono', 'monospace'],
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 25px -4px rgba(0, 240, 255, 0.35)',
+            'glow-violet': '0 0 25px -4px rgba(139, 92, 246, 0.4)',
+            'glow-emerald': '0 0 25px -4px rgba(16, 185, 129, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-animations">
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(1000%); }
+    }
+    .scanner-line {
+      animation: scanline 8s linear infinite;
+    }
+    .pulse-dot {
+      animation: pulseGlow 2.5s ease-in-out infinite;
+    }
+    .cyber-btn-cut {
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+  </style>
+<style data-purpose="component-styles">
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #040711;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00F0FF;
+    }
+  </style>
+</head>
+<body class="bg-[#050914] text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-black relative">
+<!-- BEGIN: Interactive Cyber Canvas Background -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" data-purpose="background-mesh">
+<!-- Starfield & Nodes Canvas -->
+<canvas class="w-full h-full opacity-60" id="networkCanvas"></canvas>
+<!-- Cyber India Silhouette & Tactical Grid overlay -->
+<div class="absolute right-0 top-0 w-full lg:w-2/3 h-full opacity-15 bg-radial from-cyan-900/30 via-transparent to-transparent pointer-events-none"></div>
+<div class="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)]"></div>
+</div>
+<!-- END: Interactive Cyber Canvas Background -->
+<!-- BEGIN: MainHeader -->
+<header class="relative z-20 border-b border-slate-800/80 bg-[#070D1D]/90 backdrop-blur-md px-6 lg:px-12 py-3.5 transition-all" data-purpose="primary-header">
+<div class="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+<!-- Brand & Tagline -->
+<div class="flex items-center gap-4">
+<div class="relative flex items-center justify-center w-11 h-11 rounded-lg border border-cyan-500/30 bg-cyan-950/20 text-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+<!-- Ashoka Pillar / Police Emblem Vector Symbol -->
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"></path>
+<path d="M12 7v8"></path>
+<path d="M9 10h6"></path>
+<circle cx="12" cy="11" r="2.5"></circle>
+</svg>
+<span class="absolute -top-1 -right-1 flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-2xl font-bold tracking-tight text-white font-cyber flex items-center">
+              Case Connect <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 ml-1.5 font-extrabold">AI</span>
+</h1>
+<span class="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded bg-blue-900/50 text-cyan-300 border border-blue-500/30">v4.8-LEO</span>
+</div>
+<p class="text-xs text-slate-400 font-medium tracking-wide">Explainable Crime Network &amp; Evidence Dissection Platform</p>
+</div>
+</div>
+<!-- Live Operations & Security Status -->
+<div class="flex items-center gap-3 lg:gap-6">
+<!-- Terminal Ready Badge -->
+<div class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-xs font-mono">
+<span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot shadow-[0_0_8px_#34d399]"></span>
+<span class="text-emerald-400 font-semibold tracking-wide">Live Terminal Ready</span>
+</div>
+<!-- Secure Connection indicator -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-xs font-medium text-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.15)]">
+<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+<span class="tracking-wide">Secure Connection</span>
+</div>
+<!-- Quick Access Icon Controls -->
+<div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 transition" title="System Manual &amp; Help">
+<i class="fa-regular fa-circle-question text-sm"></i>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-rose-400 hover:border-rose-500/40 transition" title="Secure Logout">
+<i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="relative z-10 flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-12 py-8 max-w-[1720px] mx-auto w-full">
+<!-- Portal Cards Container -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8 items-stretch justify-center my-auto" data-purpose="role-selection-grid">
+<!-- ========================================== -->
+<!-- CARD 1: Lead Investigator (Cyan/Teal Theme) -->
+<!-- ========================================== -->
+<div class="group relative rounded-2xl bg-cardBg/90 border border-cyan-500/40 hover:border-cyan-400 flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow-cyan backdrop-blur-md">
+<!-- Top Neon Accent Line -->
+<div class="h-1 w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80 group-hover:opacity-100 transition"></div>
+<!-- Header of Card -->
+<div class="p-5 pb-3 flex items-center gap-3.5 border-b border-cyan-900/30 bg-gradient-to-b from-cyan-950/20 to-transparent">
+<div class="w-10 h-10 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.2)]">
+<i class="fa-solid fa-user-shield text-base"></i>
+</div>
+<div>
+<h2 class="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-cyan-300 transition-colors">
+              Lead Investigator
+            </h2>
+<span class="text-[11px] font-mono text-cyan-400/80">LEVEL 3 ACCESS • OPERATIONAL</span>
+</div>
+</div>
+<!-- Officer Visual Context -->
+<div class="relative h-60 w-full overflow-hidden bg-slate-950">
+<img alt="Lead Investigator Indian Police Officer reviewing cyber intelligence" class="w-full h-full object-cover object-center filter saturate-75 contrast-125 group-hover:scale-105 transition-transform duration-500 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaTExNpkJ7SRITSD6yIA2iXB5XqPZ8NfAMsRA_2EMw8hGjW_0jrgCY2M8K7gDhjukwZJGeF0RtaGDdOBSCRqdQCVUVeCD3rUt2KWwFOKeCSmZQDBOE_YmMDujcuh4RVClbvehO9hOXPIIk60e2CTVVdJj0y6UYqWrTkdK4XedprRYlC0AZm23GAo9fs8WAYJSBQ7s2Lw-65RoW_ofh3nqXoS7BlOz93wtMmGjWeo60IIAF6FTnfywmMw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-cardBg via-transparent to-transparent"></div>
+<div class="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/60 border border-cyan-500/30 font-mono text-[10px] text-cyan-300 backdrop-blur-sm">
+            AUTH_ID: IND-LEO-994
+          </div>
+</div>
+<!-- Body & Scope -->
+<div class="p-6 flex-1 flex flex-col justify-between space-y-6">
+<p class="text-sm text-slate-300 leading-relaxed font-normal text-center">
+            Full evidence upload, dynamic graph analysis &amp; report generation
+          </p>
+<!-- Interactive Action Button -->
+<div class="pt-2 flex justify-center">
+<button class="relative cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-cyan-950 border border-cyan-400 text-cyan-300 font-cyber font-bold tracking-widest text-base hover:bg-cyan-400 hover:text-black hover:shadow-[0_0_20px_#00F0FF] active:scale-95 transition-all duration-200">
+<span class="inline-flex items-center gap-2">
+<i class="fa-solid fa-terminal text-xs"></i> Enter
+              </span>
+</button>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- CARD 2: Supervisory Admin (Violet Theme - Hero) -->
+<!-- ============================================== -->
+<div class="group relative rounded-2xl bg-cardBg/90 border border-violet-500/50 hover:border-violet-400 flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow-violet backdrop-blur-md lg:-mt-2">
+<!-- Elevated Badge Indicator -->
+<div class="h-1 w-full bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90 group-hover:opacity-100 transition"></div>
+<!-- Header of Card -->
+<div class="p-5 pb-3 flex items-center gap-3.5 border-b border-violet-900/30 bg-gradient-to-b from-violet-950/20 to-transparent">
+<div class="w-10 h-10 rounded-xl bg-violet-950/70 border border-violet-500/40 flex items-center justify-center text-violet-400 shadow-[0_0_12px_rgba(139,92,246,0.3)]">
+<i class="fa-solid fa-shield-halved text-base"></i>
+</div>
+<div>
+<h2 class="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-violet-300 transition-colors">
+              Supervisory Admin
+            </h2>
+<span class="text-[11px] font-mono text-violet-400/80">COMMAND OVERSIGHT • AUDITOR</span>
+</div>
+</div>
+<!-- Officer Visual Context -->
+<div class="relative h-60 w-full overflow-hidden bg-slate-950">
+<img alt="Supervisory Senior Police Commander in Ops Center" class="w-full h-full object-cover object-top filter saturate-75 contrast-125 group-hover:scale-105 transition-transform duration-500 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNR9tj156enzrutBevb8GcjuGlWpr39ohKt2eF7D9TUAIf1xr89IC7LR65uBFq2RCcdoFq67QVLK2gzq0bMk0qgxQnMjXe9cP2uBbTEbl8CoQinuUNVBRx1Us-M99lQCcfqg5EtC4mq0Qfz046HNHVaxRCiW_bDoI5nU3D1R6hOtKDTyK_HIraHctIl7lquECZ75P8KCI6owBVdjncbrwplQeVaL4L5-jOwh5PXKXgh9QP5zb9nM3vaA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-cardBg via-transparent to-transparent"></div>
+<div class="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/60 border border-violet-500/30 font-mono text-[10px] text-violet-300 backdrop-blur-sm">
+            CLEARANCE: LEVEL 5
+          </div>
+</div>
+<!-- Body & Scope -->
+<div class="p-6 flex-1 flex flex-col justify-between space-y-6">
+<p class="text-sm text-slate-300 leading-relaxed font-normal text-center">
+            Case management, case settings &amp; immutable audit log verification
+          </p>
+<!-- Interactive Action Button -->
+<div class="pt-2 flex justify-center">
+<button class="relative cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-violet-900/80 via-blue-900/70 to-violet-900/80 border border-violet-400 text-violet-200 font-cyber font-bold tracking-widest text-base hover:bg-violet-500 hover:text-white hover:shadow-[0_0_25px_#8B5CF6] active:scale-95 transition-all duration-200">
+<span class="inline-flex items-center gap-2">
+<i class="fa-solid fa-lock-open text-xs"></i> Action
+              </span>
+</button>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- CARD 3: Intelligence Analyst (Emerald Theme)   -->
+<!-- ============================================== -->
+<div class="group relative rounded-2xl bg-cardBg/90 border border-emerald-500/40 hover:border-emerald-400 flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow-emerald backdrop-blur-md">
+<!-- Top Neon Accent Line -->
+<div class="h-1 w-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-80 group-hover:opacity-100 transition"></div>
+<!-- Header of Card -->
+<div class="p-5 pb-3 flex items-center gap-3.5 border-b border-emerald-900/30 bg-gradient-to-b from-emerald-950/20 to-transparent">
+<div class="w-10 h-10 rounded-xl bg-emerald-950/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+<i class="fa-regular fa-eye text-base"></i>
+</div>
+<div>
+<h2 class="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-emerald-300 transition-colors">
+              Intelligence Analyst
+            </h2>
+<span class="text-[11px] font-mono text-emerald-400/80">FIN-CRIME &amp; CDR CORRELATION</span>
+</div>
+</div>
+<!-- Analyst Visual Context -->
+<div class="relative h-60 w-full overflow-hidden bg-slate-950">
+<img alt="Cyber Analyst reviewing intelligence feeds" class="w-full h-full object-cover object-center filter saturate-75 contrast-125 group-hover:scale-105 transition-transform duration-500 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNjIYXMyaR6erp-BjHdVBMVrXzEaSc2JVt_5Md4hhvKGgYonKtPgBdZSoeMlD-zR3EUWfG174DONwIPyzZ2AkzlZbaFiMNCi-jmfZohTwKK19Gi5YduHzBqdPM39_knMtu9LPSylljejNBnGMqq9pdokuY5iJi9E1IacgvsMoyt9oAc-hN3lIL45ZafBbiSTYRfGJgtBgROHBYl2itONNN-g9wVXHaCpjiWlzHBWe19HPEyBCMtezyTA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-cardBg via-transparent to-transparent"></div>
+<div class="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/60 border border-emerald-500/30 font-mono text-[10px] text-emerald-300 backdrop-blur-sm">
+            ACCESS: READ-ONLY
+          </div>
+</div>
+<!-- Body & Scope -->
+<div class="p-6 flex-1 flex flex-col justify-between space-y-6">
+<p class="text-sm text-slate-300 leading-relaxed font-normal text-center">
+            Read-only exploration of money trails, charts &amp; graph topology
+          </p>
+<!-- Interactive Action Button -->
+<div class="pt-2 flex justify-center">
+<button class="relative cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-emerald-950 border border-emerald-400 text-emerald-300 font-cyber font-bold tracking-widest text-base hover:bg-emerald-400 hover:text-black hover:shadow-[0_0_20px_#10B981] active:scale-95 transition-all duration-200">
+<span class="inline-flex items-center gap-2">
+<i class="fa-solid fa-chart-line text-xs"></i> Enter
+              </span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: MainFooter -->
+<footer class="relative z-20 border-t border-slate-800/80 bg-[#060B19]/95 backdrop-blur-lg pt-7 pb-5 px-6 lg:px-12 mt-auto" data-purpose="refined-footer">
+<div class="max-w-[1720px] mx-auto flex flex-col items-center text-center space-y-4">
+<!-- Brand Soft Emblem & Identity -->
+<div class="flex items-center justify-center gap-2.5">
+<div class="flex items-center gap-2 tracking-widest font-cyber text-2xl font-bold text-slate-200">
+<span>UNIT<span class="text-cyan-400 font-black">X</span></span>
+</div>
+<!-- Law enforcement shield watermark -->
+<div class="w-6 h-6 rounded-full border border-cyan-500/40 bg-cyan-950/40 flex items-center justify-center text-cyan-400 text-xs">
+<i class="fa-solid fa-shield-cat"></i>
+</div>
+</div>
+<!-- Functional Capability Subtitle -->
+<p class="max-w-4xl text-xs sm:text-sm text-slate-400 font-normal leading-relaxed">
+        Automated telecommunication CDR, banking transaction, and multi-jurisdiction FIR correlation engine engineered for Indian law enforcement agencies.
+      </p>
+<!-- Statutory & Algorithmic Compliance Tags -->
+<div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-400 font-mono tracking-tight bg-slate-900/80 py-1.5 px-4 rounded-full border border-slate-800">
+<span class="text-slate-300">Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023 compliant audit ledger</span>
+<span class="text-cyan-500">•</span>
+<span class="text-slate-300">Deterministic SHA-256 genesis-anchored chain of custody</span>
+<span class="text-cyan-500">•</span>
+<span class="text-slate-300">100% Dynamic multi-evidence learning without hardcoded mocks</span>
+</div>
+<!-- Divider line -->
+<div class="w-full h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent my-1"></div>
+<!-- Bottom Status & Navigation Strip -->
+<div class="w-full flex flex-col lg:flex-row items-center justify-between gap-4 pt-1 text-xs">
+<!-- Left: Sovereign Trust Tag -->
+<div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-left">
+<div class="flex items-center gap-1.5 text-cyan-400 font-medium">
+<i class="fa-solid fa-shield-halved text-[11px]"></i>
+<span>Secure | Trusted | For a Safer India</span>
+</div>
+<span class="hidden sm:inline text-slate-700">|</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+            DPDP Act 2023 Compliant
+          </span>
+</div>
+<!-- Center: Security Node Icons -->
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-900 border border-slate-700/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition cursor-default" title="End-to-End Encrypted Ledger">
+<i class="fa-solid fa-lock text-xs"></i>
+</div>
+<div class="w-7 h-7 rounded-full bg-slate-900 border border-slate-700/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition cursor-default" title="Biometric / Cert Authenticated">
+<i class="fa-solid fa-user-check text-xs"></i>
+</div>
+<div class="w-7 h-7 rounded-full bg-slate-900 border border-slate-700/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition cursor-default" title="Decentralized Inter-Agency Node">
+<i class="fa-solid fa-network-wired text-xs"></i>
+</div>
+<div class="w-7 h-7 rounded-full bg-slate-900 border border-slate-700/80 flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition cursor-default" title="Immutable Data Vault">
+<i class="fa-solid fa-database text-xs"></i>
+</div>
+</div>
+<!-- Right: Legal & Portal Links -->
+<div class="flex flex-wrap items-center gap-4 text-slate-400 text-[11px]">
+<a class="hover:text-cyan-400 transition" href="#privacy">Privacy Policy</a>
+<span class="text-slate-700">•</span>
+<a class="hover:text-cyan-400 transition" href="#terms">Terms of Service</a>
+<span class="text-slate-700">•</span>
+<a class="hover:text-cyan-400 transition" href="#docs">Documentation</a>
+<span class="text-slate-700">•</span>
+<a class="hover:text-cyan-400 transition" href="#contact">Contact Us</a>
+</div>
+</div>
+</div>
+</footer>
+<!-- END: MainFooter -->
+<!-- BEGIN: Interactive Canvas Background Script -->
+<script data-purpose="canvas-setup">
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    // Particle nodes representing telecommunications and FIR nodes
+    const nodeCount = 55;
+    const nodes = [];
+
+    for (let i = 0; i < nodeCount; i++) {
+      nodes.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 2 + 1,
+        color: i % 4 === 0 ? '#8B5CF6' : (i % 3 === 0 ? '#10B981' : '#00F0FF')
+      });
+    }
+
+    function drawNetwork() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Connect nodes within distance threshold
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 140) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(0, 240, 255, ${0.15 * (1 - dist / 140)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw and step nodes
+      nodes.forEach(node => {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        ctx.shadowColor = node.color;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        node.x += node.vx;
+        node.y += node.vy;
+
+        if (node.x < 0 || node.x > width) node.vx *= -1;
+        if (node.y < 0 || node.y > height) node.vy *= -1;
+      });
+
+      requestAnimationFrame(drawNetwork);
+    }
+
+    drawNetwork();
+  </script>
+<!-- END: Interactive Canvas Background Script -->
+</body></html>

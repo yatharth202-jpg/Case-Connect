@@ -11,17 +11,35 @@ VEHICLE_REGEX = re.compile(r'\b([A-Z]{2}[ -]?\d{1,2}[ -]?[A-Z]{1,3}[ -]?\d{4})\b
 EMAIL_REGEX = re.compile(r'\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\b')
 IP_REGEX = re.compile(r'\b((?:[0-9]{1,3}\.){3}[0-9]{1,3})\b')
 UPI_REGEX = re.compile(r'\b([a-zA-Z0-9.\-_]{2,}@[a-zA-Z0-9]{2,})(?!\.[a-zA-Z0-9])\b')
-FIR_REGEX = re.compile(r'(?:FIR\s*(?:No\.?|Number)?\s*[:\-]?\s*)([A-Z0-9\/\-]+)|\b(FIR-\d{4}-\d+)\b', re.IGNORECASE)
-PS_REGEX = re.compile(r'(?:Police\s+Station|P\.S\.|PS)\s*[:\-]?\s*([A-Za-z\s]{3,30}?)(?=[,.\n]|\s+dated|\s+district|\s+under|\s+FIR)', re.IGNORECASE)
+FIR_REGEX = re.compile(
+    r'\bFIR\s*(?:No\.?|Number)?\s*[:\-\s]\s*([0-9]{3,6}[\/\-][0-9]{2,4}|[A-Z0-9\/\-]{4,15})\b|\b(FIR[_\-]\d{3,6}[_\-]\d{2,4})\b',
+    re.IGNORECASE
+)
+PS_REGEX = re.compile(
+    r'\b(?:Police\s+Station|P\.S\.|PS)\s*[:\-]?\s*([A-Za-z\s]{3,30}?)(?=[,.\n]|\s+dated|\s+district|\s+under|\s+FIR|\s+IO|\s+Date|\s+Entry)',
+    re.IGNORECASE
+)
+PS_SUFFIX_REGEX = re.compile(
+    r'\b([A-Z][a-zA-Z]{2,20}(?:\s+[A-Z][a-zA-Z]{2,20}){0,2})\s+(?:P\.S\.|Police\s+Station)\b'
+)
 
 # Account keywords trigger for 9-18 digit numbers within 40 characters
 ACCOUNT_TRIGGER_REGEX = re.compile(r'(?:account(?:\s*no\.?)?|a/c(?:\s*no\.?)?|acct|beneficiary\s+a/c)\s*[:\-]?\s*([A-Za-z0-9]{9,18})\b', re.IGNORECASE)
 
-# Account suffix / masked patterns (e.g. XXXXXX7890, ending 7890)
-MASKED_ACCOUNT_REGEX = re.compile(r'(?:[X*]{4,12}(\d{4})|(?:ending|a/c\s+ending\s+in|account\s+ending\s+with)\s+(\d{4}))\b', re.IGNORECASE)
+# Account suffix / masked patterns (e.g. XXXXXX7890, ending 7890, last digits 6338)
+MASKED_ACCOUNT_REGEX = re.compile(
+    r'(?:[X*]{4,12}(\d{4})|'
+    r'(?:account|a/c|digits)[\w\s]{0,35}?(?:ending(?:\s+in|\s+with)?|last\s+digits(?:\s+are|\s+of)?|digits\s+are)\s*[:\-]?\s*(\d{4,6}))\b',
+    re.IGNORECASE
+)
 
-# Amount patterns
-AMOUNT_REGEX = re.compile(r'(?:Rs\.?|INR|₹)\s*([\d,]+(?:\.\d{2})?)\s*(lakh|lac|crore|cr)?|([\d,]+(?:\.\d{2})?)\s*(lakh|lac|crore|cr)\s*(?:rupees|INR)?', re.IGNORECASE)
+# Amount patterns supporting Indian units (lakh, crore, paise, Cash Rs. ...)
+AMOUNT_REGEX = re.compile(
+    r'\b(?:Cash[^\S\r\n]+)?(?:Rs\.?|INR|₹)[^\S\r\n]*([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?(?:\s*\/-)?\b|'
+    r'\b(?:Cash[^\S\r\n]+)([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?(?:\s*(?:INR|rupees))?(?:\s*\/-)?\b|'
+    r'\b([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)\s*(?:rupees|INR)?(?:\s*\/-)?\b',
+    re.IGNORECASE
+)
 
 # Date patterns (dd/mm/yyyy, yyyy-mm-dd, 15th January 2024, etc.)
 DATE_REGEX = re.compile(r'\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b|\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b', re.IGNORECASE)
@@ -101,7 +119,7 @@ def extract_rule_entities(text: str, page_or_para: str, base_char_offset: int = 
                 "method": "regex"
             })
 
-    # 3. ACCOUNT SUFFIX (masked/partial accounts)
+    # 3. ACCOUNT SUFFIX (masked/partial accounts -> BankAccount node)
     for m in MASKED_ACCOUNT_REGEX.finditer(text):
         raw = m.group(0).strip()
         last4 = m.group(1) or m.group(2)
@@ -243,11 +261,34 @@ def extract_rule_entities(text: str, page_or_para: str, base_char_offset: int = 
             })
 
     # 11. POLICE STATION
+    ps_spans: List[Tuple[int, int]] = []
     for m in PS_REGEX.finditer(text):
         ps_name = m.group(1).strip()
-        if ps_name and len(ps_name) >= 3:
+        ps_lower = ps_name.lower()
+        if ps_name and len(ps_name) >= 3 and not any(ps_lower.startswith(w) or ps_lower == w for w in ["registered", "reported", "informed", "sent to", "about", "near", "under", "dated", "district", "at", "to", "from", "the", "in", "case", "for"]):
             start = base_char_offset + m.start(1)
             end = base_char_offset + m.end(1)
+            ps_spans.append((start, end))
+            results.append({
+                "entity_type": "POLICE_STATION",
+                "raw_value": ps_name,
+                "normalized_value": ps_name.title(),
+                "char_span_start": start,
+                "char_span_end": end,
+                "page_or_paragraph": page_or_para,
+                "confidence": 0.85,
+                "method": "regex"
+            })
+
+    for m in PS_SUFFIX_REGEX.finditer(text):
+        ps_name = m.group(1).strip()
+        ps_lower = ps_name.lower()
+        start = base_char_offset + m.start(1)
+        end = base_char_offset + m.end(1)
+        if any(not (end <= s or start >= e) for s, e in ps_spans):
+            continue
+        if ps_name and len(ps_name) >= 3 and not any(ps_lower.startswith(w) or ps_lower == w for w in ["registered", "reported", "informed", "sent to", "about", "near", "under", "dated", "district", "at", "to", "from", "the", "in", "case", "for"]):
+            ps_spans.append((start, end))
             results.append({
                 "entity_type": "POLICE_STATION",
                 "raw_value": ps_name,

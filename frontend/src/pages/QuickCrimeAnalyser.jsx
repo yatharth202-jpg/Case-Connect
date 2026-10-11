@@ -53,12 +53,12 @@ export default function QuickCrimeAnalyser() {
 
       setTimeout(() => {
         setProgress(65);
-        setCurrentStep('Extracting criminal entities, telecom records & financial transactions...');
+        setCurrentStep('Extracting named entities, telecom records & financial transactions...');
       }, 800);
 
       setTimeout(() => {
         setProgress(85);
-        setCurrentStep('Correlating multi-source graph topology & re-evaluating suspect hierarchy...');
+        setCurrentStep('Correlating multi-source graph topology & re-evaluating network hierarchy...');
       }, 1200);
 
       const result = await dynamicAnalysisApi.analyseFile(
@@ -79,7 +79,7 @@ export default function QuickCrimeAnalyser() {
 
       if (targetCaseId) {
         setSuccessToast(
-          `Evidence '${file.name}' correlated successfully! Case network topology and suspect ranking updated.`
+          `Evidence '${file.name}' correlated successfully! Case network topology and centrality ranking updated.`
         );
         setTimeout(() => setSuccessToast(''), 5000);
       }
@@ -118,7 +118,7 @@ export default function QuickCrimeAnalyser() {
 
       setTimeout(() => {
         setProgress(85);
-        setCurrentStep('Recalculating network centrality & criminal ranking...');
+        setCurrentStep('Recalculating network centrality & entity ranking...');
       }, 1000);
 
       const result = await dynamicAnalysisApi.analyseText(
@@ -136,7 +136,7 @@ export default function QuickCrimeAnalyser() {
 
       if (targetCaseId) {
         setSuccessToast(
-          'Narrative evidence merged successfully! Network links and prime suspect updated.'
+          'Narrative evidence merged successfully! Network links and primary focal entity updated.'
         );
         setTimeout(() => setSuccessToast(''), 5000);
       }
@@ -397,7 +397,7 @@ export default function QuickCrimeAnalyser() {
                   <span className="text-cyan-400">{analysisResult.case_title}</span>
                 </h3>
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  Uploading supplementary evidence (e.g. Bank CSV, CDR logs, interrogation report) will incrementally merge entities, recalculate centrality, and update suspect ranking!
+                  Uploading supplementary evidence (e.g. Bank CSV, CDR logs, interrogation report) will incrementally merge entities, recalculate centrality, and update network ranking!
                 </p>
               </div>
               <button
@@ -516,7 +516,7 @@ export default function QuickCrimeAnalyser() {
             {/* Top 4 Statistical KPI Strips */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-[#080d1d] border border-[#192742] rounded-xl p-4 shadow-md">
-                <div className="text-[11px] font-mono text-slate-400">Prime Suspect Target</div>
+                <div className="text-[11px] font-mono text-slate-400">Primary Focal Entity</div>
                 <div className="text-base font-bold text-rose-400 mt-1 truncate">
                   {analysisResult.prime_suspect?.name || 'Unattributed'}
                 </div>
@@ -556,7 +556,7 @@ export default function QuickCrimeAnalyser() {
               </div>
             </div>
 
-            {/* Suspect Attribution Dossier Card */}
+            {/* Entity Attribution Dossier Card */}
             <DynamicSuspectCard
               suspects={analysisResult.all_suspects}
               primeSuspect={analysisResult.prime_suspect}
@@ -585,7 +585,7 @@ export default function QuickCrimeAnalyser() {
               />
             </div>
 
-            {/* Suspect Command Hierarchy Tree (Top 5 Suspects with Reasons & Links) */}
+            {/* Command Hierarchy Tree (Top 5 Ranked Entities with Reasons & Links) */}
             {analysisResult.suspect_hierarchy && analysisResult.suspect_hierarchy.length > 0 && (
               <SuspectHierarchyTree
                 hierarchy={analysisResult.suspect_hierarchy}

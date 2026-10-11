@@ -144,16 +144,25 @@ def process_dynamic_file_analysis(
             # 3. Inter-entity co-occurrence relationships
             rel_items = extract_cooccurrence_relationships(p_text, p_entities, p_name, base_char_offset=p_offset)
 
-            # Detect mentioned amounts in text
-            amount_matches = re.findall(r'(?:Rs\.?|INR|₹)\s*([\d,]+(?:\.\d{2})?)\s*(lakh|lac|crore|cr)?', p_text, re.IGNORECASE)
-            for raw_amt, unit in amount_matches:
-                clean_num = float(re.sub(r'[^\d.]', '', raw_amt) or 0)
-                u = (unit or "").lower()
-                if "cr" in u:
-                    clean_num *= 10000000
-                elif "la" in u:
-                    clean_num *= 100000
-                total_money_volume += clean_num
+            # Detect mentioned amounts in text supporting Indian financial formats
+            amount_matches = re.finditer(
+                r'\b(?:Cash[^\S\r\n]+)?(?:Rs\.?|INR|₹)[^\S\r\n]*([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?(?:\s*\/-)?\b|'
+                r'\b(?:Cash[^\S\r\n]+)([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?(?:\s*(?:INR|rupees))?(?:\s*\/-)?\b|'
+                r'\b([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)\s*(?:rupees|INR)?(?:\s*\/-)?\b',
+                p_text,
+                re.IGNORECASE
+            )
+            for m_amt in amount_matches:
+                raw_amt = m_amt.group(1) or m_amt.group(3) or m_amt.group(5)
+                unit = m_amt.group(2) or m_amt.group(4) or m_amt.group(6)
+                if raw_amt:
+                    clean_num = float(re.sub(r'[^\d.]', '', raw_amt) or 0)
+                    u = (unit or "").lower()
+                    if "cr" in u:
+                        clean_num *= 10000000
+                    elif "la" in u:
+                        clean_num *= 100000
+                    total_money_volume += clean_num
 
             collected_items.extend(p_entities + rel_items)
 
@@ -162,10 +171,16 @@ def process_dynamic_file_analysis(
             try:
                 full_doc_sample = "\n\n".join(pg["text"] for pg in pages)[:4500]
                 gemini_items = extract_entities_with_gemini(full_doc_sample, "P1")
-                # Deduplicate with existing normalized values
-                existing_norms = {it["normalized_value"].upper() for it in collected_items}
                 for g_item in gemini_items:
-                    if g_item["normalized_value"].upper() not in existing_norms:
+                    g_norm = g_item["normalized_value"].upper()
+                    existing = next((it for it in collected_items if it.get("normalized_value", "").upper() == g_norm), None)
+                    if existing:
+                        # Upgrade role if Gemini detected a role, but protect non-suspect roles
+                        if existing.get("role") in ["police_officer", "witness", "victim"]:
+                            continue
+                        if g_item.get("role") and g_item["role"] not in ["person", ""]:
+                            existing["role"] = g_item["role"]
+                    else:
                         collected_items.append(g_item)
             except Exception:
                 pass
@@ -202,9 +217,17 @@ def process_dynamic_file_analysis(
                         curr_props = json.loads(staged_ent.properties_json or "{}")
                     except Exception:
                         curr_props = {}
-                    curr_props["role"] = item["role"]
-                    staged_ent.properties_json = json.dumps(curr_props)
-                    db.flush()
+                    curr_role = curr_props.get("role", "")
+                    new_role = item["role"]
+                    # Strictly protect non-suspect roles and non-person entities
+                    if curr_role in ["police_officer", "witness", "victim"] and new_role in ["suspect", "mule", "operator"]:
+                        pass
+                    elif staged_ent.label in ["Phone", "BankAccount", "Vehicle", "FIR"] and new_role in ["suspect", "witness", "victim", "police_officer"]:
+                        pass
+                    else:
+                        curr_props["role"] = new_role
+                        staged_ent.properties_json = json.dumps(curr_props)
+                        db.flush()
 
             all_extracted.append(item)
 
@@ -350,8 +373,21 @@ def process_dynamic_file_analysis(
     # Degree map in NetworkX
     degree_map = dict(g.degree()) if g.number_of_nodes() > 0 else {}
 
-    # If persons exist, rank them; otherwise rank phones or accounts
-    ranking_pool = persons if persons else staged_entities
+    # Filter out police officers, witnesses, and victims from the criminal suspect pool
+    NON_SUSPECT_ROLES = {"police_officer", "investigator", "witness", "victim", "complainant"}
+    suspect_pool = []
+    for ent in persons:
+        props = {}
+        try:
+            props = json.loads(ent.properties_json or "{}")
+        except Exception:
+            pass
+        role_str = (props.get("role") or "").lower()
+        if not any(ns in role_str for ns in NON_SUSPECT_ROLES):
+            suspect_pool.append(ent)
+
+    # If criminal suspects exist, rank them; otherwise fallback to persons
+    ranking_pool = suspect_pool if suspect_pool else (persons if persons else staged_entities)
 
     for ent in ranking_pool:
         node_key = f"{case_id}|{ent.label}|{ent.canonical_id}"
@@ -487,21 +523,23 @@ def process_dynamic_file_analysis(
             }
         })
 
+    valid_node_ids = {n["data"]["id"] for n in cy_nodes}
     for idx, l in enumerate(staged_links):
-        edge_data = {
-            "id": f"e_{idx}_{l.id}",
-            "source": l.source_entity_id,
-            "target": l.target_entity_id,
-            "label": l.relationship_type
-        }
-        try:
-            p = json.loads(l.properties_json or "{}")
-            if "amount" in p and p["amount"]:
-                edge_data["amount"] = format_inr(float(p["amount"]))
-        except Exception:
-            pass
+        if l.source_entity_id in valid_node_ids and l.target_entity_id in valid_node_ids:
+            edge_data = {
+                "id": f"e_{idx}_{l.id}",
+                "source": l.source_entity_id,
+                "target": l.target_entity_id,
+                "label": l.relationship_type
+            }
+            try:
+                p = json.loads(l.properties_json or "{}")
+                if "amount" in p and p["amount"]:
+                    edge_data["amount"] = format_inr(float(p["amount"]))
+            except Exception:
+                pass
 
-        cy_edges.append({"data": edge_data})
+            cy_edges.append({"data": edge_data})
 
     # 7. Suspect Syndicate Hierarchy (Top 5 Ranked Tiers)
     tier_defs = [

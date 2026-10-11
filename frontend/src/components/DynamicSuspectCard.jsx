@@ -8,7 +8,7 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
   if (!active) {
     return (
       <div className="bg-[#080d1d] border border-[#1b2b48] rounded-2xl p-6 text-center text-slate-400 font-mono text-xs">
-        No suspect identified yet. Upload an investigative file to trigger autonomous criminal attribution.
+        No target identified yet. Upload an investigative file to trigger autonomous entity attribution.
       </div>
     );
   }
@@ -30,7 +30,7 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-              Criminal Nexus & Potential Criminal Attribution
+              Syndicate Nexus & Key Target Attribution
             </h3>
             <p className="text-[10px] text-slate-400 font-mono">
               Forensic scoring based on graph centrality, role keywords, and evidence correlation
@@ -38,7 +38,7 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
           </div>
         </div>
 
-        {/* Multi-Suspect Selector Tabs */}
+        {/* Multi-Target Selector Tabs */}
         {suspects && suspects.length > 1 && (
           <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
             {suspects.slice(0, 4).map((s, idx) => (
@@ -117,11 +117,11 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
             <div className="text-2xl font-bold font-mono text-white mt-1">
               {active.risk_score}%
             </div>
-            <div className="text-[10px] text-slate-400 font-mono">Criminal Probability</div>
+            <div className="text-[10px] text-slate-400 font-mono">Attribution Probability</div>
           </div>
         </div>
 
-        {/* Right Column: Suspect Details, Role, and Evidence Rationale (8 cols) */}
+        {/* Right Column: Target Details, Role, and Evidence Rationale (8 cols) */}
         <div className="md:col-span-8 space-y-3">
           <div>
             <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
               <svg className="w-3.5 h-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              Why This Entity Is The Potential Criminal:
+              Investigative Indicators & Attribution Rationale:
             </div>
             <ul className="space-y-1 text-xs text-slate-300">
               {(active.rationale || []).map((item, i) => (

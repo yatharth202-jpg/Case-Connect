@@ -12,7 +12,7 @@ def is_gemini_configured() -> bool:
     """Returns True if a valid GEMINI_API_KEY is configured in settings or environment."""
     return bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip())
 
-ACTIVE_MODELS = ["gemini-3.5-flash", "gemini-flash-lite-latest", "gemini-3.5-flash-lite"]
+ACTIVE_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash"]
 
 def _clean_json_text(text: str) -> str:
     cleaned = text.strip()
@@ -39,7 +39,7 @@ async def call_gemini_api(
         logger.info("Gemini API key is not configured; skipping AI call.")
         return None
 
-    configured_model = getattr(settings, "GEMINI_MODEL", "gemini-3.5-flash") or "gemini-3.5-flash"
+    configured_model = getattr(settings, "GEMINI_MODEL", "gemini-2.0-flash") or "gemini-2.0-flash"
     models_to_try = list(dict.fromkeys([configured_model] + ACTIVE_MODELS))
 
     contents = []
@@ -99,7 +99,7 @@ def call_gemini_sync(
     if not api_key or not api_key.strip():
         return None
 
-    configured_model = getattr(settings, "GEMINI_MODEL", "gemini-3.5-flash") or "gemini-3.5-flash"
+    configured_model = getattr(settings, "GEMINI_MODEL", "gemini-2.0-flash") or "gemini-2.0-flash"
     models_to_try = list(dict.fromkeys([configured_model] + ACTIVE_MODELS))
 
     contents = []
@@ -157,7 +157,12 @@ def extract_entities_with_gemini(document_text: str, page_ref: str = "P1") -> Li
         "You are an expert criminal intelligence and digital forensics officer operating under "
         "Section 63 of Bharatiya Sakshya Adhiniyam (BSA 2023). Extract all entities and identifiers "
         "from the provided police investigation document. Return ONLY valid JSON adhering strictly "
-        "to the requested format."
+        "to the requested format.\n"
+        "RULES:\n"
+        "1. Police officers (IO, SHO, SI, Inspector, Constable, Sub-Inspector) MUST have role_description 'police_officer', NEVER 'suspect'.\n"
+        "2. Victims/Complainants must have role_description 'victim'. Witnesses must have role_description 'witness'.\n"
+        "3. Only genuine suspects, accused persons, and cash/hawala carriers should have role_description 'suspect', 'mule', or 'kingpin'.\n"
+        "4. Non-person entities (Phone, Vehicle, Bank Account, FIR) should have role_description ''."
     )
 
     prompt = f"""Analyze the following police investigation text and extract all entities:
@@ -170,7 +175,7 @@ Return a JSON array of objects with the exact schema:
     "entity_type": "PERSON | PHONE | BANK_ACCOUNT | VEHICLE | FIR | ORGANIZATION",
     "raw_value": "exact mention in text",
     "normalized_value": "standardized canonical format",
-    "role_description": "suspect / mule / kingpin / courier / witness / driver / victim",
+    "role_description": "police_officer / suspect / mule / kingpin / courier / witness / driver / victim",
     "confidence": 0.95
   }}
 ]

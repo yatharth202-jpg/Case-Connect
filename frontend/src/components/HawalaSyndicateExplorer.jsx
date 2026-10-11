@@ -101,7 +101,7 @@ export default function HawalaSyndicateExplorer({ caseId, onOpenTab }) {
         </div>
         <h3 className="text-sm font-bold text-white mb-1">No Evidence Records Ingested in this Case</h3>
         <p className="text-xs text-slate-400 max-w-md mx-auto mb-4">
-          Upload telecom CDRs, banking statements, or FIR police reports above to trigger automated entity extraction, BFS money trail layering, and suspect scoring.
+          Upload telecom CDRs, banking statements, or FIR police reports above to trigger automated entity extraction, BFS money trail layering, and lead scoring.
         </p>
       </div>
     );
@@ -185,7 +185,7 @@ export default function HawalaSyndicateExplorer({ caseId, onOpenTab }) {
         </div>
       </div>
 
-      {/* 2. DYNAMIC LEAD SELECTION & IDENTIFIED SUSPECT DOSSIER */}
+      {/* 2. DYNAMIC LEAD SELECTION & IDENTIFIED TARGET DOSSIER */}
       <div className="bg-[#080d19] border border-[#1a2742] rounded-xl p-5 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#16233a] pb-4 mb-5">
           <div>

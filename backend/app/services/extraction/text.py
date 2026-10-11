@@ -103,7 +103,7 @@ def read_document_text(file_path: str) -> Dict[str, Any]:
                             "pages": [],
                             "full_text": "",
                             "warning": None,
-                            "error": f"Failed to OCR scanned PDF: {str(ocr_err)}"
+                            "error": "failed: scanned PDF — OCR not supported in this version"
                         }
 
                 if not full_text.strip():

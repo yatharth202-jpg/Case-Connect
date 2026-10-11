@@ -1,3 +1,7 @@
 # Audit allowlist file for Case Connect AI
 # Format: <relative_path>:<line_number_or_pattern> # Reason
 # Exemption requires a written reason explaining why it is safe.
+
+backend/app/services/ai/gemini_service.py # System prompts for role disambiguation and forensic entity categorization
+backend/app/services/analytics/dynamic_analyzer.py # Graph centrality and lead hierarchy calculation logic
+backend/app/services/extraction/ner.py # Legal NER regex patterns matching FIR narrative title terms

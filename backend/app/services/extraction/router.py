@@ -59,6 +59,7 @@ def _commit_approved_entity(db: Session, ee: ExtractedEntity, user_id: str):
             "PERSON": "Person",
             "PHONE": "Phone",
             "BANK_ACCOUNT": "BankAccount",
+            "ACCOUNT_SUFFIX": "BankAccount",
             "VEHICLE": "Vehicle",
             "FIR": "FIR",
             "ORGANIZATION": "Organization"

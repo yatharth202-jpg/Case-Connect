@@ -221,7 +221,7 @@ export default function ForensicAnalyticsCharts({ charts = {}, metrics = {} }) {
             </span>
           </div>
           <p className="text-[10px] text-slate-400 font-mono mb-4">
-            Highest-value funds routed through suspect and mule account channels.
+            Highest-value funds routed through flagged and intermediary account channels.
           </p>
 
           <div className="h-56 w-full">
