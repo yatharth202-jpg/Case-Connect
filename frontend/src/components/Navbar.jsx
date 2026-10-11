@@ -1,98 +1,170 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Shield, HelpCircle, LogOut, Activity, Lock, Database, FileText } from 'lucide-react';
 
 export default function Navbar({ onOpenLegalModal }) {
   const { user, isAdmin, logout } = useAuth();
+  const currentPath = window.location.pathname;
+
+  const roleColors = {
+    admin: 'border-violet-500/40 text-violet-300 bg-violet-950/40',
+    investigator: 'border-cyan-500/40 text-cyan-300 bg-cyan-950/40',
+    viewer: 'border-emerald-500/40 text-emerald-300 bg-emerald-950/40',
+  };
+
+  const userBadgeColor = roleColors[user?.role] || 'border-cyan-500/40 text-cyan-300 bg-cyan-950/40';
 
   return (
-    <header className="bg-[#080d19] border-b border-[#182338] px-6 py-3 flex items-center justify-between sticky top-0 z-40">
-      {/* Brand */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#0e172c] border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-white font-bold text-sm tracking-wide">CASE CONNECT</span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-blue-950/80 text-blue-400 border border-blue-500/30 rounded font-mono font-semibold">
-              PS SIH26189
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-400 font-mono leading-none">Evidence Correlation & Syndicate Topology</p>
-        </div>
-      </div>
-
-      {/* Nav links */}
-      <nav className="flex items-center gap-3 text-xs">
-        <a
-          href="/"
-          className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold transition-colors flex items-center gap-1.5 shadow-sm"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <span>Investigation Workbench</span>
-        </a>
-
-        <a
-          href="/cases"
-          className="text-slate-300 hover:text-white px-2.5 py-1.5 rounded transition-colors"
-        >
-          Case Repository
-        </a>
-
-        {isAdmin && (
-          <a
-            href="/audit"
-            className="text-[#cbd5e1] hover:text-white px-2 py-1 rounded transition-colors"
-          >
-            Audit Trail
-          </a>
-        )}
-
-        <button
-          onClick={() => onOpenLegalModal('bsa')}
-          className="text-[#94a3b8] hover:text-[#38bdf8] transition-colors"
-        >
-          Section 63 BSA
-        </button>
-
-        <button
-          onClick={() => onOpenLegalModal('dpdp')}
-          className="text-[#94a3b8] hover:text-[#38bdf8] transition-colors"
-        >
-          DPDP 2023
-        </button>
-      </nav>
-
-      {/* User profile & Logout */}
-      <div className="flex items-center gap-3">
-        {user ? (
-          <div className="flex items-center gap-3 bg-[#030712] border border-[#1e293b] px-3 py-1.5 rounded-md">
-            <div className="text-right">
-              <span className="text-xs text-white font-medium block leading-tight">{user.username}</span>
-              <span className="text-[10px] text-[#38bdf8] font-mono uppercase tracking-wider block">
-                {user.role}
+    <header className="relative z-40 border-b border-slate-800/80 bg-[#070D1D]/95 backdrop-blur-md px-4 sm:px-6 lg:px-12 py-3 transition-all select-none sticky top-0">
+      <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        {/* Brand & Tagline */}
+        <div className="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-cyan-500/40 bg-cyan-950/30 text-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.25)] shrink-0">
+              {/* Ashoka Pillar / Police Emblem Vector Symbol */}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" />
+                <path d="M12 7v8" />
+                <path d="M9 10h6" />
+                <circle cx="12" cy="11" r="2.5" />
+              </svg>
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
               </span>
             </div>
-            <button
-              onClick={logout}
-              className="text-xs text-[#94a3b8] hover:text-rose-400 border-l border-[#1e293b] pl-3 py-0.5 transition-colors"
-              title="Sign Out"
-            >
-              Logout
-            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <a href="/" className="text-xl sm:text-2xl font-bold tracking-tight text-white font-cyber flex items-center hover:opacity-95 transition">
+                  Case Connect <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 ml-1.5 font-extrabold">AI</span>
+                </a>
+                <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded bg-blue-900/50 text-cyan-300 border border-blue-500/30">
+                  v4.8-LEO
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium tracking-wide hidden sm:block">
+                Explainable Crime Network & Evidence Dissection Platform
+              </p>
+            </div>
           </div>
-        ) : (
+
+          {/* Mobile Right Badges */}
+          <div className="flex md:hidden items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
+            <span className="text-[10px] font-mono text-emerald-400 font-bold">ONLINE</span>
+          </div>
+        </div>
+
+        {/* Center: Navigation Links */}
+        <nav className="flex items-center gap-2 sm:gap-2.5 text-xs font-mono">
           <a
-            href="/login"
-            className="text-xs bg-[#0284c7] hover:bg-[#0369a1] text-white px-3 py-1.5 rounded-md transition-colors font-medium"
+            href="/"
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+              currentPath === '/'
+                ? 'bg-gradient-to-r from-cyan-950 via-cyan-900/70 to-cyan-950 border border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.25)]'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900/80 border border-transparent'
+            }`}
           >
-            Sign In
+            <Activity className="w-3.5 h-3.5" />
+            <span>Investigation Workbench</span>
           </a>
-        )}
+
+          <a
+            href="/cases"
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              currentPath.startsWith('/cases')
+                ? 'bg-gradient-to-r from-blue-950 via-blue-900/70 to-blue-950 border border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.25)] font-bold'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900/80 border border-transparent'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span>Case Repository</span>
+          </a>
+
+          {isAdmin && (
+            <a
+              href="/audit"
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                currentPath === '/audit'
+                  ? 'bg-gradient-to-r from-violet-950 via-violet-900/70 to-violet-950 border border-violet-400 text-violet-300 shadow-[0_0_15px_rgba(139,92,246,0.25)] font-bold'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900/80 border border-transparent'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Audit Trail</span>
+            </a>
+          )}
+        </nav>
+
+        {/* Right: Telemetry & Controls */}
+        <div className="flex items-center gap-3 lg:gap-4">
+          {/* Live Operations Badges (Hidden on tiny screens) */}
+          <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[11px] font-mono">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
+            <span className="text-emerald-400 font-semibold tracking-wide">Live Terminal Ready</span>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-[11px] font-medium text-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.15)] font-mono">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="tracking-wide">Secure Connection</span>
+          </div>
+
+          {/* Quick Legal Modals */}
+          <button
+            onClick={() => onOpenLegalModal('bsa')}
+            className="hidden md:inline-flex px-2 py-1 text-[10px] font-mono text-slate-400 hover:text-cyan-300 bg-slate-900/60 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/40 rounded transition"
+            title="Section 63 BSA 2023 Statutory Compliance"
+          >
+            Sec. 63 BSA
+          </button>
+
+          <button
+            onClick={() => onOpenLegalModal('dpdp')}
+            className="hidden md:inline-flex px-2 py-1 text-[10px] font-mono text-slate-400 hover:text-cyan-300 bg-slate-900/60 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/40 rounded transition"
+            title="DPDP Act 2023 Law Enforcement Exemption"
+          >
+            DPDP 2023
+          </button>
+
+          {/* Officer profile & Logout */}
+          {user ? (
+            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
+              <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border font-mono ${userBadgeColor}`}>
+                <div className="text-right">
+                  <span className="text-xs text-white font-semibold block leading-tight font-sans">{user.username}</span>
+                  <span className="text-[9px] uppercase tracking-wider block font-bold">
+                    {user.role}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onOpenLegalModal('help')}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 transition"
+                title="System Manual & Operator Guidelines"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={logout}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-300 hover:text-rose-400 hover:border-rose-500/40 transition"
+                title="Secure Terminal Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <a
+              href="/login"
+              className="cyber-btn-cut px-4 py-1.5 bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-cyan-950 border border-cyan-400 text-cyan-300 font-cyber font-bold tracking-wider text-xs hover:bg-cyan-400 hover:text-black transition"
+            >
+              Sign In
+            </a>
+          )}
+        </div>
       </div>
     </header>
   );

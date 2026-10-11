@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Connect AI - Evidence Dissection &amp; Crime Network Platform</title>
+<!-- Tailwind CSS v3 with Forms & Container-Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Custom Google Fonts: Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            midnight: '#030712',
+            cyberNavy: '#070d1e',
+            neonCyan: '#00f0ff',
+            neonMagenta: '#ff0055',
+            neonAmber: '#ffaa00',
+            matrixGreen: '#00ff66',
+          },
+          boxShadow: {
+            'cyan-glow': '0 0 20px -3px rgba(0, 240, 255, 0.35)',
+            'magenta-glow': '0 0 20px -3px rgba(255, 0, 85, 0.35)',
+            'glass-inset': 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styling for Cyber Glass & Scrollbars -->
+<style data-purpose="custom-scrollbar-and-effects">
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00f0ff;
+    }
+
+    .glass-panel {
+      background: rgba(10, 18, 38, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-panel-subtle {
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .cyber-grid-line {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    }
+
+    @keyframes pulseSlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+    .node-pulse {
+      animation: pulseSlow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-midnight text-slate-100 font-sans antialiased selection:bg-neonCyan/30 selection:text-neonCyan min-h-screen relative flex flex-col cyber-grid-line">
+<!-- BEGIN: WebGLShaderBackground -->
+<!-- Dynamic 3D Animated Background Grid via WebGL shader spec -->
+<!-- STITCH_SHADER_START:ANIMATION_11 class="fixed inset-0 w-full h-full pointer-events-none -z-10" -->
+<div class="fixed inset-0 w-full h-full pointer-events-none -z-10" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_11" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_11');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+
+// Simplex noise / grid wave helpers
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+void main() {
+    vec2 st = gl_FragCoord.xy / u_resolution.xy;
+    vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    
+    float t = u_time * 0.35;
+    
+    // Subtle perspective tilt simulating 3D grid plane
+    p.y += 0.2;
+    float depth = 1.0 / (abs(p.y - 0.95) + 0.15);
+    vec2 gridUV = vec2(p.x * depth * 0.4, depth * 0.5 + t * 0.8);
+    
+    // Grid lines
+    vec2 grid = abs(fract(gridUV - 0.5) - 0.5) / fwidth(gridUV);
+    float line = min(grid.x, grid.y);
+    float gridGlow = 1.0 - min(line, 1.0);
+    gridGlow *= smoothstep(0.0, 0.6, abs(p.y - 0.95)) * 0.22;
+    
+    // Flowing ambient cyber nebula
+    float n1 = noise(p * 1.8 + vec2(t * 0.2, -t * 0.15));
+    float n2 = noise(p * 3.5 - vec2(t * 0.3, t * 0.25));
+    float nebula = pow(n1 * 0.65 + n2 * 0.35, 2.2);
+    
+    // Colors
+    vec3 bg = vec3(0.02, 0.035, 0.065); // deep midnight obsidian
+    vec3 cyanGlow = vec3(0.0, 0.85, 0.95) * nebula * 0.45;
+    vec3 purpleGlow = vec3(0.45, 0.15, 0.85) * pow(noise(p * 2.2 + vec2(-t * 0.1, t * 0.1)), 3.0) * 0.35;
+    vec3 cyberLine = vec3(0.0, 0.95, 0.85) * gridGlow;
+    
+    // Vignette
+    float vig = smoothstep(1.4, 0.2, length(p * vec2(0.8, 1.1)));
+    
+    vec3 col = (bg + cyanGlow + purpleGlow + cyberLine) * vig;
+    gl_FragColor = vec4(col, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_11 -->
+<!-- Fallback static visual ambient depth if custom element is unhandled -->
+<div class="fixed inset-0 w-full h-full pointer-events-none -z-20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/20 via-midnight to-black"></div>
+<!-- END: WebGLShaderBackground -->
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 w-full border-b border-cyan-500/20 bg-midnight/90 backdrop-blur-xl transition-all" data-purpose="primary-navigation">
+<div class="max-w-[1720px] mx-auto px-4 lg:px-8 py-2.5 flex items-center justify-between gap-4">
+<!-- Brand & Platform Identifiers -->
+<div class="flex items-center gap-3.5">
+<div class="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-neonCyan/40 shadow-cyan-glow">
+<svg class="w-6 h-6 text-neonCyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-neonCyan opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-neonCyan"></span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-bold tracking-wider text-base lg:text-lg text-white font-mono uppercase">CASE CONNECT <span class="text-neonCyan">AI</span></span>
+<span class="px-2 py-0.5 text-[10px] font-mono tracking-widest uppercase bg-cyan-950/80 text-neonCyan border border-cyan-500/30 rounded-md">V4.8-LEO</span>
+</div>
+<p class="text-[11px] text-slate-400 font-mono tracking-tight">Explainable Crime Network &amp; Evidence Dissection Platform</p>
+</div>
+</div>
+<!-- Center Pill Navigation Tabs -->
+<nav aria-label="Investigation Navigation" class="hidden xl:flex items-center p-1 bg-slate-900/80 border border-slate-700/60 rounded-full">
+<a class="px-4 py-1.5 rounded-full text-xs font-medium font-mono text-cyan-200 bg-cyan-600/30 border border-cyan-400/40 shadow-cyan-glow flex items-center gap-2 transition" href="#investigation">
+<span class="w-1.5 h-1.5 rounded-full bg-neonCyan animate-pulse"></span>
+          Investigation Platform
+        </a>
+<a class="px-4 py-1.5 rounded-full text-xs font-medium font-mono text-slate-400 hover:text-white transition" href="#repository">Case Repository</a>
+<a class="px-4 py-1.5 rounded-full text-xs font-medium font-mono text-slate-400 hover:text-white transition" href="#audit">Audit Trail</a>
+<a class="px-4 py-1.5 rounded-full text-xs font-medium font-mono text-slate-400 hover:text-white transition" href="#bsa">Section 63 BSA</a>
+<a class="px-4 py-1.5 rounded-full text-xs font-medium font-mono text-slate-400 hover:text-white transition" href="#dpdp">DPDP 2023</a>
+</nav>
+<!-- Right Header Status, Operations & Profile -->
+<div class="flex items-center gap-3">
+<!-- Live Terminal status badge -->
+<div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-mono text-xs">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+<span>Live Terminal Ready</span>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-neonCyan border border-cyan-500/40 flex items-center gap-1.5 transition" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="hidden md:inline">Append</span> Evidence
+          </button>
+<button class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 flex items-center gap-1.5 transition" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Export <span class="hidden md:inline">Court Brief</span>
+</button>
+</div>
+<!-- Admin Profile Badge -->
+<div class="flex items-center pl-2 border-l border-slate-700/60 gap-2">
+<div class="w-8 h-8 rounded-full bg-cyan-900/60 border border-cyan-400/50 flex items-center justify-center font-mono text-xs font-bold text-neonCyan">
+            AD
+          </div>
+<div class="hidden 2xl:block text-left font-mono">
+<div class="text-xs font-bold leading-none text-slate-200">Insp. A. Verma</div>
+<span class="text-[10px] text-cyan-400">Cyber Cell HQ</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 max-w-[1720px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6" id="investigation">
+<!-- BEGIN: IngestedEvidenceBanner -->
+<!-- Evidence Ingestion Proof and Genesis Fingerprint Banner -->
+<section class="glass-panel rounded-xl p-3 sm:p-4 border-cyan-500/25 flex flex-wrap items-center justify-between gap-4" data-purpose="ingested-evidence-strip">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-neonCyan">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-2.5 flex-wrap">
+<span class="text-xs font-mono font-semibold tracking-wider text-slate-400 uppercase">Ingested Evidence Bucket:</span>
+<span class="text-xs font-mono font-bold text-white bg-slate-900/80 px-2 py-0.5 rounded border border-slate-700">1 File(s) Extracted</span>
+<span class="text-xs font-mono text-neonCyan font-medium">caseconnect_fiks_12_pdf</span>
+</div>
+<p class="text-[11px] font-mono text-slate-400 mt-0.5">
+            SHA-256 Genesis Hash: <span class="text-slate-300">d582e04e902b7405fa0e6...789fbc</span> (Anchored under BSA Sec 63)
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span>
+          Synthesized &amp; Indexed
+        </span>
+<button class="px-2.5 py-1 rounded text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+          View Raw Manifest
+        </button>
+</div>
+</section>
+<!-- END: IngestedEvidenceBanner -->
+<!-- BEGIN: QuickKPITelemetry -->
+<!-- High-level intelligence cards matching data snapshot metrics -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="kpi-telemetry-metrics">
+<!-- KPI 1: Prime Suspect Target -->
+<div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-red-500/40 transition">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-red-600/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+<span>Prime Suspect Target</span>
+<span class="text-red-400 text-[10px] font-bold px-1.5 py-0.5 bg-red-950/80 border border-red-500/40 rounded">CRITICAL</span>
+</div>
+<div class="mt-2 text-2xl font-bold font-mono text-white tracking-tight flex items-baseline gap-2">
+          Rakesh Yadav
+        </div>
+<div class="mt-2 text-xs font-mono text-red-300/90 flex items-center gap-1.5">
+<span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+          Threat Gauge: 95% High Severity
+        </div>
+</div>
+<!-- KPI 2: Total Extracted Entities -->
+<div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-cyan-500/40 transition">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-cyan-600/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+<span>Total Extracted Entities</span>
+<span class="text-neonCyan text-[10px] font-bold px-1.5 py-0.5 bg-cyan-950/80 border border-cyan-500/40 rounded">SYNDICATE</span>
+</div>
+<div class="mt-2 text-2xl font-bold font-mono text-white tracking-tight">
+          120
+        </div>
+<div class="mt-2 text-xs font-mono text-slate-400 flex items-center gap-2">
+<span class="text-cyan-400">89 Persons</span> • <span class="text-slate-300">31 Phones</span>
+</div>
+</div>
+<!-- KPI 3: Network Operational Links -->
+<div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-emerald-500/40 transition">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-600/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+<span>Network Operational Links</span>
+<span class="text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 bg-emerald-950/80 border border-emerald-500/40 rounded">CORRELATED</span>
+</div>
+<div class="mt-2 text-2xl font-bold font-mono text-white tracking-tight">
+          881
+        </div>
+<div class="mt-2 text-xs font-mono text-emerald-400/90 flex items-center gap-1.5">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+          Mid-Hop Topology Synthesized
+        </div>
+</div>
+<!-- KPI 4: Cumulative Money Volume -->
+<div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-amber-500/40 transition">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-600/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+<span>Cumulative Money Volume</span>
+<span class="text-amber-400 text-[10px] font-bold px-1.5 py-0.5 bg-amber-950/80 border border-amber-500/40 rounded">HAWALA / MULE</span>
+</div>
+<div class="mt-2 text-2xl font-bold font-mono text-amber-300 tracking-tight">
+          ₹6.13 Cr
+        </div>
+<div class="mt-2 text-xs font-mono text-slate-400 flex items-center gap-1.5">
+<span>8 Banking Accounts Seized</span>
+</div>
+</div>
+</section>
+<!-- END: QuickKPITelemetry -->
+<!-- BEGIN: CoreSuspectAndGraphSection -->
+<!-- Core Suspect Dossier, Threat Assessment & Graph Network Container -->
+<section class="glass-panel rounded-2xl p-5 lg:p-6 space-y-6" data-purpose="core-suspect-attribution">
+<!-- Section Header -->
+<div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-red-500 shadow-magenta-glow"></div>
+<div>
+<h2 class="text-base sm:text-lg font-bold font-mono text-white uppercase tracking-wider">
+              CRIMINAL ACTOR &amp; POTENTIAL ORGANIZED ATTRIBUTION
+            </h2>
+<p class="text-xs font-mono text-slate-400">
+              Primary entity extracted from Case: 2024-CCAI-00812 | Multi-jurisdiction CDR &amp; Hawala Correlation
+            </p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 text-xs font-mono bg-red-950/80 text-red-300 border border-red-500/40 rounded">
+            95 Severity Index: High
+          </span>
+<span class="px-2.5 py-1 text-xs font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 rounded">
+            44 Network Links
+          </span>
+<span class="px-2.5 py-1 text-xs font-mono bg-indigo-950/80 text-indigo-300 border border-indigo-500/40 rounded">
+            08 Hawala Nodes
+          </span>
+</div>
+</div>
+<!-- Dossier & Network Graph Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+<!-- Suspect Dossier Card (Left Column, 4 cols) -->
+<div class="lg:col-span-4 flex flex-col justify-between space-y-4 p-5 rounded-xl bg-slate-900/70 border border-slate-700/60">
+<!-- Threat Score Gauge and Target Head -->
+<div class="flex items-center gap-4">
+<!-- Radial Threat Gauge -->
+<div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+<svg class="w-24 h-24 transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#1f2937" stroke-width="8"></circle>
+<circle class="transition-all duration-1000" cx="50" cy="50" fill="transparent" r="40" stroke="#ff0055" stroke-dasharray="251.2" stroke-dashoffset="12.5" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-xl font-bold font-mono text-red-500">95%</span>
+<span class="text-[9px] font-mono text-slate-400 uppercase">Criminal Prob.</span>
+</div>
+</div>
+<!-- Suspect Name & Designation -->
+<div>
+<div class="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-400 border border-red-800 uppercase font-semibold">
+                Tier-1 Principal Target
+              </div>
+<h3 class="text-xl font-bold font-mono text-white mt-1">Rakesh Yadav</h3>
+<p class="text-xs font-mono text-slate-400">Primary Suspect / Syndicate Broker</p>
+<p class="text-xs font-mono text-cyan-400 mt-1">Graph Centrality: <span class="font-bold">44 Nodes</span></p>
+</div>
+</div>
+<!-- Why Principal Suspect Alert Box -->
+<div class="p-3.5 rounded-lg bg-red-950/30 border border-red-500/30 space-y-2">
+<div class="flex items-center gap-1.5 text-xs font-mono font-bold text-red-400 uppercase">
+<svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              Why This Entity Is The Principal Suspect:
+            </div>
+<ul class="text-xs font-mono text-slate-300 space-y-1.5 pl-2 list-disc list-inside">
+<li>Identified as an account party in this ingested case evidence file.</li>
+<li>Connected to multiple confirmed mule phone clusters across NCR &amp; Mumbai.</li>
+<li>High velocity UPI transaction routing via 8 offshore spoofed gateways.</li>
+</ul>
+</div>
+<!-- Source File Attribution Stamp -->
+<div class="pt-3 border-t border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+<span>Source File: <strong class="text-slate-300">caseconnect_fiks_12.pdf</strong></span>
+<span class="text-cyan-400 cursor-pointer hover:underline">SHA-256 Verified</span>
+</div>
+</div>
+<!-- Crime Topology & Interactive Graph Canvas (Right Column, 8 cols) -->
+<div class="lg:col-span-8 flex flex-col rounded-xl bg-slate-900/60 border border-slate-700/60 p-4 relative overflow-hidden" data-purpose="crime-topology-canvas">
+<!-- Graph Filters and Controls -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800 z-10">
+<div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+<span class="text-slate-400 mr-1">Filter View:</span>
+<button class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition">Show Suspect</button>
+<button class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Persons (89)</button>
+<button class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Phones (31)</button>
+<button class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Accounts (8)</button>
+<button class="px-2.5 py-1 rounded bg-red-950/60 text-red-300 border border-red-700/50 hover:bg-red-900/40 transition">MULES (19)</button>
+<button class="px-2.5 py-1 rounded bg-purple-950/60 text-purple-300 border border-purple-700/50 hover:bg-purple-900/40 transition">IPs (42)</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-mono text-slate-400">Hop:</span>
+<select class="bg-slate-800 border border-slate-700 rounded text-xs font-mono text-slate-200 py-1 px-2 focus:ring-1 focus:ring-neonCyan">
+<option>Hop 1-2 (Case Syndicate)</option>
+<option>Hop 3-4 (Extended CDR)</option>
+<option>All Discovered Hops</option>
+</select>
+<button class="p-1 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:text-white" title="Reset View">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+</div>
+<!-- Force-directed Network Vector Simulation Representation -->
+<div class="relative w-full h-[320px] sm:h-[380px] flex items-center justify-center">
+<!-- Dynamic Vector Network with Nodes and Radiating Data Lines -->
+<svg class="w-full h-full" preserveaspectratio="xMidYMid meet" viewbox="0 0 800 400">
+<defs>
+<lineargradient id="cyanLine" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#00f0ff" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#3b82f6" stop-opacity="0.2"></stop>
+</lineargradient>
+<lineargradient id="redLine" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#ff0055" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#f59e0b" stop-opacity="0.4"></stop>
+</lineargradient>
+<filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+<fegaussianblur result="blur" stddeviation="3"></fegaussianblur>
+<fecomposite in="SourceGraphic" in2="blur" operator="over"></fecomposite>
+</filter>
+</defs>
+<!-- Network Interconnect Lines -->
+<g opacity="0.6" stroke="currentColor" stroke-width="1.2">
+<!-- Primary Target lines (Red) -->
+<line stroke="url(#redLine)" stroke-dasharray="4 2" stroke-width="2.2" x1="400" x2="260" y1="200" y2="120"></line>
+<line stroke="url(#redLine)" stroke-width="2.2" x1="400" x2="540" y1="200" y2="110"></line>
+<line stroke="url(#redLine)" stroke-width="2" x1="400" x2="330" y1="200" y2="300"></line>
+<line stroke="url(#redLine)" stroke-width="2" x1="400" x2="490" y1="200" y2="310"></line>
+<line stroke="url(#redLine)" stroke-width="1.8" x1="400" x2="200" y1="200" y2="210"></line>
+<line stroke="url(#redLine)" stroke-width="1.8" x1="400" x2="620" y1="200" y2="220"></line>
+<!-- Peripheral Cluster Interlinks (Cyan) -->
+<line stroke="url(#cyanLine)" x1="260" x2="160" y1="120" y2="80"></line>
+<line stroke="url(#cyanLine)" x1="260" x2="210" y1="120" y2="160"></line>
+<line stroke="url(#cyanLine)" x1="540" x2="660" y1="110" y2="90"></line>
+<line stroke="url(#cyanLine)" x1="540" x2="600" y1="110" y2="170"></line>
+<line stroke="url(#cyanLine)" x1="330" x2="240" y1="300" y2="340"></line>
+<line stroke="url(#cyanLine)" x1="330" x2="390" y1="300" y2="370"></line>
+<line stroke="url(#cyanLine)" x1="490" x2="570" y1="310" y2="360"></line>
+<line stroke="url(#cyanLine)" x1="490" x2="460" y1="310" y2="380"></line>
+<line stroke="url(#cyanLine)" x1="200" x2="130" y1="210" y2="240"></line>
+<line stroke="url(#cyanLine)" x1="620" x2="710" y1="220" y2="200"></line>
+<line stroke="url(#cyanLine)" x1="620" x2="690" y1="220" y2="270"></line>
+<!-- Cross mesh -->
+<line stroke="#1e293b" stroke-dasharray="2 2" x1="160" x2="200" y1="80" y2="210"></line>
+<line stroke="#1e293b" stroke-dasharray="2 2" x1="660" x2="620" y1="90" y2="220"></line>
+<line stroke="#1e293b" stroke-dasharray="2 2" x1="240" x2="200" y1="340" y2="210"></line>
+</g>
+<!-- Interactive Node Points -->
+<!-- Outer Nodes -->
+<circle cx="160" cy="80" fill="#00f0ff" r="5"></circle>
+<circle cx="210" cy="160" fill="#3b82f6" r="6"></circle>
+<circle cx="660" cy="90" fill="#00f0ff" r="5"></circle>
+<circle cx="600" cy="170" fill="#f59e0b" r="6"></circle>
+<circle cx="240" cy="340" fill="#ef4444" r="7"></circle>
+<circle cx="390" cy="370" fill="#3b82f6" r="5"></circle>
+<circle cx="570" cy="360" fill="#00f0ff" r="6"></circle>
+<circle cx="460" cy="380" fill="#8b5cf6" r="5"></circle>
+<circle cx="130" cy="240" fill="#3b82f6" r="5"></circle>
+<circle cx="710" cy="200" fill="#ef4444" r="7"></circle>
+<circle cx="690" cy="270" fill="#00f0ff" r="5"></circle>
+<!-- Secondary Hubs -->
+<g class="cursor-pointer">
+<circle cx="260" cy="120" fill="#070d1e" r="10" stroke="#00f0ff" stroke-width="2"></circle>
+<text fill="#93c5fd" font-family="monospace" font-size="9" text-anchor="middle" x="260" y="102">NCR-Hub (Cell 8)</text>
+</g>
+<g class="cursor-pointer">
+<circle cx="540" cy="110" fill="#070d1e" r="11" stroke="#f59e0b" stroke-width="2"></circle>
+<text fill="#fcd34d" font-family="monospace" font-size="9" text-anchor="middle" x="540" y="90">Mule-Acct-04</text>
+</g>
+<g class="cursor-pointer">
+<circle cx="330" cy="300" fill="#070d1e" r="11" stroke="#00f0ff" stroke-width="2"></circle>
+<text fill="#93c5fd" font-family="monospace" font-size="9" text-anchor="middle" x="330" y="325">Kolkata CDR</text>
+</g>
+<g class="cursor-pointer">
+<circle cx="490" cy="310" fill="#070d1e" r="10" stroke="#8b5cf6" stroke-width="2"></circle>
+<text fill="#c4b5fd" font-family="monospace" font-size="9" text-anchor="middle" x="490" y="335">Bengaluru IP</text>
+</g>
+<g class="cursor-pointer">
+<circle cx="200" cy="210" fill="#070d1e" r="9" stroke="#00f0ff" stroke-width="2"></circle>
+<text fill="#93c5fd" font-family="monospace" font-size="9" text-anchor="middle" x="200" y="232">IMEI Cloned</text>
+</g>
+<g class="cursor-pointer">
+<circle cx="620" cy="220" fill="#070d1e" r="12" stroke="#ef4444" stroke-width="2"></circle>
+<text fill="#fca5a5" font-family="monospace" font-size="9" text-anchor="middle" x="620" y="244">Hawala Broker-2</text>
+</g>
+<!-- Central Node: Rakesh Yadav (Primary Target) -->
+<g class="node-pulse cursor-pointer">
+<!-- Concentric radar waves -->
+<circle cx="400" cy="200" fill="none" opacity="0.3" r="32" stroke="#ff0055" stroke-width="1"></circle>
+<circle cx="400" cy="200" fill="none" opacity="0.6" r="24" stroke="#ff0055" stroke-width="1.5"></circle>
+<!-- Core suspect node -->
+<circle cx="400" cy="200" fill="#18040d" filter="url(#glow)" r="16" stroke="#ff0055" stroke-width="3"></circle>
+<circle cx="400" cy="200" fill="#ff0055" r="6"></circle>
+<!-- Label banner -->
+<rect fill="#1f0714" height="20" rx="4" stroke="#ff0055" stroke-width="1" width="120" x="340" y="152"></rect>
+<text fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle" x="400" y="166">TARGET: RAKESH YADAV</text>
+</g>
+</svg>
+<!-- Holographic Overlay Badge -->
+<div class="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700/80 font-mono text-[10px] text-slate-300 flex items-center gap-2 pointer-events-none">
+<span class="w-2 h-2 rounded-full bg-neonCyan"></span>
+<span>Centrality Degree: 44 | Direct Ties: 18</span>
+</div>
+</div>
+<!-- Bottom Topology Legend bar -->
+<div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
+<div class="flex items-center gap-4 flex-wrap">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Principal Target</span>
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Mule Account</span>
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> CDR Intercept</span>
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span> VPN / Mule IP</span>
+</div>
+<span class="text-[11px] text-slate-500">Interactive SVG Force Simulation (Unreal HUD Layout)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: CoreSuspectAndGraphSection -->
+<!-- BEGIN: SyndicateRankingAndAccordions -->
+<!-- Suspect Syndicate Hierarchy & Priority Suspect Ranking Accordions -->
+<section class="space-y-3" data-purpose="syndicate-hierarchy-accordion">
+<!-- Accordion Item 1 (Active / Primary Target) -->
+<div class="glass-panel rounded-xl border-red-500/30 overflow-hidden">
+<div class="p-4 bg-gradient-to-r from-red-950/40 via-slate-900/40 to-transparent flex flex-wrap items-center justify-between gap-3 border-b border-red-900/30">
+<div class="flex items-center gap-3">
+<span class="flex h-3 w-3 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+</span>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-mono font-bold text-white text-sm sm:text-base">Syndicate Command Hierarchy &amp; Top Suspect Ranking</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-400 border border-red-600 font-bold">CRITICAL PRIORITY</span>
+</div>
+<p class="text-xs font-mono text-slate-400 mt-0.5">Tier-1 Principal • Operates Hawala Bridge • Prior Suspect / Subject • 28 Linkages</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono font-bold text-red-400">95% Risk Index</span>
+<button class="px-3 py-1 text-xs font-mono rounded bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-700 transition">
+              Collapse Details
+            </button>
+</div>
+</div>
+<div class="p-5 space-y-4">
+<div class="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 text-xs font-mono space-y-2">
+<div class="text-red-400 font-bold flex items-center gap-1.5">
+<span>●</span> PRIMARY SUSPECT IDENTIFIED: RAKESH YADAV
+            </div>
+<p class="text-slate-300">
+              • Identified as an account party in this Ingested case evidence. High amount, probability with off-street linkages.
+            </p>
+</div>
+<!-- Identified Multi-Factor Linkages Chips -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-3 rounded-lg bg-slate-900/50 border border-slate-800/80 space-y-2">
+<span class="text-[11px] font-mono uppercase text-slate-400 tracking-wider">Identified Identifiers &amp; Telecom Nodes:</span>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono">+91 98921-99812</span>
+<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono">IMEI: 862410041289012</span>
+<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono">UPI: rkshydv@axl</span>
+<span class="px-2 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 text-xs font-mono">110.227.185.12</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-slate-900/50 border border-slate-800/80 space-y-2">
+<span class="text-[11px] font-mono uppercase text-slate-400 tracking-wider">Jurisdiction Cross-References:</span>
+<p class="text-xs font-mono text-slate-300">
+                Logged across 3 case evidence files (NCR Cyber Cell FIR 204/24, Mumbai Cyber Unit FIR 88/24).
+              </p>
+<div class="pt-1">
+<button class="px-3 py-1 rounded text-xs font-mono bg-cyan-600/30 hover:bg-cyan-600/50 text-neonCyan border border-cyan-400/40 transition">
+                  Focus &amp; Crop to Scope
+                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Accordion Item 2: Secondary Suspect (Collapsed) -->
+<div class="glass-panel-subtle rounded-xl border-amber-500/20 p-4 flex flex-wrap items-center justify-between gap-3 hover:border-amber-500/40 transition cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-mono font-bold text-white text-sm">Vikram Bhatt</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-400 border border-amber-700">TIER-2 MULE CONTROLLER</span>
+</div>
+<p class="text-xs font-mono text-slate-400">Tier 2, Bank Presence, 2 Operating Nodes • Prior Subject • 19 Links</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-mono text-amber-300 font-semibold">81% Risk</span>
+<span class="text-xs font-mono text-slate-400 hover:text-white">+ Expand</span>
+</div>
+</div>
+<!-- Accordion Item 3: Tertiary Suspect (Collapsed) -->
+<div class="glass-panel-subtle rounded-xl border-slate-700/60 p-4 flex flex-wrap items-center justify-between gap-3 hover:border-slate-500 transition cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-mono font-bold text-white text-sm">Tippu Qureshi</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">SIM RUNNER / HARDWARE</span>
+</div>
+<p class="text-xs font-mono text-slate-400">Tier 3, SIM Aggregator/Hardware logistics • Related / Suspect • 14 Links</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-mono text-cyan-300 font-semibold">74% Risk</span>
+<span class="text-xs font-mono text-slate-400 hover:text-white">+ Expand</span>
+</div>
+</div>
+</section>
+<!-- END: SyndicateRankingAndAccordions -->
+<!-- BEGIN: IntelligentCrimeAndFlowCharts -->
+<!-- Analytics and Dynamic Wave / Ring Charts Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6" data-purpose="charts-and-telemetry-visualizations">
+<!-- 24-Hour Activity Dual-Wave Chart (Left, 7 cols) -->
+<div class="lg:col-span-7 glass-panel rounded-xl p-5 flex flex-col justify-between space-y-4">
+<div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+<div>
+<h3 class="text-sm font-mono font-bold text-white flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-neonCyan"></span>
+              24-HOUR OPERATIONAL ACTIVITY SPIKE GRAPH (CDR/IP)
+            </h3>
+<p class="text-xs font-mono text-slate-400">Spike frequency of telecommunication calls and financial gateway events over 24-hr period</p>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-300 border border-red-800">
+            Peak Window: 02:00 - 05:00 HRS
+          </span>
+</div>
+<!-- Dynamic SVG Dual Area Wave Chart -->
+<div class="w-full h-52 relative">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 600 200">
+<defs>
+<!-- Cyan Gradient Area -->
+<lineargradient id="areaCyan" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#00f0ff" stop-opacity="0.45"></stop>
+<stop offset="100%" stop-color="#00f0ff" stop-opacity="0.0"></stop>
+</lineargradient>
+<!-- Magenta Gradient Area -->
+<lineargradient id="areaMagenta" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ff0055" stop-opacity="0.4"></stop>
+<stop offset="100%" stop-color="#ff0055" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Grid Lines -->
+<line stroke="#1f2937" stroke-dasharray="3 3" x1="0" x2="600" y1="40" y2="40"></line>
+<line stroke="#1f2937" stroke-dasharray="3 3" x1="0" x2="600" y1="90" y2="90"></line>
+<line stroke="#1f2937" stroke-dasharray="3 3" x1="0" x2="600" y1="140" y2="140"></line>
+<!-- Area 1 (Magenta - Hawala Spike) -->
+<path d="M0,180 Q80,180 120,150 T240,165 T360,130 T480,170 T600,160 L600,200 L0,200 Z" fill="url(#areaMagenta)"></path>
+<path d="M0,180 Q80,180 120,150 T240,165 T360,130 T480,170 T600,160" fill="none" stroke="#ff0055" stroke-width="2.5"></path>
+<!-- Area 2 (Cyan - CDR Telemetry Surge) -->
+<path d="M0,175 Q60,160 100,110 T200,140 T320,60 T420,20 T490,40 T540,130 T600,170 L600,200 L0,200 Z" fill="url(#areaCyan)"></path>
+<path d="M0,175 Q60,160 100,110 T200,140 T320,60 T420,20 T490,40 T540,130 T600,170" fill="none" stroke="#00f0ff" stroke-width="2.5"></path>
+<!-- Highlight Dots at Peaks -->
+<circle cx="420" cy="20" fill="#00f0ff" r="4" stroke="#ffffff" stroke-width="2"></circle>
+<circle cx="360" cy="130" fill="#ff0055" r="4" stroke="#ffffff" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- Graph Axis & Legend -->
+<div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-neonCyan"></span> CDR Call Volume Peak</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-neonMagenta"></span> Financial Routing Surge</span>
+</div>
+<div class="flex gap-4 text-slate-500">
+<span>00:00</span>
+<span>04:00</span>
+<span>08:00</span>
+<span>12:00</span>
+<span>16:00</span>
+<span>20:00</span>
+<span>23:59</span>
+</div>
+</div>
+</div>
+<!-- Entity Threat Distribution Donut Ring Chart (Right, 5 cols) -->
+<div class="lg:col-span-5 glass-panel rounded-xl p-5 flex flex-col justify-between space-y-4">
+<div class="flex items-center justify-between pb-3 border-b border-slate-800">
+<h3 class="text-sm font-mono font-bold text-white flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            ENTITY THREAT DISTRIBUTION [120 NODES]
+          </h3>
+<span class="text-xs font-mono text-slate-400">120 Total Units</span>
+</div>
+<!-- Donut Ring Chart Representation with SVG -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-6 py-2">
+<div class="relative w-40 h-40 shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<!-- Background track -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#1f2937" stroke-width="12"></circle>
+<!-- Segment 1: Persons (42/120 ~ 35%) -> dasharray: 83.5 238.7 -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#00f0ff" stroke-dasharray="83.5 238.7" stroke-dashoffset="0" stroke-width="12"></circle>
+<!-- Segment 2: Phones (31/120 ~ 25.8%) -> dasharray: 61.6 238.7 -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#3b82f6" stroke-dasharray="61.6 238.7" stroke-dashoffset="-83.5" stroke-width="12"></circle>
+<!-- Segment 3: Accounts (8/120 ~ 6.6%) -> dasharray: 15.7 238.7 -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#ffaa00" stroke-dasharray="15.7 238.7" stroke-dashoffset="-145.1" stroke-width="12"></circle>
+<!-- Segment 4: Mule IPs (19/120 ~ 15.8%) -> dasharray: 37.7 238.7 -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#a855f7" stroke-dasharray="37.7 238.7" stroke-dashoffset="-160.8" stroke-width="12"></circle>
+<!-- Segment 5: Remainder Critical (20/120 ~ 16.6%) -> dasharray: 39.9 238.7 -->
+<circle cx="50" cy="50" fill="transparent" r="38" stroke="#ff0055" stroke-dasharray="39.9 238.7" stroke-dashoffset="-198.5" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center font-mono">
+<span class="text-xl font-bold text-white">120</span>
+<span class="text-[9px] uppercase tracking-wider text-slate-400">Cataloged</span>
+</div>
+</div>
+<!-- Donut Legend Table -->
+<div class="w-full space-y-2 text-xs font-mono">
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+<span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Persons Identified</span>
+<span class="font-bold text-white">42</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+<span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Intercepted Phones</span>
+<span class="font-bold text-white">31</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+<span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Bank Accounts</span>
+<span class="font-bold text-white">08</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+<span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Mule IP / VPNs</span>
+<span class="font-bold text-white">19</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+<span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> High Threat Nodes</span>
+<span class="font-bold text-red-400">20</span>
+</div>
+</div>
+</div>
+<div class="text-[11px] font-mono text-slate-400 border-t border-slate-800 pt-2 flex justify-between">
+<span>Categorization: Automated Bayes Classifier</span>
+<span class="text-cyan-400">100% Parsed</span>
+</div>
+</div>
+</section>
+<!-- END: IntelligentCrimeAndFlowCharts -->
+<!-- BEGIN: FinancialFlowAndCentralityBars -->
+<!-- Top Financial Transaction Stems & Network Centrality Metrics -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6" data-purpose="stems-and-degree-bars">
+<!-- Top Financial Transaction Stems -->
+<div class="glass-panel rounded-xl p-5 space-y-4">
+<div class="flex items-center justify-between pb-3 border-b border-slate-800">
+<div>
+<h3 class="text-sm font-mono font-bold text-white">TOP FINANCIAL TRANSACTION STEMS [INR CR]</h3>
+<p class="text-xs font-mono text-slate-400">Highest volume Hawala routing stems correlated with suspect transfers</p>
+</div>
+<span class="text-xs font-mono text-amber-400 font-bold">₹6.13 Cr Ingestion</span>
+</div>
+<!-- Horizontal Bar Charts -->
+<div class="space-y-3 font-mono text-xs">
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>HDFC A/C ...0921 (Direct Suspect Stem)</span>
+<span class="text-amber-300 font-bold">₹2.84 Cr</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-cyan-500 to-amber-400 rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>ICICI A/C ...8840 (Layered Mule Hub)</span>
+<span class="text-amber-300 font-bold">₹1.42 Cr</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 rounded-full" style="width: 52%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>Yes Bank A/C ...1174 (Offshore Shell Gateway)</span>
+<span class="text-amber-300 font-bold">₹1.05 Cr</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-cyan-500 to-blue-400 rounded-full" style="width: 38%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>SBI A/C ...4029 (ATM Dispersal Network)</span>
+<span class="text-amber-300 font-bold">₹0.82 Cr</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style="width: 28%"></div>
+</div>
+</div>
+</div>
+<p class="text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800">
+          In direct telemetry: Transfer patterns matched 82 secondary syndicates. Section 68F freezing order advisory active.
+        </p>
+</div>
+<!-- Top Operational Nodes by Network Degree -->
+<div class="glass-panel rounded-xl p-5 space-y-4">
+<div class="flex items-center justify-between pb-3 border-b border-slate-800">
+<div>
+<h3 class="text-sm font-mono font-bold text-white">TOP OPERATIONAL NODES BY NETWORK DEGREE (CENTRALITY)</h3>
+<p class="text-xs font-mono text-slate-400">Metrics calculating the highest hub connection densities</p>
+</div>
+<span class="text-xs font-mono text-neonCyan font-bold">881 Total Edges</span>
+</div>
+<!-- Centrality Bar Metrics -->
+<div class="space-y-3 font-mono text-xs">
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>Node: Rakesh Yadav (Suspect Primary Hub)</span>
+<span class="text-neonCyan font-bold">44 Edges</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-neonCyan rounded-full" style="width: 88%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>Node: CDR +91-98921-XXXXX (Burner Gateway)</span>
+<span class="text-cyan-300 font-bold">36 Edges</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-cyan-400 rounded-full" style="width: 72%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>Node: Kolkata IP Gateway 110.227.X.X</span>
+<span class="text-cyan-300 font-bold">29 Edges</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-blue-400 rounded-full" style="width: 58%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-slate-300 mb-1">
+<span>Node: Vikram Bhatt (Mule Manager)</span>
+<span class="text-cyan-300 font-bold">19 Edges</span>
+</div>
+<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-indigo-400 rounded-full" style="width: 38%"></div>
+</div>
+</div>
+</div>
+<p class="text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800">
+          Betweenness Centrality confirms target entity serves as the singular bottleneck bridging Hawala to local mules.
+        </p>
+</div>
+</section>
+<!-- END: FinancialFlowAndCentralityBars -->
+<!-- BEGIN: ExtractedEvidenceNodeInventory -->
+<!-- Sleek High-Density Interactive Evidence Node Inventory Grid -->
+<section class="glass-panel rounded-xl p-5 space-y-4" data-purpose="node-inventory-grid">
+<div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+<div>
+<h3 class="text-base font-mono font-bold text-white flex items-center gap-2">
+<svg class="w-4 h-4 text-neonCyan" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            EXTRACTED EVIDENCE NODE INVENTORY [120]
+          </h3>
+<p class="text-xs font-mono text-slate-400">
+            Certified telecommunication and financial cross-matrix compliant with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023.
+          </p>
+</div>
+<!-- Filter Chips -->
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-xs font-mono rounded bg-cyan-600/30 text-neonCyan border border-cyan-400/40">ALL (120)</button>
+<button class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700">Persons</button>
+<button class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700">Phones</button>
+<button class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700">Accounts</button>
+<button class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700">IPs</button>
+</div>
+</div>
+<!-- Node Inventory Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 font-mono text-xs">
+<!-- Target Highlight Node -->
+<div class="p-2.5 rounded-lg bg-red-950/40 border border-red-500/50 hover:border-red-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-red-400 font-bold uppercase">TARGET</span>
+<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">Rakesh Yadav</div>
+<div class="text-[10px] text-slate-400">Score: 95% • Primary</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">PHONE CDR</span>
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">+91 98921-99812</div>
+<div class="text-[10px] text-slate-400">44 Intercepts</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">BANK ACCT</span>
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">HDFC-0921004</div>
+<div class="text-[10px] text-amber-300">₹2.84 Cr Flow</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">PERSON</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">Vikram Bhatt</div>
+<div class="text-[10px] text-slate-400">Score: 81% • Mule Mgr</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">IP GATEWAY</span>
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">110.227.185.12</div>
+<div class="text-[10px] text-slate-400">Kolkata VPN Node</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">IMEI TAG</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">862410041289012</div>
+<div class="text-[10px] text-slate-400">Multi-SIM Cloned</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">PERSON</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">Tippu Qureshi</div>
+<div class="text-[10px] text-slate-400">Score: 74% • SIM Runner</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">BANK ACCT</span>
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">ICICI-884019</div>
+<div class="text-[10px] text-amber-300">₹1.42 Cr Flow</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">PHONE CDR</span>
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">+91 97110-44102</div>
+<div class="text-[10px] text-slate-400">18 Intercepts</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">UPI VPA</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">rkshydv@axl</div>
+<div class="text-[10px] text-slate-400">Hawala Receiver</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">PERSON</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">Suraj Pal</div>
+<div class="text-[10px] text-slate-400">Score: 61% • Courier</div>
+</div>
+<div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-700 hover:border-cyan-400 transition cursor-pointer">
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-cyan-400 uppercase">WALLET TAG</span>
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+</div>
+<div class="text-white font-bold truncate mt-1">0x8F9a...C412</div>
+<div class="text-[10px] text-purple-300">USDT Cold Transit</div>
+</div>
+</div>
+<!-- Pagination / Inventory Footer -->
+<div class="flex items-center justify-between pt-3 border-t border-slate-800 text-xs font-mono text-slate-400">
+<span>Showing 12 of 120 Total Correlated Elements</span>
+<div class="flex items-center gap-2">
+<button class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 disabled:opacity-50">Previous</button>
+<span class="text-cyan-400 font-bold">1 / 10</span>
+<button class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Next</button>
+</div>
+</div>
+</section>
+<!-- END: ExtractedEvidenceNodeInventory -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: MainFooter -->
+<!-- UNITx Cyber Themed Institutional Footer -->
+<footer class="w-full border-t border-cyan-500/20 bg-midnight/95 backdrop-blur-2xl mt-12 py-8" data-purpose="institutional-footer">
+<div class="max-w-[1720px] mx-auto px-4 lg:px-8 space-y-6">
+<!-- Top Section: UNITx Shield Brand & Security Compliance Badges -->
+<div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
+<!-- UNITx Logo Branding -->
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-neonCyan font-mono font-bold text-sm tracking-wider shadow-cyan-glow">
+            Ux
+          </div>
+<div class="font-mono">
+<span class="text-base font-bold tracking-widest text-white">UNIT<span class="text-neonCyan">X</span></span>
+<span class="text-[11px] text-slate-400 block -mt-1 font-sans">Cyber Forensic Architecture</span>
+</div>
+</div>
+<!-- Security Compliance Pills -->
+<div class="flex flex-wrap items-center gap-2.5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+<svg class="w-3.5 h-3.5 text-neonCyan" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Secure Enclave
+          </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Trusted System
+          </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-orange-950/60 text-orange-300 border border-orange-500/30">
+            🇮🇳 For a Safer India
+          </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">
+            DPDP Act 2023 Compliant
+          </span>
+</div>
+</div>
+<!-- Legal Compliance Narrative & Links -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400">
+<p class="max-w-4xl text-left leading-relaxed">
+          Automated telecommunication CDR, banking transaction, and multi-jurisdiction FIR correlation engine engineered for Indian law enforcement agencies. Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023 compliant audit ledger | Deterministic SHA-256 genesis-anchored chain of custody | 100% Dynamic multi-evidence learning without hardcoded mocks.
+        </p>
+<div class="flex items-center gap-5 shrink-0 text-slate-400">
+<a class="hover:text-neonCyan transition" href="#privacy">Privacy Policy</a>
+<a class="hover:text-neonCyan transition" href="#terms">Terms of Service</a>
+<a class="hover:text-neonCyan transition" href="#docs">Documentation</a>
+<a class="hover:text-neonCyan transition" href="#contact">Contact Us</a>
+</div>
+</div>
+<!-- Bottom Copyright Mark -->
+<div class="text-center md:text-left text-[11px] font-mono text-slate-600 pt-2">
+        © 2025 Case Connect AI • UNITx Defense Technologies Inc. Restricted Access to Authorized Law Enforcement Personnel Only.
+      </div>
+</div>
+</footer>
+<!-- END: MainFooter -->
+</body></html>

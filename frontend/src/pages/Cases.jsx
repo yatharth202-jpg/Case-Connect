@@ -63,6 +63,24 @@ export default function Cases() {
     }
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setNewTitle('');
+    setNewDesc('');
+    setNewPriority('medium');
+    setModalError('');
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Top Bar */}
@@ -222,7 +240,7 @@ export default function Cases() {
               <h3 className="text-sm font-bold text-white">Create New Investigation Case</h3>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCloseModal}
                 className="text-slate-400 hover:text-white text-sm px-2 py-1 rounded hover:bg-[#1e293b] transition-colors"
                 title="Close"
               >
@@ -285,7 +303,7 @@ export default function Cases() {
               <div className="pt-3 border-t border-[#1e293b] flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="px-3 py-2 bg-[#030712] hover:bg-[#1e293b] text-slate-300 rounded text-xs transition-colors"
                 >
                   Cancel
