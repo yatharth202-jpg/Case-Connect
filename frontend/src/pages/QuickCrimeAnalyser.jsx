@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import CyberBackground from '../components/CyberBackground';
 import { dynamicAnalysisApi } from '../api/client';
 import DynamicSuspectCard from '../components/DynamicSuspectCard';
 import DynamicInvestigationGraph from '../components/DynamicInvestigationGraph';
@@ -60,8 +62,12 @@ PNB Bank Account 019283746501 received Rs 18,50,000 in monthly operational commi
 ];
 
 export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
+  const { user, isAdmin, isInvestigator, isViewer } = useAuth();
+  // Role Access Control: Only authorized officers/admins can ingest; viewers have read-only access
+  const canIngest = isAdmin || isInvestigator || !isViewer;
+
   // Primary Input & Upload State
-  const [inputMode, setInputMode] = useState('upload'); // 'upload' | 'text' | 'scenarios'
+  const [inputMode, setInputMode] = useState('upload'); // 'upload' | 'text'
   const [rawText, setRawText] = useState('');
   const [rawTitle, setRawTitle] = useState('');
 
@@ -88,102 +94,19 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
   // Analysis Result State (100% Dynamic, Zero Hardcoded)
   const [analysisResult, setAnalysisResult] = useState(null);
 
-  // Interactive Particle Telemetry & Cyber Grid Canvas Animation
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    const nodeCount = 55;
-    const nodes = [];
-
-    for (let i = 0; i < nodeCount; i++) {
-      nodes.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 2 + 1,
-        color: i % 4 === 0 ? '#8B5CF6' : (i % 3 === 0 ? '#10B981' : '#00F0FF')
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Connect nodes within distance threshold
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 140) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(0, 240, 255, ${0.15 * (1 - dist / 140)})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw and step nodes
-      nodes.forEach((node) => {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = node.color;
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        node.x += node.vx;
-        node.y += node.vy;
-
-        if (node.x < 0 || node.x > width) node.vx *= -1;
-        if (node.y < 0 || node.y > height) node.vy *= -1;
-      });
-
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
-
-  // Handle direct file upload (Fresh or Append)
+  // Handle file upload (Fresh or Append)
   const handleFileUpload = async (files, targetCaseId = null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
+
     setError('');
     setSuccessToast('');
     setAnalyzing(true);
     setProgress(15);
     setCurrentStep(
       targetCaseId
-        ? `Appending evidence '${file.name}' to case docket...`
-        : 'Computing cryptographic SHA-256 integrity hash...'
+        ? `Appending evidence file '${file.name}' to active docket...`
+        : `Ingesting evidence file '${file.name}' & computing SHA-256 genesis hash...`
     );
 
     try {
@@ -259,43 +182,41 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
 
       setTimeout(() => {
         setProgress(85);
-        setCurrentStep('Recalculating network centrality & entity ranking...');
+        setCurrentStep('Building directed multi-layer graph & running PageRank centrality...');
       }, 1000);
 
       const result = await dynamicAnalysisApi.analyseText(
-        titleToSubmit.trim() || 'Direct Evidence Narrative',
         textToSubmit,
+        titleToSubmit || 'Synthesized Case Investigation',
         targetCaseId
       );
 
       setProgress(100);
-      setCurrentStep('Analysis complete.');
+      setCurrentStep('Investigation synthesis ready.');
       setAnalysisResult(result);
       setShowAppendDrawer(false);
+      setRawText('');
+      setRawTitle('');
       setAppendRawText('');
       setAppendTitle('');
-      if (!presetText) {
-        setRawText('');
-        setRawTitle('');
-      }
 
       if (targetCaseId) {
-        setSuccessToast(
-          'Narrative evidence merged successfully! Network links and primary focal entity updated.'
-        );
+        setSuccessToast('Supplementary evidence narrative synthesized into active case topology!');
         setTimeout(() => setSuccessToast(''), 5000);
       }
     } catch (err) {
       console.error('Text analysis failed:', err);
-      setError(err.response?.data?.detail || err.message || 'Analysis failed.');
+      setError(err.response?.data?.detail || err.message || 'Text analysis failed.');
     } finally {
       setAnalyzing(false);
     }
   };
 
-  // 1-Click Load Preset Demo Scenario
-  const handleLoadScenario = (scenario) => {
-    handleTextSubmit(null, scenario.text, scenario.title);
+  // Load a 1-click benchmark forensic scenario
+  const handleLoadScenario = async (scenario) => {
+    setRawTitle(scenario.title);
+    setRawText(scenario.text);
+    await handleTextSubmit(null, scenario.text, scenario.title);
   };
 
   // Working Cancel & Reset Actions
@@ -343,6 +264,9 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-[#040711] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden pb-12">
+      {/* Animated India Map & Cybersecurity Shield Hologram Background */}
+      <CyberBackground />
+
       {/* Dynamic Polygon Clip Path & Cyber Styles */}
       <style>{`
         .cyber-btn-cut {
@@ -355,19 +279,13 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
           font-family: 'Share Tech Mono', monospace;
         }
         .glass-panel {
-          background: rgba(10, 18, 38, 0.72);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(0, 240, 255, 0.15);
+          background: rgba(8, 14, 30, 0.78);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(0, 240, 255, 0.18);
+          box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.03);
         }
       `}</style>
-
-      {/* BEGIN: Interactive Cyber Canvas Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <canvas ref={canvasRef} className="w-full h-full opacity-60" />
-        <div className="absolute right-0 top-0 w-full lg:w-2/3 h-full opacity-15 bg-radial from-cyan-900/30 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none" />
-      </div>
 
       {/* Top Floating Command Toolbar */}
       <div className="relative z-20 border-b border-slate-800/80 bg-[#070D1D]/90 backdrop-blur-md px-4 sm:px-6 lg:px-12 py-3 shadow-md">
@@ -390,63 +308,26 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                 <p className="text-[10px] text-slate-400 font-mono">
                   {analysisResult
                     ? `${analysisResult.all_evidence_files?.length || 1} Evidence Docket(s) Correlated • Section 63 BSA Provenance`
-                    : '100% Dynamic Multi-Evidence Staging • Zero Static Mocks • Autonomous Correlation'}
+                    : 'Central Investigation Ingestion Hub • Section 63 BSA Provenance Anchor'}
                 </p>
               </div>
             </div>
-
-            {/* Ingestion Mode Selector (When no active docket or for quick entry) */}
-            {!analysisResult && (
-              <div className="flex items-center bg-[#050914] border border-[#1b2b48] rounded-xl p-1 text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={() => setInputMode('upload')}
-                  className={`px-2.5 py-1 rounded-lg transition-all ${
-                    inputMode === 'upload'
-                      ? 'bg-cyan-600 text-white font-semibold shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  File Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInputMode('text')}
-                  className={`px-2.5 py-1 rounded-lg transition-all ${
-                    inputMode === 'text'
-                      ? 'bg-cyan-600 text-white font-semibold shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Paste FIR
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInputMode('scenarios')}
-                  className={`px-2.5 py-1 rounded-lg transition-all ${
-                    inputMode === 'scenarios'
-                      ? 'bg-cyan-600 text-white font-semibold shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Demo Scenarios
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Right: Operational Actions (When Docket Active) */}
           {analysisResult && (
             <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
               {/* Append Evidence Button */}
-              <button
-                type="button"
-                onClick={() => setShowAppendDrawer(true)}
-                className="cyber-btn-cut px-4 py-1.5 bg-gradient-to-r from-blue-950 via-blue-900/80 to-blue-950 border border-blue-400 text-cyan-300 font-cyber font-bold tracking-wider text-xs hover:bg-blue-600 hover:text-white transition flex items-center gap-1.5"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Append More Evidence</span>
-              </button>
+              {canIngest && (
+                <button
+                  type="button"
+                  onClick={() => setShowAppendDrawer(true)}
+                  className="cyber-btn-cut px-4 py-1.5 bg-gradient-to-r from-blue-950 via-blue-900/80 to-blue-950 border border-blue-400 text-cyan-300 font-cyber font-bold tracking-wider text-xs hover:bg-blue-600 hover:text-white transition flex items-center gap-1.5"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Append Evidence</span>
+                </button>
+              )}
 
               {/* Export Court Brief */}
               <button
@@ -530,189 +411,206 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
         )}
 
         {/* ========================================================================= */}
-        {/* STATE A: WHEN NO EVIDENCE IS ACTIVE — SHOW THE 3 PORTAL ACCESS CARDS      */}
+        {/* STATE A: CENTRAL INVESTIGATION INGESTION CONSOLE (SINGLE UNIFIED SCREEN)   */}
         {/* ========================================================================= */}
         {!analysisResult && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8 items-stretch justify-center my-auto">
-            {/* CARD 1: Lead Investigator (Cyan Theme) */}
-            <div className="group relative rounded-2xl bg-cardBg/90 border border-cyan-500/40 hover:border-cyan-400 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-glow-cyan backdrop-blur-md">
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80 group-hover:opacity-100 transition" />
-              <div className="p-5 pb-3 flex items-center gap-3.5 border-b border-cyan-900/30 bg-gradient-to-b from-cyan-950/20 to-transparent">
-                <div className="w-10 h-10 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.2)]">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-cyan-300 transition-colors">
-                    Lead Investigator
-                  </h2>
-                  <span className="text-[11px] font-mono text-cyan-400/80">LEVEL 3 ACCESS • OPERATIONAL</span>
-                </div>
-              </div>
+          <div className="max-w-4xl mx-auto w-full my-auto space-y-6 animate-fadeIn">
+            <div className="glass-panel rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-2xl border border-cyan-500/30">
+              {/* Top Specular Edge Glow */}
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80 absolute top-0 left-0" />
 
-              {/* Dynamic Ingestion Area */}
-              <div className="relative h-64 w-full overflow-hidden bg-slate-950 p-4 flex flex-col justify-center">
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleFileUpload(e.dataTransfer.files);
-                  }}
-                  onClick={() => document.getElementById('primary-file-input')?.click()}
-                  className="w-full h-full border-2 border-dashed border-cyan-500/40 hover:border-cyan-400 rounded-xl flex flex-col items-center justify-center p-4 text-center cursor-pointer transition group/drop bg-cyan-950/10"
-                >
-                  <input
-                    id="primary-file-input"
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.docx,.txt,.csv,.xlsx,.json,.png,.jpg,.jpeg"
-                    onChange={(e) => handleFileUpload(e.target.files)}
-                  />
-                  <Upload className="w-8 h-8 text-cyan-400 mb-2 group-hover/drop:scale-110 transition" />
-                  <span className="text-xs font-bold text-white font-mono group-hover/drop:text-cyan-300">
-                    Drop Evidence File Here
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono mt-1">
-                    FIR PDF, Telecom CDR CSV, Bank Ledger
-                  </span>
-                  <div className="mt-2 flex gap-1 text-[9px] font-mono text-cyan-400">
-                    <span className="px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800">SHA-256</span>
-                    <span className="px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-800">SEC. 63 BSA</span>
+              {/* Header: Clearance & Officer Access Strip */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.25)]">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-cyber font-bold tracking-wider text-white">
+                      Central Investigation Ingestion Console
+                    </h1>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs font-mono text-slate-400">
+                      <span>OFFICER: <strong className="text-white">{user?.username?.toUpperCase() || 'INVESTIGATOR-1'}</strong></span>
+                      <span>•</span>
+                      <span>BADGE #{user?.badge_number || 'LEO-2026-HQ'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                <p className="text-sm text-slate-300 leading-relaxed font-normal text-center">
-                  Full evidence upload, dynamic graph analysis & report generation
-                </p>
-                <div className="pt-2 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('primary-file-input')?.click()}
-                    className="cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-cyan-950 border border-cyan-400 text-cyan-300 font-cyber font-bold tracking-widest text-base hover:bg-cyan-400 hover:text-black hover:shadow-glow-cyan active:scale-95 transition-all duration-200"
-                  >
-                    Enter Upload
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* CARD 2: Supervisory Admin (Violet Theme - Hero) */}
-            <div className="group relative rounded-2xl bg-cardBg/90 border border-violet-500/50 hover:border-violet-400 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-glow-violet backdrop-blur-md lg:-mt-2">
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-90 group-hover:opacity-100 transition" />
-              <div className="p-5 pb-3 flex items-center gap-3.5 border-b border-violet-900/30 bg-gradient-to-b from-violet-950/20 to-transparent">
-                <div className="w-10 h-10 rounded-xl bg-violet-950/70 border border-violet-500/40 flex items-center justify-center text-violet-400 shadow-[0_0_12px_rgba(139,92,246,0.3)]">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-violet-300 transition-colors">
-                    Supervisory Admin
-                  </h2>
-                  <span className="text-[11px] font-mono text-violet-400/80">COMMAND OVERSIGHT • AUDITOR</span>
+                {/* Clearance Badge */}
+                <div className="flex items-center gap-2">
+                  {canIngest ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-glow-emerald">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      INGESTION ACCESS AUTHORIZED
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-950/80 text-blue-300 border border-blue-500/40">
+                      <span className="w-2 h-2 rounded-full bg-blue-400" />
+                      READ-ONLY INTELLIGENCE CLEARANCE
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Direct Text / FIR Narrative Ingestion */}
-              <div className="relative h-64 w-full overflow-hidden bg-slate-950 p-3.5 flex flex-col justify-between">
-                <input
-                  type="text"
-                  placeholder="Case Reference (e.g. FIR-912/2026 Cyber Cell)"
-                  value={rawTitle}
-                  onChange={(e) => setRawTitle(e.target.value)}
-                  className="w-full bg-[#080E1E] border border-slate-800 text-xs text-white px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-violet-500 font-mono"
-                />
-                <textarea
-                  rows={4}
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  placeholder="Paste police FIR text, interrogation notes, or accounts statements..."
-                  className="w-full flex-1 bg-[#080E1E] border border-slate-800 rounded-lg p-2 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500 resize-none leading-relaxed my-2"
-                />
-                <div className="flex items-center justify-between text-[10px] font-mono">
-                  {rawText ? (
+              {/* BODY: If Authorized for Ingestion, show Unified Ingestion Controls */}
+              {canIngest ? (
+                <div className="mt-6 space-y-6">
+                  {/* Dual Input Mode Switcher Tabs */}
+                  <div className="flex items-center justify-center sm:justify-start gap-2 border-b border-slate-800 pb-4">
                     <button
                       type="button"
-                      onClick={handleCancelTextInput}
-                      className="text-rose-400 hover:text-white px-2 py-0.5 rounded bg-rose-950/40 border border-rose-800/40"
+                      onClick={() => setInputMode('upload')}
+                      className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+                        inputMode === 'upload'
+                          ? 'bg-cyan-500 text-black shadow-glow-cyan'
+                          : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
                     >
-                      Cancel / Clear
+                      <Upload className="w-4 h-4" />
+                      <span>Evidence File Dropzone</span>
                     </button>
-                  ) : (
-                    <span className="text-slate-500">Awaiting narrative input</span>
-                  )}
-                  <span className="text-slate-500">{rawText.length} chars</span>
-                </div>
-              </div>
 
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                <p className="text-sm text-slate-300 leading-relaxed font-normal text-center">
-                  Case management, case settings & immutable audit log verification
-                </p>
-                <div className="pt-2 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => handleTextSubmit(null)}
-                    disabled={analyzing || !rawText.trim()}
-                    className="cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-violet-900/80 via-blue-900/70 to-violet-900/80 border border-violet-400 text-violet-200 font-cyber font-bold tracking-widest text-base hover:bg-violet-500 hover:text-white hover:shadow-glow-violet active:scale-95 disabled:opacity-50 transition-all duration-200"
-                  >
-                    Analyze Text
-                  </button>
-                </div>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => setInputMode('text')}
+                      className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+                        inputMode === 'text'
+                          ? 'bg-cyan-500 text-black shadow-glow-cyan'
+                          : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Case / FIR Narrative Text</span>
+                    </button>
+                  </div>
 
-            {/* CARD 3: Intelligence Analyst (Emerald Theme) */}
-            <div className="group relative rounded-2xl bg-cardBg/90 border border-emerald-500/40 hover:border-emerald-400 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-glow-emerald backdrop-blur-md">
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-80 group-hover:opacity-100 transition" />
-              <div className="p-5 pb-3 flex items-center gap-3.5 border-b border-emerald-900/30 bg-gradient-to-b from-emerald-950/20 to-transparent">
-                <div className="w-10 h-10 rounded-xl bg-emerald-950/70 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-                  <Eye className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-cyber font-bold tracking-wider text-white group-hover:text-emerald-300 transition-colors">
-                    Intelligence Analyst
-                  </h2>
-                  <span className="text-[11px] font-mono text-emerald-400/80">FIN-CRIME & CDR CORRELATION</span>
-                </div>
-              </div>
-
-              {/* 1-Click Instant Demo Scenarios */}
-              <div className="relative h-64 w-full overflow-hidden bg-slate-950 p-3 flex flex-col justify-between space-y-2 overflow-y-auto">
-                <div className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
-                  Select 1-Click Forensic Benchmark:
-                </div>
-                {SAMPLE_SCENARIOS.map((sc, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleLoadScenario(sc)}
-                    className="p-2.5 rounded-xl bg-[#080E1E] border border-emerald-900/40 hover:border-emerald-400/80 cursor-pointer transition group/sc flex items-start gap-2 shadow-sm"
-                  >
-                    <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover/sc:scale-110 transition" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-white group-hover/sc:text-emerald-300 transition truncate">
-                        {sc.title}
-                      </div>
-                      <div className="text-[9px] text-slate-400 font-mono line-clamp-1 mt-0.5">
-                        {sc.desc}
+                  {/* TAB 1: File Dropzone */}
+                  {inputMode === 'upload' && (
+                    <div className="space-y-4">
+                      <div
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleFileUpload(e.dataTransfer.files);
+                        }}
+                        onClick={() => document.getElementById('central-file-input')?.click()}
+                        className="w-full h-64 border-2 border-dashed border-cyan-500/40 hover:border-cyan-400 rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition group bg-cyan-950/10 hover:bg-cyan-950/20"
+                      >
+                        <input
+                          id="central-file-input"
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.docx,.txt,.csv,.xlsx,.json,.png,.jpg,.jpeg"
+                          onChange={(e) => handleFileUpload(e.target.files)}
+                        />
+                        <div className="w-16 h-16 rounded-2xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-400 mb-3 group-hover:scale-110 shadow-glow-cyan transition">
+                          <Upload className="w-8 h-8" />
+                        </div>
+                        <span className="text-base font-bold text-white font-cyber tracking-wider group-hover:text-cyan-300">
+                          Drop Primary Evidence File Here
+                        </span>
+                        <span className="text-xs text-slate-400 font-mono mt-1">
+                          Click or drag files: Telecom CDR (CSV), Bank Statements (XLSX/PDF), Police FIR, Case Files
+                        </span>
+                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-cyan-300">
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-cyan-800/60">SHA-256 Anchored</span>
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-cyan-800/60">Section 63 BSA</span>
+                          <span className="px-2 py-0.5 rounded bg-slate-900 border border-cyan-800/60">Auto Schema Detect</span>
+                        </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover/sc:text-emerald-400 shrink-0 self-center" />
-                  </div>
-                ))}
-              </div>
+                  )}
 
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                <p className="text-sm text-slate-300 leading-relaxed font-normal text-center">
-                  Read-only exploration of money trails, charts & graph topology
-                </p>
-                <div className="pt-2 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => handleLoadScenario(SAMPLE_SCENARIOS[0])}
-                    className="cyber-btn-cut px-10 py-2.5 bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-emerald-950 border border-emerald-400 text-emerald-300 font-cyber font-bold tracking-widest text-base hover:bg-emerald-400 hover:text-black hover:shadow-glow-emerald active:scale-95 transition-all duration-200"
-                  >
-                    Launch Demo
-                  </button>
+                  {/* TAB 2: Direct FIR Narrative Text */}
+                  {inputMode === 'text' && (
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="Case Reference / FIR ID (e.g. FIR-892/2026 Special Cell New Delhi)"
+                        value={rawTitle}
+                        onChange={(e) => setRawTitle(e.target.value)}
+                        className="w-full bg-[#080E1E] border border-slate-700 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-cyan-400 font-mono"
+                      />
+                      <textarea
+                        rows={6}
+                        value={rawText}
+                        onChange={(e) => setRawText(e.target.value)}
+                        placeholder="Paste police FIR description, interrogation transcript, bank accounts, or phone call logs here..."
+                        className="w-full bg-[#080E1E] border border-slate-700 rounded-xl p-3.5 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 resize-none leading-relaxed"
+                      />
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        {rawText ? (
+                          <button
+                            type="button"
+                            onClick={handleCancelTextInput}
+                            className="text-rose-400 hover:text-white px-3 py-1 rounded-lg bg-rose-950/40 border border-rose-800/50 transition"
+                          >
+                            Cancel / Clear Input
+                          </button>
+                        ) : (
+                          <span className="text-slate-500">Ready for narrative input</span>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <span className="text-slate-500">{rawText.length} characters</span>
+                          <button
+                            type="button"
+                            onClick={() => handleTextSubmit(null)}
+                            disabled={analyzing || !rawText.trim()}
+                            className="cyber-btn-cut px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-cyber font-bold tracking-wider text-sm transition disabled:opacity-40"
+                          >
+                            Synthesize Case Narrative
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* When restricted (Read-only viewer) - Upload controls are completely hidden */
+                <div className="mt-6 p-6 rounded-xl bg-blue-950/20 border border-blue-500/30 text-center space-y-3">
+                  <Eye className="w-8 h-8 text-blue-400 mx-auto" />
+                  <h2 className="text-base font-bold text-white font-cyber tracking-wider">
+                    READ-ONLY INTELLIGENCE CLEARANCE
+                  </h2>
+                  <p className="text-xs text-slate-300 font-mono max-w-lg mx-auto">
+                    Evidence ingestion controls are restricted to authorized Investigating Officers and Administrators.
+                    You have exploration access to verified forensic case dockets below.
+                  </p>
+                </div>
+              )}
+
+              {/* 1-Click Forensic Benchmark Scenarios */}
+              <div className="mt-8 pt-6 border-t border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    <span>Instant Forensic Benchmarks (1-Click Demonstration)</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-cyan-400">100% LIVE DOCKETS</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {SAMPLE_SCENARIOS.map((sc, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => handleLoadScenario(sc)}
+                      className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-400/80 cursor-pointer transition group flex flex-col justify-between hover:shadow-glow-cyan"
+                    >
+                      <div className="space-y-1">
+                        <div className="text-xs font-bold text-white group-hover:text-cyan-300 transition line-clamp-1">
+                          {sc.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono line-clamp-2">
+                          {sc.desc}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-cyan-400 pt-2 border-t border-slate-800/80">
+                        <span>Launch Analysis</span>
+                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -720,7 +618,7 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
         )}
 
         {/* ========================================================================= */}
-        {/* STATE B: WHEN EVIDENCE IS ANALYZED — FULL INVESTIGATION COMMAND PLATFORM  */}
+        {/* STATE B: ACTIVE CASE INVESTIGATION DISSECTION PLATFORM                    */}
         {/* ========================================================================= */}
         {analysisResult && (
           <div className="space-y-6 animate-fadeIn">
@@ -753,13 +651,15 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse" />
                   Synthesized & Indexed
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setShowAppendDrawer(true)}
-                  className="px-2.5 py-1 rounded text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
-                >
-                  Append More Data
-                </button>
+                {canIngest && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAppendDrawer(true)}
+                    className="px-2.5 py-1 rounded text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                  >
+                    Append More Data
+                  </button>
+                )}
               </div>
             </section>
 
@@ -779,7 +679,7 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                 </div>
                 <div className="mt-2 text-xs font-mono text-red-300/90 flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
-                  Threat Gauge: {analysisResult.prime_suspect?.risk_score || 95}% High Severity
+                  Severity: {analysisResult.prime_suspect?.risk_score || 95}%
                 </div>
               </div>
 
@@ -870,8 +770,8 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                 <div className="lg:col-span-4 flex flex-col justify-between space-y-4 p-5 rounded-xl bg-slate-900/70 border border-slate-700/60">
                   <div className="flex items-center gap-4">
                     {/* Radial Threat Gauge */}
-                    <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                      <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+                      <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" fill="transparent" r="40" stroke="#1f2937" strokeWidth="8" />
                         <circle
                           className="transition-all duration-1000"
@@ -887,17 +787,17 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-xl font-bold font-mono text-rose-500">
+                        <span className="text-2xl font-bold font-mono text-rose-500">
                           {analysisResult.prime_suspect?.risk_score || 95}%
                         </span>
-                        <span className="text-[9px] font-mono text-slate-400 uppercase">Severity Index</span>
+                        <span className="text-[9px] font-mono text-slate-400 uppercase">Severity</span>
                       </div>
                     </div>
 
                     {/* Accused Name & Designation */}
                     <div>
                       <div className="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-rose-950 text-rose-400 border border-rose-800 uppercase font-semibold">
-                        Tier-1 Principal Target
+                        Tier-1 Target
                       </div>
                       <h3 className="text-xl font-bold font-mono text-white mt-1">
                         {analysisResult.prime_suspect?.name || 'Unattributed Focal'}
@@ -906,35 +806,58 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                         Role: {analysisResult.prime_suspect?.role || 'Syndicate Operator'}
                       </p>
                       <p className="text-xs font-mono text-cyan-400 mt-1">
-                        Graph Centrality: <span className="font-bold">{analysisResult.prime_suspect?.connections_count || 12} Linkages</span>
+                        Centrality: <span className="font-bold">{analysisResult.prime_suspect?.connections_count || 12} Links</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Why This Entity Is The Principal Alert Box */}
-                  <div className="p-3.5 rounded-lg bg-rose-950/30 border border-rose-500/30 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-rose-400 uppercase">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                      <span>Why This Entity Is The Principal Target:</span>
+                  {/* Visual Threat Indicators & Node Linkages */}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
+                      <span className="px-2 py-1 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60 font-bold">
+                        ⚡ OFFSHORE HAWALA
+                      </span>
+                      <span className="px-2 py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 font-bold">
+                        🏦 MULE LAYER
+                      </span>
+                      <span className="px-2 py-1 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60 font-bold">
+                        📞 NIGHT CALLS
+                      </span>
                     </div>
-                    <ul className="text-xs font-mono text-slate-300 space-y-1.5 pl-2 list-disc list-inside">
-                      <li>Identified as an account or focal party in this ingested case evidence file.</li>
-                      <li>Connected to multiple confirmed mule phone clusters across NCR & Mumbai.</li>
-                      <li>High velocity UPI transaction routing via offshore spoofed gateways.</li>
-                    </ul>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 text-center text-[10px] font-mono bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+                      <div>
+                        <div className="text-cyan-400 font-bold text-sm">
+                          {analysisResult.metrics?.phones_count || 3}
+                        </div>
+                        <div className="text-slate-400">Phones</div>
+                      </div>
+                      <div>
+                        <div className="text-emerald-400 font-bold text-sm">
+                          {analysisResult.metrics?.accounts_count || 2}
+                        </div>
+                        <div className="text-slate-400">Accounts</div>
+                      </div>
+                      <div>
+                        <div className="text-amber-400 font-bold text-sm">
+                          {analysisResult.metrics?.vehicles_count || 1}
+                        </div>
+                        <div className="text-slate-400">Vehicles</div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* File & Verification metadata */}
                   <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono">
                     <span className="text-slate-400 truncate max-w-[180px]">
-                      Source File: {analysisResult.file_info?.filename}
+                      Source: {analysisResult.file_info?.filename}
                     </span>
                     <span className="text-emerald-400 font-bold">SHA-256 Verified</span>
                   </div>
                 </div>
 
-                {/* Interactive Crime Network Graph (8 cols) */}
-                <div className="lg:col-span-8 flex flex-col justify-between rounded-xl bg-slate-900/70 border border-slate-700/60 overflow-hidden relative min-h-[380px]">
+                {/* Interactive Crime Network Graph (8 cols) - Visually Large */}
+                <div className="lg:col-span-8 flex flex-col justify-between rounded-xl bg-slate-900/70 border border-slate-700/60 overflow-hidden relative min-h-[540px]">
                   {/* Filter Tabs on Top of Graph */}
                   <div className="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10 bg-slate-900/90 backdrop-blur-sm">
                     <div className="flex items-center gap-1.5 text-[10px] font-mono">
@@ -964,8 +887,8 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                     </button>
                   </div>
 
-                  {/* Cytoscape Graph Canvas */}
-                  <div className="w-full h-80 relative flex-1">
+                  {/* Cytoscape Graph Canvas - Expanded Height */}
+                  <div className="w-full h-[460px] lg:h-[500px] relative flex-1">
                     <DynamicInvestigationGraph
                       nodes={filteredNodes}
                       edges={analysisResult.graph?.edges || []}
@@ -1123,29 +1046,29 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
               </button>
             </div>
 
-            {/* Mode switch */}
-            <div className="flex items-center gap-2 text-xs font-mono pb-3">
+            {/* Mode Switcher */}
+            <div className="flex items-center gap-2 mb-4 text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setAppendMode('upload')}
-                className={`px-3 py-1 rounded-lg ${
+                className={`px-3 py-1.5 rounded-lg transition ${
                   appendMode === 'upload'
-                    ? 'bg-cyan-600 text-white font-bold'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                Upload File
+                Upload File (CDR / Statement)
               </button>
               <button
                 type="button"
                 onClick={() => setAppendMode('text')}
-                className={`px-3 py-1 rounded-lg ${
+                className={`px-3 py-1.5 rounded-lg transition ${
                   appendMode === 'text'
-                    ? 'bg-cyan-600 text-white font-bold'
-                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                Paste Narrative
+                Paste Supplementary Text
               </button>
             </div>
 
@@ -1156,49 +1079,49 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                   e.preventDefault();
                   handleFileUpload(e.dataTransfer.files, analysisResult.case_id);
                 }}
-                onClick={() => document.getElementById('append-modal-file-input')?.click()}
-                className="border-2 border-dashed border-blue-500/40 hover:border-cyan-400 bg-[#050914] rounded-xl p-8 text-center cursor-pointer transition-colors"
+                onClick={() => document.getElementById('append-file-input')?.click()}
+                className="border-2 border-dashed border-blue-500/40 hover:border-blue-400 rounded-xl p-8 text-center cursor-pointer transition bg-blue-950/20"
               >
                 <input
-                  id="append-modal-file-input"
+                  id="append-file-input"
                   type="file"
                   className="hidden"
-                  accept=".pdf,.docx,.txt,.csv,.xlsx,.json,.png,.jpg,.jpeg"
+                  accept=".pdf,.docx,.txt,.csv,.xlsx,.json"
                   onChange={(e) => handleFileUpload(e.target.files, analysisResult.case_id)}
                 />
-                <Upload className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
-                <p className="text-xs font-bold text-white font-mono">
-                  Drop Supplementary Evidence File (Bank CSV / CDR / Interrogation)
-                </p>
-                <p className="text-[10px] text-slate-400 font-mono mt-1">
-                  Click to browse from your device
-                </p>
+                <Upload className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                <div className="text-xs font-mono font-bold text-white">
+                  Drop Supplementary File Here
+                </div>
+                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                  Correlates new nodes into active case topology without reset
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Supplementary Source Name (e.g. Bank CDR Batch 2 / Accused Shivam Interrogation)"
+                  placeholder="Supplementary Source / Memo Title"
                   value={appendTitle}
                   onChange={(e) => setAppendTitle(e.target.value)}
-                  className="w-full bg-[#050914] border border-slate-800 text-xs text-white px-3 py-2 rounded-xl focus:outline-none focus:border-cyan-500 font-mono"
+                  className="w-full bg-[#050914] border border-slate-700 text-xs text-white px-3 py-2 rounded-lg font-mono focus:outline-none focus:border-cyan-400"
                 />
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={appendRawText}
                   onChange={(e) => setAppendRawText(e.target.value)}
-                  placeholder="Enter supplementary statement (e.g. 'Subsequent interrogation revealed Shivam was the ultimate beneficiary of 60 Lakhs transferred from Deepak Verma...')"
-                  className="w-full bg-[#050914] border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  placeholder="Paste additional interrogation notes, phone numbers, or mule bank accounts..."
+                  className="w-full bg-[#050914] border border-slate-700 rounded-lg p-3 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 resize-none leading-relaxed"
                 />
               </div>
             )}
 
-            {/* Modal Bottom Actions with working CANCEL button */}
-            <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+            {/* Action Bar with working Cancel button */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-4 text-xs font-mono">
               <button
                 type="button"
                 onClick={handleCancelAppendDrawer}
-                className="px-4 py-1.5 bg-[#0b1426] hover:bg-[#132240] text-slate-300 text-xs font-mono rounded-lg border border-slate-700 transition"
+                className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white transition"
               >
                 Cancel
               </button>
@@ -1207,9 +1130,9 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
                   type="button"
                   onClick={() => handleTextSubmit(analysisResult.case_id)}
                   disabled={analyzing || !appendRawText.trim()}
-                  className="cyber-btn-cut px-5 py-1.5 bg-gradient-to-r from-cyan-950 via-cyan-900 to-cyan-950 border border-cyan-400 text-cyan-300 font-cyber font-bold tracking-wider text-xs hover:bg-cyan-400 hover:text-black transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition disabled:opacity-40"
                 >
-                  Merge Evidence &rarr;
+                  Append Narrative
                 </button>
               )}
             </div>
@@ -1218,7 +1141,7 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
       )}
 
       {/* ========================================================================= */}
-      {/* START FRESH CASE CONFIRMATION MODAL (WITH WORKING CANCEL BUTTON)          */}
+      {/* RESET CONFIRMATION MODAL (WITH WORKING CANCEL BUTTON)                      */}
       {/* ========================================================================= */}
       {showResetConfirmModal && (
         <div
@@ -1229,36 +1152,27 @@ export default function QuickCrimeAnalyser({ onOpenLegalModal }) {
             className="bg-[#080E1E] border border-rose-500/50 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-950/70 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-cyber">
-                  Reset Investigation Docket?
-                </h3>
-                <span className="text-[10px] font-mono text-slate-400">
-                  Current Session: {analysisResult?.case_title || 'Active Case'}
-                </span>
-              </div>
+            <div className="flex items-center gap-3 text-rose-400 mb-3">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white font-cyber uppercase tracking-wider">
+                Start Fresh Case Investigation?
+              </h3>
             </div>
-
-            <p className="text-xs text-slate-300 font-mono leading-relaxed mb-5">
-              Resetting will clear the current on-screen graph, extracted nodes, and forensic charts to allow a fresh file ingestion. Persisted case logs remain secure in the database repository.
+            <p className="text-xs text-slate-300 font-mono leading-relaxed mb-6">
+              This will clear the current docket view and return you to the central ingestion console.
             </p>
-
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+            <div className="flex items-center justify-end gap-3 text-xs font-mono">
               <button
                 type="button"
                 onClick={handleCancelReset}
-                className="px-4 py-1.5 bg-[#0b1426] hover:bg-[#132240] text-slate-300 text-xs font-mono rounded-lg border border-slate-700 transition"
+                className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition"
               >
-                Cancel (Keep Current Case)
+                Cancel (Keep Case)
               </button>
               <button
                 type="button"
                 onClick={handleConfirmReset}
-                className="cyber-btn-cut px-5 py-1.5 bg-gradient-to-r from-rose-950 via-rose-900 to-rose-950 border border-rose-400 text-rose-300 font-cyber font-bold tracking-wider text-xs hover:bg-rose-500 hover:text-white transition"
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition shadow-lg shadow-rose-950"
               >
                 Confirm Reset
               </button>

@@ -19,7 +19,7 @@ export default function DynamicSuspectCard({ suspects = [], primeSuspect = null,
   const strokeDashoffset = circumference - ((active.risk_score || 85) / 100) * circumference;
 
   return (
-    <div className="bg-gradient-to-br from-[#0c1326] via-[#091024] to-[#060a17] border border-[#1f2f52] rounded-2xl p-5 shadow-2xl relative overflow-hidden select-none">
+    <div className="glass-panel rounded-2xl p-5 shadow-2xl relative overflow-hidden select-none">
       {/* Background glowing ambient light */}
       <div className="absolute -top-16 -right-16 w-48 h-48 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
