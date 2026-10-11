@@ -306,6 +306,48 @@ def extract_ner_entities(
                     "role": detected_role
                 })
 
+    # 2.5 High-Recall Proper Names (detects full Indian & English names e.g. Amit Kumar, Rahul Sharma)
+    PROPER_NAME_PATTERN = re.compile(r'\b([A-Z][a-z]{2,15}\s+[A-Z][a-z]{2,15}(?:\s+[A-Z][a-z]{2,15})?)\b')
+    EXCLUDED_NAME_TOKENS = {
+        "cyber", "cell", "delhi", "mumbai", "kanpur", "lucknow", "noida",
+        "south", "north", "east", "west", "central", "state", "police",
+        "station", "district", "hospital", "magistrate", "first", "information",
+        "report", "case", "diary", "memo", "court", "act", "acts", "section",
+        "sections", "bnss", "bns", "ipc", "crpc", "pmla", "bsa"
+    }
+    for m in PROPER_NAME_PATTERN.finditer(clean_unwrapped):
+        raw_name = m.group(1).strip()
+        cleaned_name = clean_person_name(raw_name)
+        start = base_char_offset + m.start(1)
+        end = base_char_offset + m.end(1)
+
+        if cleaned_name and not overlaps_any(start, end):
+            tokens = [t.lower() for t in cleaned_name.split()]
+            if len(tokens) >= 2 and not any(t in EXCLUDED_NAME_TOKENS for t in tokens):
+                norm = cleaned_name.lower()
+                if norm not in seen_norms:
+                    seen_norms.add(norm)
+                    window_start = max(0, m.start() - 60)
+                    window_end = min(len(clean_unwrapped), m.end() + 60)
+                    context_snippet = clean_unwrapped[window_start:window_end]
+                    detected_role = infer_entity_role(context_snippet, cleaned_name)
+
+                    org_indicators = ["ltd", "limited", "bank", "pvt", "corp", "corporation", "inc", "trust", "hospital", "police", "agency", "llp", "exports"]
+                    is_org = any(ind in cleaned_name.lower() for ind in org_indicators)
+
+                    occupied_spans.append((start, end))
+                    results.append({
+                        "entity_type": "ORGANIZATION" if is_org else "PERSON",
+                        "raw_value": cleaned_name.title(),
+                        "normalized_value": norm,
+                        "char_span_start": start,
+                        "char_span_end": end,
+                        "page_or_paragraph": page_or_para,
+                        "confidence": 0.88,
+                        "method": "proper_name_heuristic",
+                        "role": "syndicate_entity" if (is_org and detected_role == "suspect") else detected_role
+                    })
+
     # 3. Tertiary: spaCy Named Entity Recognition
     nlp = get_spacy_nlp()
     if nlp:
@@ -320,7 +362,8 @@ def extract_ner_entities(
 
                     if cleaned_name and not overlaps_any(start, end):
                         norm = cleaned_name.lower()
-                        if norm not in seen_norms:
+                        # Avoid single-word fragments if a multi-word name already contains this token
+                        if norm not in seen_norms and not any(norm in full_norm.split() for full_norm in seen_norms if len(full_norm.split()) >= 2):
                             seen_norms.add(norm)
                             window_start = max(0, ent.start_char - 80)
                             window_end = min(len(clean_unwrapped), ent.end_char + 80)

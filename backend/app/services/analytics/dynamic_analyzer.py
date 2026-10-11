@@ -17,7 +17,9 @@ from backend.app.db.sql import (
 )
 from backend.app.services.extraction.text import read_document_text
 from backend.app.services.extraction.rules import extract_rule_entities
-from backend.app.services.extraction.ner import extract_ner_entities, extract_cooccurrence_relationships
+from backend.app.services.extraction.ner import (
+    extract_ner_entities, extract_cooccurrence_relationships, clean_person_name
+)
 from backend.app.services.extraction.router import _commit_approved_entity
 from backend.app.services.graph.builder import build_detail_graph, invalidate_case_graph
 from backend.app.services.ai.gemini_service import (
@@ -166,8 +168,8 @@ def process_dynamic_file_analysis(
 
             collected_items.extend(p_entities + rel_items)
 
-        # 4. Optional single-pass Gemini AI extraction (runs within 5s or falls back cleanly)
-        if is_gemini_configured() and pages:
+        # 4. Optional single-pass Gemini AI extraction (only when local extraction found < 2 entities)
+        if is_gemini_configured() and pages and len(collected_items) < 2:
             try:
                 full_doc_sample = "\n\n".join(pg["text"] for pg in pages)[:4500]
                 gemini_items = extract_entities_with_gemini(full_doc_sample, "P1")
@@ -248,78 +250,216 @@ def process_dynamic_file_analysis(
                 df = pd.read_excel(str(saved_path))
             df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
 
-            # Detect Bank or CDR
-            is_bank = any("amount" in c or "txn" in c or "account" in c or "balance" in c for c in df.columns)
-            is_cdr = any("caller" in c or "receiver" in c or "duration" in c or "imei" in c for c in df.columns)
+            # Classify tabular file modality based on columns
+            cols = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+            has_name = any(any(k in c for k in ["name", "owner", "person", "subscriber", "accused"]) for c in cols)
+            has_transfer = any("from" in c for c in cols) and any("to" in c for c in cols) and any("amount" in c or "amt" in c or "val" in c for c in cols)
+            has_caller = any("caller" in c or "src" in c for c in cols) and any("receiver" in c or "dest" in c or "callee" in c for c in cols)
+            has_ip = any("ip" in c or "ip_address" in c for c in cols)
 
-            if is_bank:
-                from_col = next((c for c in df.columns if "from" in c or "sender" in c or "debit" in c), None)
-                to_col = next((c for c in df.columns if "to" in c or "receiver" in c or "credit" in c or "beneficiary" in c), None)
-                amt_col = next((c for c in df.columns if "amount" in c or "amt" in c or "val" in c), None)
-                date_col = next((c for c in df.columns if "date" in c or "time" in c), None)
+            if has_name and not has_transfer:
+                # 1. Identity / Person-Entity Mapping Table (persons.csv, sdr.csv, kyc.csv, vehicles.csv)
+                name_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["name", "owner", "person", "subscriber", "accused"])), None)
+                phone_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["phone", "mobile", "contact", "caller"])), None)
+                acc_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["account", "acc", "bank"])), None)
+                veh_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["vehicle", "reg", "plate"])), None)
+                loc_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["location", "city", "address", "dist"])), None)
+                email_col = next((c for c in df.columns if "email" in str(c).lower() or "mail" in str(c).lower()), None)
 
                 for idx, row in df.iterrows():
-                    amt_val = 0.0
-                    if amt_col and pd.notna(row[amt_col]):
-                        try:
-                            amt_val = float(str(row[amt_col]).replace(",", "").replace("₹", ""))
-                        except ValueError:
-                            amt_val = 0.0
-                    total_money_volume += amt_val
+                    raw_name = str(row[name_col]).strip() if name_col and pd.notna(row[name_col]) else None
+                    if not raw_name or raw_name.lower() in ["nan", "none", ""]:
+                        continue
 
-                    from_acc = str(row[from_col]).strip() if from_col and pd.notna(row[from_col]) else f"ACC_{idx+1}_A"
-                    to_acc = str(row[to_col]).strip() if to_col and pd.notna(row[to_col]) else f"ACC_{idx+1}_B"
+                    # Person Entity
+                    p_ent = db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == raw_name).first()
+                    props = {"name": raw_name}
+                    if email_col and pd.notna(row[email_col]):
+                        props["email"] = str(row[email_col]).strip()
+                    if not p_ent:
+                        db.add(Entity(
+                            case_id=case_id,
+                            label="Person",
+                            canonical_id=raw_name,
+                            display_name=raw_name,
+                            properties_json=json.dumps(props),
+                            source_file=filename,
+                            source_ref=f"Row {idx+1}",
+                            method="identity_mapping",
+                            confidence=1.0
+                        ))
 
-                    txn = Transaction(
-                        id=str(uuid.uuid4()),
-                        case_id=case_id,
-                        source_file=filename,
-                        source_ref=f"Row {idx+1}",
-                        from_account=from_acc,
-                        to_account=to_acc,
-                        amount_paise=int(amt_val * 100),
-                        date_iso=datetime.utcnow().isoformat(),
-                        fingerprint=str(uuid.uuid4())
-                    )
-                    db.add(txn)
-
-                    # Add Entities
-                    for acc in [from_acc, to_acc]:
-                        exists = db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == acc).first()
-                        if not exists:
-                            db.add(Entity(
+                    # Phone Association
+                    if phone_col and pd.notna(row[phone_col]):
+                        phone_val = str(row[phone_col]).strip().replace(".0", "")
+                        if phone_val and phone_val.lower() not in ["nan", "none"]:
+                            if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == phone_val).first():
+                                db.add(Entity(
+                                    case_id=case_id,
+                                    label="Phone",
+                                    canonical_id=phone_val,
+                                    display_name=phone_val,
+                                    properties_json=json.dumps({"phone": phone_val}),
+                                    source_file=filename,
+                                    source_ref=f"Row {idx+1}",
+                                    method="identity_mapping",
+                                    confidence=1.0
+                                ))
+                            db.add(EntityLink(
                                 case_id=case_id,
-                                label="BankAccount",
-                                canonical_id=acc,
-                                display_name=f"A/C {acc}",
-                                properties_json=json.dumps({"account_number": acc}),
+                                source_entity_id=raw_name,
+                                target_entity_id=phone_val,
+                                relationship_type="USES",
+                                properties_json=json.dumps({"source": "identity_table"}),
                                 source_file=filename,
                                 source_ref=f"Row {idx+1}",
-                                method="tabular_import",
+                                method="identity_mapping",
                                 confidence=1.0
                             ))
 
-                    # Add Link
-                    db.add(EntityLink(
-                        case_id=case_id,
-                        source_entity_id=from_acc,
-                        target_entity_id=to_acc,
-                        relationship_type="TRANSFERRED_TO",
-                        properties_json=json.dumps({"amount": amt_val}),
-                        source_file=filename,
-                        source_ref=f"Row {idx+1}",
-                        method="tabular_import",
-                        confidence=1.0
-                    ))
+                    # Bank Account Association
+                    if acc_col and pd.notna(row[acc_col]):
+                        acc_val = str(row[acc_col]).strip()
+                        if acc_val and acc_val.lower() not in ["nan", "none"]:
+                            if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == acc_val).first():
+                                db.add(Entity(
+                                    case_id=case_id,
+                                    label="BankAccount",
+                                    canonical_id=acc_val,
+                                    display_name=f"A/C {acc_val}",
+                                    properties_json=json.dumps({"account": acc_val}),
+                                    source_file=filename,
+                                    source_ref=f"Row {idx+1}",
+                                    method="identity_mapping",
+                                    confidence=1.0
+                                ))
+                            db.add(EntityLink(
+                                case_id=case_id,
+                                source_entity_id=raw_name,
+                                target_entity_id=acc_val,
+                                relationship_type="OWNS",
+                                properties_json=json.dumps({"source": "identity_table"}),
+                                source_file=filename,
+                                source_ref=f"Row {idx+1}",
+                                method="identity_mapping",
+                                confidence=1.0
+                            ))
 
-            elif is_cdr:
-                caller_col = next((c for c in df.columns if "caller" in c or "src" in c or "from" in c), None)
-                callee_col = next((c for c in df.columns if "receiver" in c or "callee" in c or "dest" in c or "to" in c), None)
-                dur_col = next((c for c in df.columns if "duration" in c or "sec" in c), None)
+                    # Vehicle Association
+                    if veh_col and pd.notna(row[veh_col]):
+                        veh_val = str(row[veh_col]).strip().upper().replace(" ", "")
+                        if veh_val and veh_val.lower() not in ["nan", "none"]:
+                            if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == veh_val).first():
+                                db.add(Entity(
+                                    case_id=case_id,
+                                    label="Vehicle",
+                                    canonical_id=veh_val,
+                                    display_name=veh_val,
+                                    properties_json=json.dumps({"registration": veh_val}),
+                                    source_file=filename,
+                                    source_ref=f"Row {idx+1}",
+                                    method="identity_mapping",
+                                    confidence=1.0
+                                ))
+                            db.add(EntityLink(
+                                case_id=case_id,
+                                source_entity_id=raw_name,
+                                target_entity_id=veh_val,
+                                relationship_type="DRIVES",
+                                properties_json=json.dumps({"source": "identity_table"}),
+                                source_file=filename,
+                                source_ref=f"Row {idx+1}",
+                                method="identity_mapping",
+                                confidence=1.0
+                            ))
+
+                    # Location Association
+                    if loc_col and pd.notna(row[loc_col]):
+                        loc_val = str(row[loc_col]).strip()
+                        if loc_val and loc_val.lower() not in ["nan", "none"]:
+                            if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == loc_val).first():
+                                db.add(Entity(
+                                    case_id=case_id,
+                                    label="Location",
+                                    canonical_id=loc_val,
+                                    display_name=loc_val,
+                                    properties_json=json.dumps({"location": loc_val}),
+                                    source_file=filename,
+                                    source_ref=f"Row {idx+1}",
+                                    method="identity_mapping",
+                                    confidence=1.0
+                                ))
+                            db.add(EntityLink(
+                                case_id=case_id,
+                                source_entity_id=raw_name,
+                                target_entity_id=loc_val,
+                                relationship_type="LOCATED_AT",
+                                properties_json=json.dumps({"source": "identity_table"}),
+                                source_file=filename,
+                                source_ref=f"Row {idx+1}",
+                                method="identity_mapping",
+                                confidence=1.0
+                            ))
+
+            elif has_ip and not has_caller:
+                # 2. IP Logs (ip_logs.csv)
+                phone_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["phone", "mobile", "contact"])), None)
+                ip_col = next((c for c in df.columns if "ip" in str(c).lower()), None)
 
                 for idx, row in df.iterrows():
-                    c1 = str(row[caller_col]).strip() if caller_col and pd.notna(row[caller_col]) else f"9876543{idx:03d}"
-                    c2 = str(callee_col and pd.notna(row[callee_col]) and str(row[callee_col]).strip()) or f"9123456{idx:03d}"
+                    ip_val = str(row[ip_col]).strip() if ip_col and pd.notna(row[ip_col]) else None
+                    if not ip_val or ip_val.lower() in ["nan", "none"]:
+                        continue
+
+                    if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == ip_val).first():
+                        db.add(Entity(
+                            case_id=case_id,
+                            label="IP",
+                            canonical_id=ip_val,
+                            display_name=f"IP: {ip_val}",
+                            properties_json=json.dumps({"ip_address": ip_val}),
+                            source_file=filename,
+                            source_ref=f"Row {idx+1}",
+                            method="tabular_ip",
+                            confidence=1.0
+                        ))
+
+                    if phone_col and pd.notna(row[phone_col]):
+                        p_val = str(row[phone_col]).strip().replace(".0", "")
+                        if p_val and p_val.lower() not in ["nan", "none"]:
+                            if not db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == p_val).first():
+                                db.add(Entity(
+                                    case_id=case_id,
+                                    label="Phone",
+                                    canonical_id=p_val,
+                                    display_name=p_val,
+                                    properties_json=json.dumps({"phone": p_val}),
+                                    source_file=filename,
+                                    source_ref=f"Row {idx+1}",
+                                    method="tabular_ip",
+                                    confidence=1.0
+                                ))
+                            db.add(EntityLink(
+                                case_id=case_id,
+                                source_entity_id=p_val,
+                                target_entity_id=ip_val,
+                                relationship_type="ACCESSED_IP",
+                                properties_json=json.dumps({"source": "ip_log"}),
+                                source_file=filename,
+                                source_ref=f"Row {idx+1}",
+                                method="tabular_ip",
+                                confidence=1.0
+                            ))
+
+            elif has_caller:
+                # 3. Telecom CDR (cdr.csv)
+                caller_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["caller", "src", "calling"])), None)
+                callee_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["receiver", "callee", "dest", "called"])), None)
+                dur_col = next((c for c in df.columns if "duration" in str(c).lower() or "sec" in str(c).lower()), None)
+
+                for idx, row in df.iterrows():
+                    c1 = str(row[caller_col]).strip().replace(".0", "") if caller_col and pd.notna(row[caller_col]) else f"9876543{idx:03d}"
+                    c2 = str(row[callee_col]).strip().replace(".0", "") if callee_col and pd.notna(row[callee_col]) else f"9123456{idx:03d}"
                     dur = int(row[dur_col]) if dur_col and pd.notna(row[dur_col]) and str(row[dur_col]).isdigit() else 60
 
                     cr = CallRecord(
@@ -359,6 +499,64 @@ def process_dynamic_file_analysis(
                         source_file=filename,
                         source_ref=f"Row {idx+1}",
                         method="tabular_cdr",
+                        confidence=1.0
+                    ))
+
+            elif has_transfer or any("amount" in c or "txn" in c or "balance" in c for c in cols):
+                # 4. Bank Transactions (bank_transactions.csv)
+                from_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["from", "sender", "debit", "src"])), None)
+                to_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["to", "receiver", "credit", "beneficiary", "dest"])), None)
+                amt_col = next((c for c in df.columns if any(k in str(c).lower() for k in ["amount", "amt", "val"])), None)
+
+                for idx, row in df.iterrows():
+                    amt_val = 0.0
+                    if amt_col and pd.notna(row[amt_col]):
+                        try:
+                            amt_val = float(str(row[amt_col]).replace(",", "").replace("₹", ""))
+                        except ValueError:
+                            amt_val = 0.0
+                    total_money_volume += amt_val
+
+                    from_acc = str(row[from_col]).strip() if from_col and pd.notna(row[from_col]) else f"ACC_{idx+1}_A"
+                    to_acc = str(row[to_col]).strip() if to_col and pd.notna(row[to_col]) else f"ACC_{idx+1}_B"
+
+                    txn = Transaction(
+                        id=str(uuid.uuid4()),
+                        case_id=case_id,
+                        source_file=filename,
+                        source_ref=f"Row {idx+1}",
+                        from_account=from_acc,
+                        to_account=to_acc,
+                        amount_paise=int(amt_val * 100),
+                        date_iso=datetime.utcnow().isoformat(),
+                        fingerprint=str(uuid.uuid4())
+                    )
+                    db.add(txn)
+
+                    for acc in [from_acc, to_acc]:
+                        exists = db.query(Entity).filter(Entity.case_id == case_id, Entity.canonical_id == acc).first()
+                        if not exists:
+                            db.add(Entity(
+                                case_id=case_id,
+                                label="BankAccount",
+                                canonical_id=acc,
+                                display_name=f"A/C {acc}",
+                                properties_json=json.dumps({"account_number": acc}),
+                                source_file=filename,
+                                source_ref=f"Row {idx+1}",
+                                method="tabular_import",
+                                confidence=1.0
+                            ))
+
+                    db.add(EntityLink(
+                        case_id=case_id,
+                        source_entity_id=from_acc,
+                        target_entity_id=to_acc,
+                        relationship_type="TRANSFERRED_TO",
+                        properties_json=json.dumps({"amount": amt_val}),
+                        source_file=filename,
+                        source_ref=f"Row {idx+1}",
+                        method="tabular_import",
                         confidence=1.0
                     ))
 
