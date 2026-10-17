@@ -1,0 +1,110 @@
+================================================================================
+FIRST INFORMATION REPORT & SPECIAL CRIME DOSSIER
+DELHI POLICE SPECIAL CELL — ORGANISED CRIME UNIT, LODHI COLONY
+================================================================================
+FIR Number         : FIR/2026/0409
+Police Station     : Special Cell, Lodhi Colony, New Delhi
+Date & Time        : 10 October 2026, 14:30 IST
+Statutory Sections : Sec 420, 120-B, 468, 471 IPC; Sec 111 BNS 2023 (Organised Crime);
+                     Sec 3 & 4 Prevention of Money Laundering Act (PMLA 2002);
+                     Section 63 Bharatiya Sakshya Adhiniyam 2023 (BSA 2023).
+Investigating Head : Inspector Meera Sundaram (Lead Investigator, SIH/CCU)
+Case Codename      : OPERATION REDSAND (INTER-STATE HAWALA & ANGADIA NEXUS)
+
+1. OVERVIEW & SOURCE INFORMATION:
+Credible intelligence from Financial Intelligence Unit (FIU-IND) and covert informants
+revealed that an inter-state clandestine Hawala network is orchestrating large-scale
+cash transfers originating from illicit foreign remittances (Dubai corridor) to bullion
+markets in Delhi, Haryana, and Gujarat. The syndicate utilizes multi-layered mule bank
+accounts to pool digital funds, transfers the layered proceeds to a shell entity
+'Lotus Overseas Impex Pvt Ltd', and withdraws physical currency for handover via
+armoured courier vehicles to Angadia operators using authenticated token numbers ('Parchi').
+
+2. PRIMARY IDENTIFIED TARGETS & OPERATIVES:
+[A] KAILASH CHAND JAIN @ KC SETH (Prime Target & Kingpin):
+    - Profile: Bullion Trader & Clandestine Syndicate Hub
+    - Mobile Number: +91 98112 34567 (9811234567)
+    - Primary Entity Account: HDFC Bank A/c 00381040001928 (KC Bullion & Jewellers)
+    - Registered Vehicle: Toyota Fortuner (Black), Reg: DL01CZ8821
+    - Role: Overall mastermind coordinating foreign Hawala payouts, bullion layering,
+      and token generation for physical cash handovers.
+
+[B] FARHAN KHAN (Cash Courier & Armoured Transit Driver):
+    - Profile: Chief Syndicate Courier & Transporter
+    - Mobile Number: +91 98711 22334 (9871122334)
+    - Personal Vehicle: Hyundai Creta (White), Reg: HR26DK4902
+    - Designated Transit Vehicle: Operates suspect Toyota Fortuner DL01CZ8821
+    - Role: Transport of physical cash trunks between Chandni Chowk bullion market,
+      Karol Bagh Angadia counters, and Western border toll plazas.
+
+[C] VIKRAM MALHOTRA (Shell Company Front Director):
+    - Profile: Director, Lotus Overseas Impex Pvt Ltd
+    - Mobile Number: +91 99100 88776 (9910088776)
+    - Controlled Shell Account: AXIS Bank A/c 50100492817340
+    - Role: Absorbs fan-in deposits from dispersed mule accounts and executes rapid
+      pass-through RTGS transfers to KC Bullion & Jewellers within 24 hours.
+
+[D] ROHAN PATEL (Angadia Operator & Token Distributor):
+    - Profile: Gujarat-Mumbai Angadia Hub Coordinator
+    - Mobile Number: +91 98200 44556 (9820044556)
+    - Vehicle Registration: Mahindra Scorpio (Silver), Reg: MH02EE1999
+    - Operating Hub: Kucha Mahajani, Chandni Chowk & Kalbadevi, Mumbai.
+    - Role: Verification of secret currency serial tokens and physical cash vaulting.
+
+[E] MULE ACCOUNT OPERATORS:
+    - Sunita Sharma: Mobile 9899911223, SBI A/c 918237465012
+    - Rajesh Verma: Mobile 9876501234, PNB A/c 928374650193
+
+--------------------------------------------------------------------------------
+3. LAWFULLY INTERCEPTED TELECOMMUNICATION TRANSCRIPTS (WIRETAP LOGS):
+Pursuant to Home Ministry Interception Order No. 44/2026/LOC:
+
+--- [TRANSCRIPT INTERCEPT #01] ---
+Timestamp   : 12 October 2026, 23:45:12 IST
+Caller      : +91 98112 34567 (Kailash Chand Jain @ KC Seth)
+Receiver    : +91 98711 22334 (Farhan Khan - Courier Driver)
+Tower Loc   : Karol Bagh Metro BTS (Cell ID: DEL-KB-9481)
+Duration    : 142 seconds
+[CONVERSATION EXCERPT]:
+KC Seth     : "Farhan, consignment load ho gaya Fortuner mein? (Is the consignment loaded in Fortuner DL01CZ8821?)"
+Farhan      : "Haan Seth ji. Exactly 2 Crore 40 Lakh cash secret cavity mein pack hai. Gadi ready hai."
+KC Seth     : "Sun, Dhaula Kuan se mat nikalna, wahan checking hai. Direct Badarpur toll cross karke
+               Chandni Chowk Kucha Mahajani pahucho. Parchi token note sambhal ke rakhna."
+Farhan      : "Samajh gaya Seth ji. Token note ka number 44B 889210 hai. Rohan bhai ko wahi dikhaunga."
+
+--- [TRANSCRIPT INTERCEPT #02] ---
+Timestamp   : 13 October 2026, 01:14:38 IST
+Caller      : +91 98711 22334 (Farhan Khan)
+Receiver    : +91 98200 44556 (Rohan Patel - Angadia Hub)
+Tower Loc   : Chandni Chowk Clock Tower BTS (Cell ID: DEL-CC-1102)
+Duration    : 88 seconds
+[CONVERSATION EXCERPT]:
+Farhan      : "Rohan bhai, main Chandni Chowk alley mein Creta HR26DK4902 aur Fortuner ke sath hu."
+Rohan Patel : "Parchi nikaalo. Das rupaye ke note ka serial number bolo."
+Farhan      : "Currency Note serial number: 44B 889210. Dubai se yahi code pass hua tha."
+Rohan Patel : "Code matched. Gate number 3 pe gadi lagao. Vault team cash unload kar legi."
+
+--- [TRANSCRIPT INTERCEPT #03] ---
+Timestamp   : 13 October 2026, 11:32:05 IST
+Caller      : +91 99100 88776 (Vikram Malhotra - Lotus Overseas Impex)
+Receiver    : +91 98112 34567 (Kailash Chand Jain)
+Tower Loc   : Connaught Place Outer Circle (Cell ID: DEL-CP-4309)
+Duration    : 110 seconds
+[CONVERSATION EXCERPT]:
+Vikram      : "Seth ji, Sunita aur Rajesh ke mule accounts se 1 Crore 85 Lakh RTGS credit ho gaya hai
+               Lotus Overseas Impex A/c 50100492817340 mein."
+KC Seth     : "Badiya. Turant 1.85 Cr hamare KC Bullion HDFC account 00381040001928 mein transfer maro
+               aur baaki ka cash slip issue karo. Shaam ko dusra lot nikalna hai."
+
+--------------------------------------------------------------------------------
+4. SEIZED VEHICLE RECONNAISSANCE & ANPR TOLL CAMERA SIGHTINGS:
+- DL01CZ8821: Black Toyota Fortuner, Owner: Kailash Chand Jain. Sighted crossing Badarpur Toll
+  at 00:28 hrs and Chandni Chowk camera at 01:10 hrs matching Intercept #01.
+- HR26DK4902: White Hyundai Creta, Owner: Farhan Khan. Escort vehicle trailing Fortuner.
+- MH02EE1999: Silver Mahindra Scorpio, Owner: Rohan Patel. Parked at Angadia Cash Vault.
+
+--------------------------------------------------------------------------------
+5. STATUTORY ADMISSIBILITY & CERTIFICATE:
+All electronic intercepts, call detail logs, FASTag toll transactions, and bank statements
+have been extracted in compliance with Section 63 BSA 2023. Forensic SHA-256 hashes generated.
+================================================================================

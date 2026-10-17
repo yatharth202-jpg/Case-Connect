@@ -1,12 +1,12 @@
-# Case Connect AI — Anti-Vibecoding & Production Hygiene Protocol
+# Case Connect AI — Forensic Platform Production Hygiene Protocol
 
 This master checklist integrates all 6 quality pillars (Visual Aesthetics, UX Hygiene, Configuration & Infrastructure, Secrets & Tokens, Authentication & Authorization, Input Validation & Security). 
 Every phase and component must pass this 6-layer audit 3 to 4 times before being marked ready.
 
 ---
 
-## Pillar 1: Anti-Vibecoding Visual Aesthetics (Image 1)
-*Avoid lazy AI generator cliches. Deliver high-end, agency-grade law enforcement software.*
+## Pillar 1: Law Enforcement Visual Aesthetics
+*Avoid generic software cliches. Deliver high-end, agency-grade law enforcement software.*
 
 1. **NO Harsh or Rainbow Gradients**: Use restrained, calibrated dark surfaces (`#030712`, `#070b14`, `#0d172e`) with monochromatic depth.
 2. **NO Generic Icon Slop**: Use intentional, restrained icons only where they add semantic clarity. Never decorate every paragraph with icons.
@@ -39,7 +39,7 @@ Every phase and component must pass this 6-layer audit 3 to 4 times before being
 
 ---
 
-## Pillar 2: UX & Frontend Hygiene (Image 2)
+## Pillar 2: UX & Frontend Hygiene
 1. **Zero Horizontal Scrolling**: Viewport locked (`overflow-x-hidden`), layout desktop & laptop responsive (`1366x768` to `1920x1080`).
 2. **Zero Broken Links**: Every route, anchor, and internal link must resolve to a valid route or modal.
 3. **Responsive Navigation**: Collapsible sidebar with accessible mobile/tablet drawer.
@@ -62,7 +62,7 @@ Every phase and component must pass this 6-layer audit 3 to 4 times before being
 
 ---
 
-## Pillar 3: Configuration & System Hygiene (Image 3)
+## Pillar 3: Configuration & System Hygiene
 1. **Strict CORS Scoping**: Backend CORS limited strictly to authorized origins (`http://localhost:5173`, `http://127.0.0.1:5173`). Wildcard `*` is banned in production paths.
 2. **No Exposed Source Maps**: Production frontend build strips debugging source maps from public output.
 3. **No Sensitive Data Leaks**: Strict `data/private/` isolation; server logs never output passwords, tokens, or raw PII.
@@ -70,7 +70,7 @@ Every phase and component must pass this 6-layer audit 3 to 4 times before being
 
 ---
 
-## Pillar 4: Secrets & Token Safety (Image 4)
+## Pillar 4: Secrets & Token Safety
 1. **JWT Secret Protection**: `JWT_SECRET` loaded strictly from environment variable / `.env`; never hardcoded in source.
 2. **Zero API Secrets in Code**: All API keys, DB credentials, and private keys restricted to `.env`.
 3. **Safe Storage**: Auth tokens stored safely; sensitive case payloads cached only in memory/session.
@@ -78,7 +78,7 @@ Every phase and component must pass this 6-layer audit 3 to 4 times before being
 
 ---
 
-## Pillar 5: Authentication & Access Control (Image 5)
+## Pillar 5: Authentication & Access Control
 1. **BOLA / IDOR Defense (Broken Object Level Authorization)**: Every case-scoped endpoint (`/cases/{id}/...`, `/evidence/{id}/...`, `/matches/{id}/...`) strictly verifies case membership of the requesting user.
 2. **Rate Limiting**: Brute-force protection on authentication routes (`/auth/login`).
 3. **Military-Grade Password Hashing**: Hashed with bcrypt (12 salt rounds) before database storage.
@@ -87,7 +87,7 @@ Every phase and component must pass this 6-layer audit 3 to 4 times before being
 
 ---
 
-## Pillar 6: Injection & Input Validation (Image 6)
+## Pillar 6: Injection & Input Validation
 1. **SQL Injection Defense**: 100% SQLAlchemy ORM and parametrised queries. No string-concatenated SQL queries anywhere.
 2. **Cypher Injection Defense**: Parametrised Cypher only. Variable-length hop parameter `$n` strictly validated as integer `{1,2,3,4}` before string formatting.
 3. **XSS Protection**: React automatic HTML escaping, strict Content-Security-Policy headers, no `dangerouslySetInnerHTML`.

@@ -1,0 +1,66 @@
+{
+  "case_fir": "FIR-2026-409",
+  "operation_name": "OPERATION REDSAND",
+  "intercepts": [
+    {
+      "id": "INTERCEPT-01",
+      "timestamp": "2026-10-12T23:45:12Z",
+      "caller": "+91 98112 34567",
+      "caller_name": "Kailash Chand Jain @ KC Seth",
+      "receiver": "+91 98711 22334",
+      "receiver_name": "Farhan Khan (Courier Driver)",
+      "duration_seconds": 142,
+      "cell_location": "Karol Bagh Metro BTS (DEL-KB-9481)",
+      "summary": "Kingpin instructing courier driver to transport \u20b92.40 Crore cash in Fortuner DL01CZ8821.",
+      "keywords": [
+        "Fortuner",
+        "DL01CZ8821",
+        "2.40 Crore",
+        "Cash",
+        "Badarpur Toll",
+        "Parchi Token 44B 889210"
+      ],
+      "evidence_level": "CRITICAL"
+    },
+    {
+      "id": "INTERCEPT-02",
+      "timestamp": "2026-10-13T01:14:38Z",
+      "caller": "+91 98711 22334",
+      "caller_name": "Farhan Khan (Courier Driver)",
+      "receiver": "+91 98200 44556",
+      "receiver_name": "Rohan Patel (Angadia Operator)",
+      "duration_seconds": 88,
+      "cell_location": "Chandni Chowk Clock Tower BTS (DEL-CC-1102)",
+      "summary": "Courier driver authenticating delivery with secret currency note serial #44B 889210 at Angadia depot.",
+      "keywords": [
+        "Parchi",
+        "Token 44B 889210",
+        "Chandni Chowk",
+        "HR26DK4902",
+        "Vault",
+        "Cash Unload"
+      ],
+      "evidence_level": "CRITICAL"
+    },
+    {
+      "id": "INTERCEPT-03",
+      "timestamp": "2026-10-13T11:32:05Z",
+      "caller": "+91 99100 88776",
+      "caller_name": "Kailash Chand Jain",
+      "receiver": "+91 98112 34567",
+      "duration_seconds": 110,
+      "cell_location": "Connaught Place Outer Circle (DEL-CP-4309)",
+      "summary": "Shell company director confirming \u20b91.85 Crore RTGS pass-through from mule accounts into KC Bullion.",
+      "keywords": [
+        "Lotus Overseas Impex",
+        "1.85 Crore",
+        "RTGS",
+        "Mule Accounts",
+        "Sunita",
+        "Rajesh",
+        "KC Bullion"
+      ],
+      "evidence_level": "HIGH"
+    }
+  ]
+}

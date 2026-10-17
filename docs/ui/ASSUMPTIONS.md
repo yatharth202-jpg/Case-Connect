@@ -1,6 +1,6 @@
 # Case Connect AI — Phase 2 UI Design & Workflow Assumptions
 
-These assumptions establish concrete defaults for the Phase 2 implementation, aligning the Stitch screens (`docs/ui/pack/stitch_screens/`) with backend functionality and the 52-point Anti-Vibecoding Checklist.
+These assumptions establish concrete defaults for the Phase 2 implementation, aligning the Stitch screens (`docs/ui/pack/stitch_screens/`) with backend functionality and the Production Forensic Hygiene Protocol.
 
 ---
 

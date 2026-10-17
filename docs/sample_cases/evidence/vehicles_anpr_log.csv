@@ -1,0 +1,7 @@
+log_id,timestamp,vehicle_number,model,registered_owner,driver,toll_plaza,lane,direction,speed_kmh,status
+ANPR-01,2026-10-12 23:55:00,DL01CZ8821,Toyota Fortuner (Black),Kailash Chand Jain,Farhan Khan,Dhaula Kuan Flyover Camera,Lane 2,Northbound,68,FLAGGED
+ANPR-02,2026-10-13 00:28:14,DL01CZ8821,Toyota Fortuner (Black),Kailash Chand Jain,Farhan Khan,Badarpur Border Toll Plaza,Lane 4,Inbound Delhi,45,FLAGGED
+ANPR-03,2026-10-13 00:30:05,HR26DK4902,Hyundai Creta (White),Farhan Khan,Farhan Khan,Badarpur Border Toll Plaza,Lane 5,Inbound Delhi (Escort),50,FLAGGED
+ANPR-04,2026-10-13 01:08:22,DL01CZ8821,Toyota Fortuner (Black),Kailash Chand Jain,Farhan Khan,Chandni Chowk Clock Tower,Lane 1,Market Entry,22,SUSPECT_DEPOT
+ANPR-05,2026-10-13 01:10:45,HR26DK4902,Hyundai Creta (White),Farhan Khan,Farhan Khan,Chandni Chowk Clock Tower,Lane 1,Market Entry,25,SUSPECT_DEPOT
+ANPR-06,2026-10-13 01:12:00,MH02EE1999,Mahindra Scorpio (Silver),Rohan Patel,Rohan Patel,Kucha Mahajani Angadia Depot,Vault Bay,Stationary,0,ANGADIA_VAULT
