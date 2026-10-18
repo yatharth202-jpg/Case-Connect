@@ -70,7 +70,6 @@ export const dynamicAnalysisApi = {
       formData.append('case_id', caseId);
     }
     const res = await api.post('/analytics/analyse-file', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 180000, // 3 minutes timeout for heavy OCR or deep analysis
       onUploadProgress,
     });
@@ -156,7 +155,6 @@ export const evidenceApi = {
   },
   upload: async (caseId, formData, onUploadProgress) => {
     const res = await api.post(`/cases/${caseId}/evidence`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress,
     });
     return res.data;

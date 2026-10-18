@@ -38,6 +38,7 @@ class DynamicTextPayload(BaseModel):
 # 0. DIRECT RUNTIME FILE & TEXT ANALYSIS (ZERO HARDCODED MOCKS)
 # -------------------------------------------------------------------------
 @router.post("/analytics/analyse-file")
+@router.post("/analytics/analyse-file/")
 def dynamic_file_analysis_endpoint(
     file: UploadFile = File(...),
     case_id: Optional[str] = Form(None),
@@ -63,6 +64,7 @@ def dynamic_file_analysis_endpoint(
     return result
 
 @router.post("/analytics/analyse-text")
+@router.post("/analytics/analyse-text/")
 def dynamic_text_analysis_endpoint(
     payload: DynamicTextPayload,
     db: Session = Depends(get_db),

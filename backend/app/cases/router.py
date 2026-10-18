@@ -490,6 +490,7 @@ def delete_saved_view(
     return {"status": "deleted", "id": view_id}
 
 @router.post("/seed/hawala")
+@router.post("/seed/hawala/")
 def seed_hawala_syndicate_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

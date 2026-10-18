@@ -113,6 +113,7 @@ def detect_initial_type(filename: str) -> str:
     return "unknown"
 
 @router.post("/cases/{case_id}/evidence", response_model=List[EvidenceResponse])
+@router.post("/cases/{case_id}/evidence/", response_model=List[EvidenceResponse])
 async def upload_evidence(
     case_id: str,
     files: List[UploadFile] = File(...),

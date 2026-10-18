@@ -163,14 +163,17 @@ if frontend_dist.exists() and (frontend_dist / "index.html").exists():
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-    @app.get("/{full_path:path}")
-    async def serve_spa_frontend(full_path: str):
+    @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
+    async def serve_spa_frontend(request: Request, full_path: str):
         if (
+            full_path == "api" or
             full_path.startswith("api/") or
             full_path.startswith("docs") or
             full_path.startswith("openapi.json") or
             full_path.startswith("health")
         ):
+            return Response(status_code=404)
+        if request.method not in ["GET", "HEAD"]:
             return Response(status_code=404)
         target = frontend_dist / full_path
         if target.exists() and target.is_file():
