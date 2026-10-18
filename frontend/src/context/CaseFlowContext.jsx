@@ -152,6 +152,7 @@ export const CaseFlowProvider = ({ children }) => {
       const steps = [
         "Ingesting Hawala Axis Bank Statements & CDR Dumps...",
         "Running Named Entity Recognition on FIR #408...",
+        
         "Computing Louvain community partitions...",
         "Detecting pass-through money loops...",
         "Attributing primary orchestrator lead..."
@@ -171,7 +172,7 @@ export const CaseFlowProvider = ({ children }) => {
       setLoadingProgress(100);
       setLoadingStepText('Hawala docket ready. Transitioning to investigation hub...');
 
-      const caseId = res.case?.id || res.id;
+      const caseId = res.case?.id || res.id || res.case_id;
       setActiveCaseId(caseId);
       setActiveCaseData(res);
       await fetchRecentCases();
