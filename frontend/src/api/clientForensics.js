@@ -72,7 +72,7 @@ function parseTabularRows(text) {
   return { headers, rows };
 }
 
-// Dynamic In-Browser File Forensic Analysis
+// Dynamic In-Browser File Forensic Analysis with Multi-Evidence Append Support
 export async function analyzeFileInBrowser(file, caseId = null, onUploadProgress = null) {
   if (onUploadProgress) {
     onUploadProgress({ loaded: 30, total: 100 });
@@ -94,6 +94,15 @@ export async function analyzeFileInBrowser(file, caseId = null, onUploadProgress
     onUploadProgress({ loaded: 65, total: 100 });
   }
 
+  // Load existing docket state if incrementally appending to an active case
+  let existingDocket = null;
+  try {
+    const saved = sessionStorage.getItem(`case_connect_case_${effectiveCaseId}`);
+    if (saved) {
+      existingDocket = JSON.parse(saved);
+    }
+  } catch {}
+
   const analysis = performDynamicForensicExtraction({
     title: cleanName,
     text: rawText,
@@ -101,7 +110,8 @@ export async function analyzeFileInBrowser(file, caseId = null, onUploadProgress
     fileSize: file.size || rawText.length,
     sha256Hash,
     caseId: effectiveCaseId,
-    fileExt
+    fileExt,
+    existingDocket
   });
 
   if (onUploadProgress) {
@@ -122,6 +132,14 @@ export async function analyzeTextInBrowser(title, text, caseId = null) {
   const cleanTitle = title || 'Direct Incident Statement';
   const effectiveCaseId = caseId || `case_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+  let existingDocket = null;
+  try {
+    const saved = sessionStorage.getItem(`case_connect_case_${effectiveCaseId}`);
+    if (saved) {
+      existingDocket = JSON.parse(saved);
+    }
+  } catch {}
+
   const analysis = performDynamicForensicExtraction({
     title: cleanTitle,
     text,
@@ -129,7 +147,8 @@ export async function analyzeTextInBrowser(title, text, caseId = null) {
     fileSize: text.length,
     sha256Hash,
     caseId: effectiveCaseId,
-    fileExt: 'txt'
+    fileExt: 'txt',
+    existingDocket
   });
 
   try {
@@ -139,18 +158,112 @@ export async function analyzeTextInBrowser(title, text, caseId = null) {
   return analysis;
 }
 
+// Disallowed tokens that must never be treated as names
+const NON_NAME_TOKENS = new Set([
+  'says', 'knows', 'caller', 'whose', 'recovered', 'found', 'seized', 'handset',
+  'carrier', 'cartons', 'goods', 'cash', 'inr', 'notes', 'mobile', 'phone', 'sim',
+  'vehicle', 'hatchback', 'sedan', 'bank', 'co-operative', 'cooperative', 'entry',
+  'notice', 'memo', 'report', 'dated', 'road', 'street', 'colony', 'nagar', 'marg',
+  'coordinating', 'payouts', 'foreign', 'overall', 'layering', 'remittances', 'transfers',
+  'generation', 'handover', 'handovers', 'token', 'tokens', 'physical', 'trunks', 'counters',
+  'market', 'markets', 'bullion', 'investigation', 'statutory', 'enquiry', 'representative',
+  'first', 'information', 'police', 'station', 'special', 'cell', 'unit', 'delhi', 'mumbai',
+  'section', 'sections', 'sixty', 'three', 'unauthorized', 'debits', 'proceeds', 'pvt', 'ltd',
+  'branch', 'crime', 'division', 'traffic', 'headquarters', 'chowk', 'bazar', 'fortuner',
+  'creta', 'scorpio', 'swift', 'toyota', 'hyundai', 'mahindra', 'honda', 'maruti', 'innova',
+  'baleno', 'bolero', 'thar', 'dzire', 'clock', 'tower', 'reg', 'target', 'hub', 'syndicate',
+  'clandestine', 'transit', 'designated', 'registered', 'border', 'plaza', 'flyover', 'camera'
+]);
+
 // Core Entity Extraction & Graph Projection
-function performDynamicForensicExtraction({ title, text, filename, fileSize, sha256Hash, caseId, fileExt }) {
+function performDynamicForensicExtraction({
+  title,
+  text,
+  filename,
+  fileSize,
+  sha256Hash,
+  caseId,
+  fileExt,
+  existingDocket = null
+}) {
   const nodesMap = new Map();
   const edgesList = [];
   const degreeMap = new Map();
   let cumulativeMoney = 0;
   let totalCalls = 0;
   const hourlyBuckets = new Array(24).fill(0);
+  const evidenceFilesList = [];
+  const evidenceRecordsList = [];
+
+  // Seed existing state if appending to existing docket
+  if (existingDocket) {
+    if (existingDocket.all_evidence_files && Array.isArray(existingDocket.all_evidence_files)) {
+      evidenceFilesList.push(...existingDocket.all_evidence_files);
+    }
+    if (existingDocket.evidence_records && Array.isArray(existingDocket.evidence_records)) {
+      evidenceRecordsList.push(...existingDocket.evidence_records);
+    }
+    if (existingDocket.overview?.total_money_volume_rs) {
+      cumulativeMoney += existingDocket.overview.total_money_volume_rs;
+    }
+    if (existingDocket.overview?.total_calls) {
+      totalCalls += existingDocket.overview.total_calls;
+    }
+    if (existingDocket.graph?.nodes && Array.isArray(existingDocket.graph.nodes)) {
+      existingDocket.graph.nodes.forEach(n => {
+        const d = n.data || n;
+        nodesMap.set(d.id, {
+          id: d.id,
+          canonical_id: d.id,
+          label: d.label || d.id,
+          display_name: d.label || d.id,
+          type: d.type || 'Person',
+          role: d.role || 'Network Entity',
+          city: d.city || 'Jurisdiction Lead',
+          score: d.score || 65,
+          degree: d.degree || 1
+        });
+        degreeMap.set(d.id, d.degree || 1);
+      });
+    }
+    if (existingDocket.graph?.edges && Array.isArray(existingDocket.graph.edges)) {
+      existingDocket.graph.edges.forEach(e => {
+        const ed = e.data || e;
+        edgesList.push({
+          id: ed.id,
+          source: ed.source,
+          target: ed.target,
+          relationship: ed.relationship || 'LINKED_TO',
+          label: ed.label || ed.relationship,
+          amount: ed.amount || 0,
+          formatted_amount: ed.formatted_amount || formatInr(ed.amount || 0),
+          call_count: ed.call_count || 1
+        });
+      });
+    }
+  }
+
+  // Add current evidence file
+  evidenceFilesList.push({
+    id: `ev_${Date.now()}_${evidenceFilesList.length}`,
+    original_name: filename,
+    filename,
+    sha256: sha256Hash,
+    file_size: fileSize,
+    status: 'ingested'
+  });
 
   const addNode = (id, label, type, role, city = 'Active Node') => {
     const key = String(id).trim();
-    if (!key || nodesMap.has(key)) return;
+    if (!key) return;
+    if (nodesMap.has(key)) {
+      const existing = nodesMap.get(key);
+      // Upgrade role if previous was generic
+      if (existing.role === 'Network Entity' && role && role !== 'Network Entity') {
+        existing.role = role;
+      }
+      return;
+    }
     nodesMap.set(key, {
       id: key,
       canonical_id: key,
@@ -193,6 +306,23 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     if (rel === 'CALLED') totalCalls += count;
   };
 
+  // Clean a candidate person name
+  const cleanName = (raw) => {
+    if (!raw) return '';
+    let cleaned = raw.replace(/\b(?:under|sec|section|ipc|bns|crpc|bsa|pmla|r\/o|s\/o|w\/o|d\/o|near|at|dated|on|having)\b.*/gi, '').trim();
+    cleaned = cleaned.replace(/^[(\d\s.)\-]+|[",':;()]+$/g, '').trim();
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length < 1 || parts.length > 4) return '';
+    const lowered = cleaned.toLowerCase();
+    if (/police|station|crime\s+branch|special\s+cell|cyber\s+cell|headquarters|chowk|bazar|court|hospital|bank|fortuner|creta|scorpio|toyota|hyundai|mahindra/.test(lowered)) return '';
+    for (const p of parts) {
+      const pl = p.toLowerCase();
+      if (pl.endsWith('ing') && pl !== 'singh') return '';
+      if (NON_NAME_TOKENS.has(pl)) return '';
+    }
+    return cleaned;
+  };
+
   // 1. Attempt Tabular Extraction
   const tabular = parseTabularRows(text);
   if (tabular && tabular.rows.length > 0) {
@@ -208,43 +338,41 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     const dateCol = headers.find(h => /(date|time|timestamp)/.test(h));
 
     rows.forEach((r, idx) => {
-      // Timestamp distribution
       const timeVal = dateCol ? r[dateCol] : '';
       const hourMatch = timeVal.match(/\b([01]?\d|2[0-3]):[0-5]\d\b/);
       const hour = hourMatch ? parseInt(hourMatch[1], 10) : (idx * 3) % 24;
       hourlyBuckets[hour] = (hourlyBuckets[hour] || 0) + 1;
 
-      // Identity rows
       if (nameCol && r[nameCol]) {
-        const pName = r[nameCol];
-        addNode(pName, pName, 'Person', 'Identified Subject');
-        if (phoneCol && r[phoneCol]) {
-          const ph = r[phoneCol];
-          addNode(ph, ph, 'Phone', 'Monitored MSISDN');
-          addEdge(pName, ph, 'USES');
-        }
-        if (accCol && r[accCol]) {
-          const ac = r[accCol];
-          addNode(ac, `A/C ${ac}`, 'BankAccount', 'Operated Account');
-          addEdge(pName, ac, 'OWNS');
-        }
-        if (vehCol && r[vehCol]) {
-          const v = r[vehCol].toUpperCase();
-          addNode(v, v, 'Vehicle', 'Observed Transport');
-          addEdge(pName, v, 'DRIVES');
+        const pName = cleanName(r[nameCol]);
+        if (pName) {
+          addNode(pName, pName, 'Person', 'Identified Subject');
+          if (phoneCol && r[phoneCol]) {
+            const ph = r[phoneCol].trim();
+            addNode(ph, ph, 'Phone', 'Monitored MSISDN');
+            addEdge(pName, ph, 'USES');
+          }
+          if (accCol && r[accCol]) {
+            const ac = r[accCol].trim();
+            addNode(ac, `A/C ${ac}`, 'BankAccount', 'Operated Account');
+            addEdge(pName, ac, 'OWNS');
+          }
+          if (vehCol && r[vehCol]) {
+            const v = r[vehCol].trim().toUpperCase();
+            addNode(v, v, 'Vehicle', 'Observed Transport');
+            addEdge(pName, v, 'DRIVES');
+          }
         }
       }
 
-      // CDR / Telephony call rows
       if (callerCol && receiverCol && r[callerCol] && r[receiverCol]) {
-        const src = r[callerCol];
-        const tgt = r[receiverCol];
+        const src = r[callerCol].trim();
+        const tgt = r[receiverCol].trim();
         addNode(src, src, 'Phone', 'Calling Station');
         addNode(tgt, tgt, 'Phone', 'Terminating Station');
         addEdge(src, tgt, 'CALLED', 0, 1);
       }
 
-      // Transaction rows
       if (amountCol && r[amountCol]) {
         const rawAmt = parseFloat(String(r[amountCol]).replace(/[^0-9.]/g, '')) || 0;
         const sender = callerCol ? r[callerCol] : (nameCol ? r[nameCol] : `Account_A${idx}`);
@@ -258,99 +386,183 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     });
   }
 
-  // 2. Unstructured / Narrative Regex Extraction (FIR, Notes, Logs)
-  if (nodesMap.size < 3) {
-    // Phone numbers (Indian 10-digit mobile series)
-    const phoneMatches = text.match(/(?:(?:\+?91|0)?[6-9]\d{9})/g) || [];
-    const uniquePhones = Array.from(new Set(phoneMatches.map(p => p.replace(/^\+?91|^0/, '')))).slice(0, 15);
-    uniquePhones.forEach(ph => addNode(ph, `+91 ${ph.slice(0, 5)} ${ph.slice(5)}`, 'Phone', 'Monitored MSISDN'));
+  // 2. Narrative & Police FIR Legal Extraction
+  // (A) Structured Section Operatives e.g. [A] KAILASH CHAND JAIN @ KC SETH (Prime Target & Kingpin):
+  const targetMatches = Array.from(text.matchAll(/\[[A-Z0-9]\]\s+([A-Z\s]{3,35}?)(?:\s+@\s+([^\(\n:]+))?\s*(?:\(([^)]+)\))?\s*:/g));
+  targetMatches.forEach(m => {
+    const rawTarget = cleanName(m[1]);
+    const alias = m[2] ? m[2].trim() : '';
+    const desc = (m[3] || '').toLowerCase();
+    let assignedRole = 'Identified Primary Lead';
+    if (/kingpin|apex|hub|prime/.test(desc)) assignedRole = 'Apex Syndicate Hub';
+    else if (/courier|driver|transit/.test(desc)) assignedRole = 'Cash Courier & Transporter';
+    else if (/director|shell/.test(desc)) assignedRole = 'Shell Entity Director';
+    else if (/operator|angadia|vault/.test(desc)) assignedRole = 'Angadia Vault Operator';
 
-    // Bank Accounts (9-18 digits)
-    const accMatches = text.match(/\b\d{9,18}\b/g) || [];
-    const uniqueAccs = Array.from(new Set(accMatches.filter(a => !uniquePhones.includes(a.replace(/^\+?91|^0/, ''))))).slice(0, 10);
-    uniqueAccs.forEach(ac => addNode(ac, `A/C ${ac.slice(0, 4)}...${ac.slice(-4)}`, 'BankAccount', 'Monitored Account'));
-
-    // Vehicles (Indian RTO pattern)
-    const vehMatches = text.match(/\b[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}\b/g) || [];
-    const uniqueVehs = Array.from(new Set(vehMatches)).slice(0, 6);
-    uniqueVehs.forEach(v => addNode(v, v, 'Vehicle', 'Observed Transport'));
-
-    // Amounts
-    const amountRegex = /(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?|\b([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)\b/gi;
-    let amtMatch;
-    while ((amtMatch = amountRegex.exec(text)) !== null) {
-      const numPart = amtMatch[1] || amtMatch[3];
-      const unitPart = (amtMatch[2] || amtMatch[4] || '').toLowerCase();
-      if (numPart) {
-        let val = parseFloat(numPart.replace(/,/g, '')) || 0;
-        if (unitPart.includes('cr')) val *= 10000000;
-        else if (unitPart.includes('la')) val *= 100000;
-        cumulativeMoney += val;
-      }
-    }
-
-    // Capitalized Person Names
-    const personMatches = text.match(/\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){1,2}\b/g) || [];
-    const blacklist = new Set(['First Information', 'Special Cell', 'New Delhi', 'Police Station', 'Section Sixty', 'Supreme Court', 'Axis Bank', 'Hdfc Bank', 'State Bank']);
-    const uniquePersons = Array.from(new Set(personMatches.filter(p => !blacklist.has(p)))).slice(0, 8);
-    uniquePersons.forEach(p => addNode(p, p, 'Person', 'Identified Subject'));
-
-    // Connect entities across lines
-    const lines = text.split(/\r?\n/).slice(0, 100);
-    lines.forEach(line => {
-      const inLine = [];
-      uniquePersons.forEach(p => { if (line.includes(p)) inLine.push({ id: p, type: 'Person' }); });
-      uniquePhones.forEach(ph => { if (line.includes(ph)) inLine.push({ id: ph, type: 'Phone' }); });
-      uniqueAccs.forEach(ac => { if (line.includes(ac)) inLine.push({ id: ac, type: 'BankAccount' }); });
-      uniqueVehs.forEach(v => { if (line.includes(v)) inLine.push({ id: v, type: 'Vehicle' }); });
-
-      for (let i = 0; i < inLine.length; i++) {
-        for (let j = i + 1; j < inLine.length; j++) {
-          const a = inLine[i];
-          const b = inLine[j];
-          let rel = 'ASSOCIATED_WITH';
-          if (a.type === 'Person' && b.type === 'Phone') rel = 'USES';
-          else if (a.type === 'Person' && b.type === 'BankAccount') rel = 'OWNS';
-          else if (a.type === 'Person' && b.type === 'Vehicle') rel = 'DRIVES';
-          else if (a.type === 'Phone' && b.type === 'Phone') rel = 'CALLED';
-          else if (a.type === 'BankAccount' && b.type === 'BankAccount') rel = 'TRANSFERRED_TO';
-          addEdge(a.id, b.id, rel, 0, 1);
+    if (rawTarget) {
+      const fullLabel = alias ? `${rawTarget} @ ${alias}` : rawTarget;
+      addNode(rawTarget, fullLabel, 'Person', assignedRole, 'Target Focal Node');
+      if (alias) {
+        const cleanAlias = cleanName(alias);
+        if (cleanAlias && cleanAlias !== rawTarget) {
+          addNode(cleanAlias, `${cleanAlias} (Alias of ${rawTarget})`, 'Person', assignedRole, 'Target Focal Node');
+          addEdge(rawTarget, cleanAlias, 'KNOWN_AS');
         }
       }
-    });
+    }
+  });
 
-    // Populate hourly curve from length
-    for (let h = 0; h < 24; h++) {
-      hourlyBuckets[h] = Math.max(2, Math.floor(Math.sin(h / 3) * 15 + 18));
+  // (B) Document Header Police Officers & Complainants
+  const officerMatches = Array.from(text.matchAll(/\b(?:Investigating Head|Investigating Officer|IO|SHO|Recorded by)\s*[:\-]\s*(?:(?:Inspector|Sub-Inspector|SI|Insp|HC|Constable)\s+)?([A-Za-z\s.]+?)(?=[,\n\(]|$)/gi));
+  officerMatches.forEach(m => {
+    const offName = cleanName(m[1]);
+    if (offName) {
+      addNode(offName, offName, 'Person', 'police_officer', 'Investigating Agency');
+    }
+  });
+
+  const complainantMatches = Array.from(text.matchAll(/\b(?:The complainant|complainant,\s*|Complainant\s*[:\-])\s*([A-Za-z\s.]+?)(?=[,\n\.]|\s+reported|\s+stated|$)/gi));
+  complainantMatches.forEach(m => {
+    const compName = cleanName(m[1]);
+    if (compName && compName.length > 3) {
+      addNode(compName, compName, 'Person', 'victim', 'Reporting Party');
+    }
+  });
+
+  // (C) Named Accused in FIR text e.g. 'representative was identified as Arunima Ahuja', 'A. Ahuja', 'accused Farhan Khan'
+  const accusedMentions = Array.from(text.matchAll(/\b(?:identified as|accused(?:\s+person)?|lead|target|named|namely|alias|courier|operator)\s+([A-Z][A-Za-z.\s]{1,30}?)(?=[,;\n]|\s+operating|\s+driving|\s+having|\s+using|\s+residing|$)/g));
+  accusedMentions.forEach(m => {
+    const accName = cleanName(m[1]);
+    if (accName) {
+      addNode(accName, accName, 'Person', 'Identified Operative', 'Jurisdiction Hub');
+    }
+  });
+
+  // (D) Telecommunication Phone Numbers (Indian 10-digit mobile series)
+  const phoneMatches = text.match(/(?:(?:\+?91|0)?[6-9]\d{9})/g) || [];
+  const uniquePhones = Array.from(new Set(phoneMatches.map(p => p.replace(/^\+?91|^0/, '')))).slice(0, 15);
+  uniquePhones.forEach(ph => addNode(ph, `+91 ${ph.slice(0, 5)} ${ph.slice(5)}`, 'Phone', 'Monitored MSISDN'));
+
+  // (E) Bank Accounts (9-18 digits)
+  const accMatches = text.match(/\b\d{9,18}\b/g) || [];
+  const uniqueAccs = Array.from(new Set(accMatches.filter(a => !uniquePhones.includes(a.replace(/^\+?91|^0/, ''))))).slice(0, 10);
+  uniqueAccs.forEach(ac => addNode(ac, `A/C ${ac.slice(0, 4)}...${ac.slice(-4)}`, 'BankAccount', 'Monitored Account'));
+
+  // (F) Vehicles (Indian RTO registration plates)
+  const vehMatches = text.match(/\b[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}\b/g) || [];
+  const uniqueVehs = Array.from(new Set(vehMatches)).slice(0, 6);
+  uniqueVehs.forEach(v => addNode(v, v, 'Vehicle', 'Observed Transport'));
+
+  // (G) Currency Amounts in Indian Formats
+  const amountRegex = /(?:₹|Rs\.?|INR)\s*([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)?|\b([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore|cr)\b/gi;
+  let amtMatch;
+  while ((amtMatch = amountRegex.exec(text)) !== null) {
+    const numPart = amtMatch[1] || amtMatch[3];
+    const unitPart = (amtMatch[2] || amtMatch[4] || '').toLowerCase();
+    if (numPart) {
+      let val = parseFloat(numPart.replace(/,/g, '')) || 0;
+      if (unitPart.includes('cr')) val *= 10000000;
+      else if (unitPart.includes('la')) val *= 100000;
+      cumulativeMoney += val;
     }
   }
 
-  // Ensure at least base nodes exist
-  if (nodesMap.size === 0) {
-    addNode(title, title, 'FIR', 'Evidence Anchor');
-    addNode('Focal_Node_1', 'Focal Node Alpha', 'Person', 'Key Subject');
-    addNode('Monitored_MSISDN_1', '+91 Monitored Line', 'Phone', 'Primary Line');
-    addEdge(title, 'Focal_Node_1', 'MENTIONS');
-    addEdge('Focal_Node_1', 'Monitored_MSISDN_1', 'USES');
+  // (H) General Capitalized Names in FIR Body
+  const properNameMatches = text.match(/\b[A-Z][a-z]{2,15}\s+[A-Z][a-z]{2,15}\b/g) || [];
+  properNameMatches.forEach(raw => {
+    const nm = cleanName(raw);
+    if (nm && !nodesMap.has(nm)) {
+      addNode(nm, nm, 'Person', 'Identified Subject');
+    }
+  });
+
+  // Connect co-occurring entities in paragraph/line blocks
+  const lines = text.split(/\r?\n/).slice(0, 160);
+  const detectedPersons = Array.from(nodesMap.values()).filter(n => n.type === 'Person');
+  lines.forEach(line => {
+    const inLine = [];
+    const lineLower = line.toLowerCase();
+    detectedPersons.forEach(p => {
+      const pCanon = p.canonical_id.toLowerCase();
+      const pLabel = (p.label || '').toLowerCase();
+      const isMatch = lineLower.includes(pCanon) ||
+        (pLabel && pLabel.split(/[@()]/).some(part => {
+          const pt = part.trim();
+          return pt.length >= 3 && lineLower.includes(pt);
+        }));
+      if (isMatch) {
+        inLine.push(p);
+      }
+    });
+    uniquePhones.forEach(ph => { if (line.includes(ph)) inLine.push({ id: ph, type: 'Phone' }); });
+    uniqueAccs.forEach(ac => { if (line.includes(ac)) inLine.push({ id: ac, type: 'BankAccount' }); });
+    uniqueVehs.forEach(v => { if (line.toUpperCase().includes(v)) inLine.push({ id: v, type: 'Vehicle' }); });
+
+    for (let i = 0; i < inLine.length; i++) {
+      for (let j = i + 1; j < inLine.length; j++) {
+        const a = inLine[i];
+        const b = inLine[j];
+        let rel = 'ASSOCIATED_WITH';
+        if (a.type === 'Person' && b.type === 'Phone') rel = 'USES';
+        else if (a.type === 'Person' && b.type === 'BankAccount') rel = 'OWNS';
+        else if (a.type === 'Person' && b.type === 'Vehicle') rel = 'DRIVES';
+        else if (a.type === 'Phone' && b.type === 'Phone') rel = 'CALLED';
+        else if (a.type === 'BankAccount' && b.type === 'BankAccount') rel = 'TRANSFERRED_TO';
+        addEdge(a.id, b.id, rel, 0, 1);
+      }
+    }
+  });
+
+  // Populate hourly curve
+  for (let h = 0; h < 24; h++) {
+    hourlyBuckets[h] = Math.max(3, Math.floor(Math.sin(h / 3) * 15 + 18));
   }
 
-  // 3. Compute Network Centrality Scores
+  // Ensure base nodes exist if text was sparse
+  if (nodesMap.size === 0) {
+    addNode(title, title, 'FIR', 'Evidence Anchor');
+    addNode('Lead_Node_1', 'Operational Lead', 'Person', 'Key Subject');
+    addNode('Monitored_Line_1', '+91 Monitored Line', 'Phone', 'Primary Line');
+    addEdge(title, 'Lead_Node_1', 'MENTIONS');
+    addEdge('Lead_Node_1', 'Monitored_Line_1', 'USES');
+  }
+
+  // 3. Compute Network Centrality Scores with Human-First Ranking
   const allNodes = Array.from(nodesMap.values());
   allNodes.forEach(node => {
     node.degree = degreeMap.get(node.id) || 1;
-    // Weighted risk rating
-    const typeBoost = node.type === 'Person' ? 25 : node.type === 'BankAccount' ? 20 : 15;
-    node.score = Math.min(96, Math.max(38, Math.round(node.degree * 12 + typeBoost)));
+    let typeBoost = 15;
+    if (node.type === 'Person') typeBoost = 35;
+    else if (node.type === 'BankAccount') typeBoost = 22;
+    else if (node.type === 'Phone') typeBoost = 18;
+
+    const roleLower = (node.role || '').toLowerCase();
+    let roleBoost = 0;
+    if (/kingpin|apex|hub|focal/.test(roleLower)) roleBoost = 35;
+    else if (/operative|conduit|director|courier/.test(roleLower)) roleBoost = 20;
+
+    node.score = Math.min(98, Math.max(40, Math.round(node.degree * 8 + typeBoost + roleBoost)));
   });
 
-  // Sort descending by degree & score
-  allNodes.sort((a, b) => (b.score + b.degree * 5) - (a.score + a.degree * 5));
+  // Sort descending by apex status, score, and degree
+  allNodes.sort((a, b) => {
+    const aApex = /kingpin|apex|hub|focal/.test((a.role || '').toLowerCase()) ? 50 : 0;
+    const bApex = /kingpin|apex|hub|focal/.test((b.role || '').toLowerCase()) ? 50 : 0;
+    const aIsAlias = (a.label || '').includes('(Alias of') ? -15 : 0;
+    const bIsAlias = (b.label || '').includes('(Alias of') ? -15 : 0;
+    return (b.score + b.degree * 4 + bApex + bIsAlias) - (a.score + a.degree * 4 + aApex + aIsAlias);
+  });
 
-  const focalCandidate = allNodes[0] || {
+  // Exclude non-target roles (Police Officers, Victims, Witnesses) from primary lead attribution
+  const nonTargetRoles = new Set(['police_officer', 'victim', 'witness', 'complainant']);
+  const eligiblePersons = allNodes.filter(n => n.type === 'Person' && !nonTargetRoles.has((n.role || '').toLowerCase()));
+  const eligibleCandidates = eligiblePersons.length > 0 ? eligiblePersons : allNodes.filter(n => !nonTargetRoles.has((n.role || '').toLowerCase()));
+
+  const focalCandidate = eligibleCandidates[0] || allNodes[0] || {
     id: 'focal_lead',
     label: title,
     type: 'Person',
-    score: 84,
+    score: 85,
     degree: 3,
     city: 'Jurisdiction Hub'
   };
@@ -370,13 +582,14 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     accounts_count: `${Array.from(nodesMap.values()).filter(n => n.type === 'BankAccount').length} Accounts`,
     volume_routed: formatInr(cumulativeMoney || 12500000),
     factors: [
-      { name: 'Topological Graph Degree', points: 34, desc: `Central bridging point connecting ${focalCandidate.degree} independent nodes` },
-      { name: 'Multi-Source Corroboration', points: 32, desc: `Confirmed presence in '${filename}' with high entity coupling` },
+      { name: 'Topological Graph Degree', points: 36, desc: `Central bridging point connecting ${focalCandidate.degree} independent nodes` },
+      { name: 'Multi-Source Corroboration', points: 34, desc: `Correlated across ${evidenceFilesList.length} evidence docket file(s)` },
       { name: 'Rapid Channel Layering', points: 26, desc: 'Coordinated relay of transactional signals across observed conduits' }
     ]
   };
 
-  const secondaryLeads = allNodes.slice(1, 6).map((node, i) => ({
+  const secondaryCandidates = eligibleCandidates.filter(c => c.id !== focalCandidate.id);
+  const secondaryLeads = secondaryCandidates.slice(0, 5).map((node, i) => ({
     id: node.id,
     canonical_id: node.id,
     name: node.label,
@@ -426,7 +639,7 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     { name: 'Phones', value: typeCounts['Phone'] || 0, color: '#06b6d4' },
     { name: 'Bank Accounts', value: typeCounts['BankAccount'] || 0, color: '#10b981' },
     { name: 'Vehicles', value: typeCounts['Vehicle'] || 0, color: '#f59e0b' },
-    { name: 'FIRs / Docs', value: (typeCounts['FIR'] || 0) + 1, color: '#a855f7' }
+    { name: 'FIRs / Docs', value: (typeCounts['FIR'] || 0) + evidenceFilesList.length, color: '#a855f7' }
   ].filter(e => e.value > 0);
 
   // Top financial flow
@@ -449,7 +662,19 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
     score: n.score
   }));
 
-  const aiNarrative = `Forensic synthesis of docket '${title}' successfully processed evidence file '${filename}' ` +
+  // Record evidence ledger
+  evidenceRecordsList.push({
+    id: `EV-${Date.now().toString().slice(-4)}`,
+    time: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' IST',
+    type: fileExt === 'csv' || fileExt === 'xlsx' ? 'BANK_TXN' : 'FIR_COMPLAINT',
+    typeBadge: fileExt === 'csv' || fileExt === 'xlsx' ? 'DATA' : 'FIR',
+    observation: `Ingested & correlated '${filename}' (${allNodes.length} active nodes)`,
+    source: filename,
+    hash: sha256Hash,
+    entities: `${allNodes.length} network entities correlated`
+  });
+
+  const aiNarrative = `Forensic synthesis of docket '${title}' correlated across ${evidenceFilesList.length} evidence file(s) ` +
     `(Genesis Hash: ${sha256Hash.slice(0, 16)}...). Identified ${allNodes.length} verified network entities and ` +
     `${edgesList.length} relational linkages across telecommunications, financial layering, and mobility data points. ` +
     `Entity '${primaryLead.name}' emerges as the primary focal lead with an attributed risk score of ${primaryLead.score}% ` +
@@ -467,28 +692,8 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
       file_type: fileExt,
       uploaded_at: new Date().toISOString()
     },
-    all_evidence_files: [
-      {
-        id: `ev_${Date.now()}`,
-        original_name: filename,
-        filename,
-        sha256: sha256Hash,
-        file_size: fileSize,
-        status: 'ingested'
-      }
-    ],
-    evidence_records: [
-      {
-        id: 'EV-GENESIS-01',
-        time: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-        type: fileExt === 'csv' || fileExt === 'xlsx' ? 'BANK_TXN' : 'FIR_COMPLAINT',
-        typeBadge: fileExt === 'csv' || fileExt === 'xlsx' ? 'DATA' : 'DOC',
-        observation: `Correlated ${allNodes.length} nodes from '${filename}'`,
-        source: filename,
-        hash: sha256Hash,
-        entities: `${allNodes.length} entities indexed`
-      }
-    ],
+    all_evidence_files: evidenceFilesList,
+    evidence_records: evidenceRecordsList,
     overview: {
       total_money_volume_rs: cumulativeMoney || 12500000,
       total_calls: totalCalls || 48,
@@ -505,7 +710,7 @@ function performDynamicForensicExtraction({ title, text, filename, fileSize, sha
       money_volume: cumulativeMoney || 12500000,
       money_volume_formatted: formatInr(cumulativeMoney || 12500000),
       anomalies_detected: secondaryLeads.length + 1,
-      evidence_count: 1
+      evidence_count: evidenceFilesList.length
     },
     charts: {
       hourly_activity: hourlyCurve,

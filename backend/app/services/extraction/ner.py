@@ -29,7 +29,10 @@ NON_PERSON_WORDS = {
     "economic offences", "nehrú colony", "anti-hawala cell", "anti hawala", "government",
     "handset", "inr recovered", "recovered", "says he knows caller", "ganga co-operative",
     "ganga co-operative bank", "kanpur north p.s.", "lucknow central p.s.", "delhi south-east p.s.",
-    "south-east district", "mobile phone", "goods carrier", "cash packets", "foreign person"
+    "south-east district", "mobile phone", "goods carrier", "cash packets", "foreign person",
+    "prime target", "clandestine syndicate hub", "syndicate hub", "registered vehicle",
+    "designated transit vehicle", "designated transit", "transit vehicle", "clock tower",
+    "chandni chowk", "badarpur border", "dhaula kuan", "flyover camera"
 }
 
 # Regex to terminate trailing legal descriptors and prepositions from extracted names
@@ -46,8 +49,7 @@ NAME_TRIM_REGEX = re.compile(
 
 # Expanded patterns for Indian narrative legal text & criminal dossiers
 PERSON_TITLE_PATTERN = re.compile(
-    r'\b(?:Shri|Smt\.?|Mr\.?|Mrs\.?|Ms\.?|Sri|Dr\.?|advocate|accused(?:\s+person)?|suspect|kingpin|mastermind|operator|handler|mule|courier|driver|complainant|victim|informant|named|alias|a\.k\.a\.?|known\s+as|namely|s/o|d/o|w/o)\s+([A-Za-z]+(?:\s+[A-Za-z]+){1,3})\b',
-    re.IGNORECASE
+    r'\b(?i:(?:Shri|Smt\.?|Mr\.?|Mrs\.?|Ms\.?|Sri|Dr\.?|advocate|accused(?:\s+person)?|suspect|kingpin|mastermind|operator|handler|mule|courier|driver|complainant|victim|informant|named|alias|a\.k\.a\.?|known\s+as|namely|s/o|d/o|w/o))\s+([A-Z][A-Za-z.\'-]+(?:\s+[A-Z][A-Za-z.\'-]+){0,3})\b'
 )
 
 # All-caps names commonly found in police FIRs
@@ -92,7 +94,14 @@ DISALLOWED_NAME_TOKENS = {
     "says", "knows", "caller", "whose", "recovered", "found", "seized", "handset",
     "carrier", "cartons", "goods", "cash", "inr", "notes", "mobile", "phone", "sim",
     "vehicle", "hatchback", "sedan", "bank", "co-operative", "cooperative", "entry",
-    "notice", "memo", "report", "dated", "road", "street", "colony", "nagar", "marg"
+    "notice", "memo", "report", "dated", "road", "street", "colony", "nagar", "marg",
+    "coordinating", "payouts", "foreign", "overall", "layering", "remittances", "transfers",
+    "generation", "handover", "handovers", "token", "tokens", "physical", "trunks", "counters",
+    "market", "markets", "bullion", "investigation", "statutory", "enquiry", "representative",
+    "branch", "crime", "special", "cell", "unit", "division", "traffic", "headquarters",
+    "chowk", "bazar", "fortuner", "creta", "scorpio", "swift", "toyota", "hyundai",
+    "mahindra", "honda", "maruti", "innova", "baleno", "bolero", "thar", "dzire",
+    "reg", "target", "hub", "syndicate", "clandestine", "transit", "designated", "registered"
 }
 
 def clean_person_name(raw: str) -> str:
@@ -111,9 +120,14 @@ def clean_person_name(raw: str) -> str:
     lowered = result.lower()
     if lowered in NON_PERSON_WORDS or len(result) < 3:
         return ""
-    if any(tok.lower() in DISALLOWED_NAME_TOKENS for tok in tokens):
-        return ""
-    if any(org in lowered for org in ["p.s.", "police", "bank", "co-operative", "hospital", "court", "station"]):
+    # Filter gerunds and action nouns
+    for tok in tokens:
+        tl = tok.lower()
+        if tl.endswith("ing") and tl != "singh":
+            return ""
+        if tl in DISALLOWED_NAME_TOKENS:
+            return ""
+    if any(org in lowered for org in ["p.s.", "police", "bank", "co-operative", "hospital", "court", "station", "crime branch", "special cell", "cyber cell", "headquarters", "chowk", "fortuner", "creta", "scorpio"]):
         return ""
     return result
 
@@ -171,6 +185,10 @@ def extract_legal_entities(text: str, page_or_para: str, base_char_offset: int =
         if norm in police_officer_norms and role != "police_officer":
             return
         if norm in seen_norms:
+            for r in results:
+                if r["normalized_value"] == norm:
+                    if r.get("role") in ["person", "suspect"] and role in ["kingpin", "operator", "mule", "police_officer"]:
+                        r["role"] = role
             return
         seen_norms.add(norm)
         if role == "police_officer":
@@ -210,6 +228,26 @@ def extract_legal_entities(text: str, page_or_para: str, base_char_offset: int =
         parts = re.split(r'\(\d+\)|\bAnother\s+person\b|,|\n', line)
         for part in parts:
             add_entity(part, role="suspect")
+
+    # 2b. Section Targets list e.g. [A] KAILASH CHAND JAIN @ KC SETH (Prime Target & Kingpin):
+    for m in re.finditer(r'\[[A-Z0-9]\]\s+([A-Z\s]{3,35}?)(?:\s+@\s+([^\(\n:]+))?\s*(?:\(([^)]+)\))?\s*:', text):
+        target_name = m.group(1).strip()
+        alias_name = m.group(2).strip() if m.group(2) else ""
+        desc = (m.group(3) or "").lower()
+        role = "suspect"
+        if any(k in desc for k in ["kingpin", "mastermind", "prime target"]):
+            role = "kingpin"
+        elif any(k in desc for k in ["courier", "driver", "transit"]):
+            role = "mule"
+        elif any(k in desc for k in ["operator", "distributor"]):
+            role = "operator"
+        add_entity(target_name, role=role)
+        if alias_name:
+            add_entity(alias_name, role=role)
+
+    # 2c. Accused identified in narrative text e.g. "representative was identified as Arunima Ahuja"
+    for m in re.finditer(r'\b(?:representative|accused|suspect|perpetrator|person)\s+(?:was\s+)?identified\s+as\s+([A-Za-z.\s]{2,30}?)(?=[,;\n]|\s+operating|\s+driving|\s+having|\s+using|\s+residing|$)', text, re.IGNORECASE):
+        add_entity(m.group(1), role="suspect")
 
     # 3. Explicit Arrested / Driver mentions
     for m in re.finditer(r'\b(?:Arrested\s+accused|The\s+driver)\s+([A-Za-z\s.]+?)(?=\s+under|\s+alias|\s+was|\s+s\/o|\s+r\/o|,|\n)', text, re.IGNORECASE):
@@ -313,7 +351,10 @@ def extract_ner_entities(
         "south", "north", "east", "west", "central", "state", "police",
         "station", "district", "hospital", "magistrate", "first", "information",
         "report", "case", "diary", "memo", "court", "act", "acts", "section",
-        "sections", "bnss", "bns", "ipc", "crpc", "pmla", "bsa"
+        "sections", "bnss", "bns", "ipc", "crpc", "pmla", "bsa",
+        "branch", "crime", "special", "unit", "division", "traffic", "headquarters",
+        "chowk", "bazar", "fortuner", "creta", "scorpio", "swift", "toyota", "hyundai",
+        "mahindra", "honda", "maruti", "innova", "clock", "tower"
     }
     for m in PROPER_NAME_PATTERN.finditer(clean_unwrapped):
         raw_name = m.group(1).strip()
