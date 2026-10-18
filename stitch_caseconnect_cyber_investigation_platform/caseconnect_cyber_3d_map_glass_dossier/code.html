@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CaseConnect — Forensic Intelligence Dossier</title>
+<!-- Google Fonts: Instrument Serif + Inter Tight + JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Inter+Tight:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Three.js r125 -->
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ink: '#07090D',
+            'ink-panel': 'rgba(13, 17, 23, 0.55)',
+            'ink-deep': '#0A0D13',
+            text: '#ECE8DF',
+            muted: '#8B93A1',
+            accent: '#F2A33A',      /* Restrained Warm Amber / Saffron */
+            data: '#3FB6A8',        /* Surgical Telemetry Teal */
+            alert: '#E5484D',       /* High-Risk Crimson */
+          },
+          fontFamily: {
+            serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+            sans: ['"Inter Tight"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'Menlo', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    :root {
+      --ink: #07090D;
+      --accent: #F2A33A;
+      --data: #3FB6A8;
+      --alert: #E5484D;
+    }
+
+    body {
+      background-color: #07090D;
+      color: #ECE8DF;
+      font-family: 'Inter Tight', sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Precision Frosted Glass System */
+    .glass {
+      background: rgba(13, 17, 23, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px) saturate(130%);
+      -webkit-backdrop-filter: blur(20px) saturate(130%);
+      border-radius: 20px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 50px -15px rgba(0, 0, 0, 0.7);
+    }
+
+    .glass-sm {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px) saturate(130%);
+      -webkit-backdrop-filter: blur(20px) saturate(130%);
+      border-radius: 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    /* Custom Minimal Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #07090D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #F2A33A;
+    }
+
+    .ring-circle {
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 4s infinite ease-in-out;
+    }
+
+    /* Ballistic flight arc dash animation */
+    @keyframes flowArc {
+      from { stroke-dashoffset: 60; }
+      to { stroke-dashoffset: 0; }
+    }
+    .flow-dash {
+      animation: flowArc 1.8s linear infinite;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen selection:bg-accent selection:text-ink">
+<!-- ==================== BUILT-IN THREE.JS 3D CYBER INDIA MAP SCENE ==================== -->
+<canvas class="fixed inset-0 w-full h-full pointer-events-none z-0" id="three-cyber-map" style="width: 100vw; height: 100vh;"></canvas>
+<!-- Atmospheric Dark Gradient Vignette & Legibility Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[1] bg-[radial-gradient(circle_at_50%_40%,rgba(7,9,13,0.35)_0%,rgba(7,9,13,0.85)_75%,#07090D_100%)]"></div>
+<div class="fixed inset-0 pointer-events-none z-[1] bg-gradient-to-b from-ink/90 via-transparent to-ink"></div>
+<!-- Scanning Light Sweep Beam -->
+<div class="fixed w-full h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent top-0 transition-all duration-200 pointer-events-none z-[2]" id="scan-line"></div>
+<!-- ==================== PERSISTENT FROSTED GLASS HEADER ==================== -->
+<header class="fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300" id="main-header">
+<div class="max-w-7xl mx-auto flex items-center justify-between glass px-6 py-3.5">
+<!-- Left: Brand / Reset to top -->
+<a class="flex items-center gap-3 group" href="javascript:void(0)" onclick="resetToHome()">
+<span class="font-serif text-2xl tracking-tight text-text group-hover:text-accent transition-colors">CaseConnect</span>
+<span class="font-mono text-[9px] tracking-widest uppercase px-2 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">SIH-2024</span>
+</a>
+<!-- Center: Refined Navigation -->
+<nav class="hidden md:flex items-center gap-7 text-xs font-medium tracking-wide">
+<a class="text-muted hover:text-text transition-colors" href="#upload-section">Intake</a>
+<a class="text-muted hover:text-text transition-colors" href="#suspects-section">Suspect</a>
+<a class="text-muted hover:text-text transition-colors" href="#centerpiece-section">Trail Map</a>
+<a class="text-muted hover:text-text transition-colors" href="#network-section">Network</a>
+<a class="text-muted hover:text-text transition-colors" href="#charts-section">Forensics</a>
+<a class="text-muted hover:text-text transition-colors" href="#evidence-section">Evidence</a>
+</nav>
+<!-- Right: Saved Cases + Officer Credential Badge -->
+<div class="flex items-center gap-4">
+<button class="glass-pill px-3 py-1.5 rounded-full text-accent flex items-center gap-1.5 text-xs font-mono hover:border-accent/40 transition" onclick="toggleSavedCasesModal(true)">
+<i class="w-3.5 h-3.5" data-lucide="archive"></i>
+<span>Saved Cases (4)</span>
+</button>
+<div class="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
+<div class="text-right hidden sm:block">
+<p class="text-xs font-medium text-text">Inspector V. Sen</p>
+<p class="font-mono text-[9px] text-muted tracking-wider">CYBER CELL • ZONE IV</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-mono text-accent">
+          VS
+        </div>
+</div>
+</div>
+</header>
+<!-- ==================== MAIN DOSSIER WRAPPER ==================== -->
+<main class="relative z-10 pt-28 pb-32 max-w-7xl mx-auto px-6 space-y-32">
+<!-- STEP 01 · FILE INGESTION GLASS DOCK -->
+<section class="min-h-[75vh] flex flex-col justify-center items-center text-center relative py-8" id="upload-section">
+<div class="max-w-3xl w-full">
+<span class="font-mono text-[11px] uppercase tracking-widest text-accent mb-3 block">Step 01 • Intake &amp; Ingestion</span>
+<h1 class="font-serif text-5xl md:text-7xl text-text tracking-tight mb-3">Drop the case files.</h1>
+<p class="text-muted text-sm max-w-md mx-auto mb-10 leading-relaxed">FIR complaints, call records (CDR), bank statements, and IP logs.</p>
+<!-- Glass Drop Dock Panel -->
+<div class="glass p-10 md:p-12 text-center border-dashed border-white/20 hover:border-accent/50 transition-all duration-300 cursor-pointer group relative overflow-hidden" onclick="triggerFileInput()">
+<input class="hidden" id="file-input" multiple="" onchange="handleFileSelect(event)" type="file"/>
+<div class="w-14 h-14 mx-auto mb-4 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-muted group-hover:text-accent group-hover:scale-105 transition-all">
+<i class="w-6 h-6" data-lucide="file-up"></i>
+</div>
+<p class="text-sm text-text font-medium mb-1">Click to browse or drag &amp; drop files here</p>
+<p class="font-mono text-[11px] text-muted">Supports CSV, XLSX, PDF, TXT, PCAP (Max 50MB each)</p>
+<!-- Preloaded / Selected Chips -->
+<div class="mt-8 flex flex-wrap gap-2.5 justify-center" id="file-chips">
+<div class="glass-sm px-3.5 py-1.5 flex items-center gap-2 text-xs font-mono">
+<span class="w-2 h-2 rounded-full bg-data"></span>
+<span class="text-text">FIR_408_CyberCrime.pdf</span>
+<span class="text-muted bg-white/5 px-1.5 py-0.5 rounded text-[9px]">FIR</span>
+<button class="text-muted hover:text-alert" onclick="event.stopPropagation(); this.parentElement.remove()"><i class="w-3 h-3" data-lucide="x"></i></button>
+</div>
+<div class="glass-sm px-3.5 py-1.5 flex items-center gap-2 text-xs font-mono">
+<span class="w-2 h-2 rounded-full bg-accent"></span>
+<span class="text-text">Hawala_AxisBank_Stmt.csv</span>
+<span class="text-muted bg-white/5 px-1.5 py-0.5 rounded text-[9px]">BANK</span>
+<button class="text-muted hover:text-alert" onclick="event.stopPropagation(); this.parentElement.remove()"><i class="w-3 h-3" data-lucide="x"></i></button>
+</div>
+<div class="glass-sm px-3.5 py-1.5 flex items-center gap-2 text-xs font-mono">
+<span class="w-2 h-2 rounded-full bg-accent"></span>
+<span class="text-text">CDR_Dump_Delhi_Noida.xlsx</span>
+<span class="text-muted bg-white/5 px-1.5 py-0.5 rounded text-[9px]">CDR</span>
+<button class="text-muted hover:text-alert" onclick="event.stopPropagation(); this.parentElement.remove()"><i class="w-3 h-3" data-lucide="x"></i></button>
+</div>
+</div>
+</div>
+<!-- Case Metadata Form Fields -->
+<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+<div class="glass-sm p-3.5 px-4">
+<label class="block font-mono text-[9px] uppercase text-muted tracking-widest mb-1">Case Title</label>
+<input class="w-full bg-transparent border-none text-text text-sm focus:outline-none font-medium" id="case-title-input" type="text" value="Op Syndicate: North Corridor Hawala Network"/>
+</div>
+<div class="glass-sm p-3.5 px-4">
+<label class="block font-mono text-[9px] uppercase text-muted tracking-widest mb-1">Case Number</label>
+<input class="w-full bg-transparent border-none text-text text-sm focus:outline-none font-mono" type="text" value="FIR-2024-DEL-0941"/>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+<button class="text-xs font-mono text-muted hover:text-accent transition flex items-center gap-1.5" onclick="loadSampleHawalaCase()">
+<i class="w-3.5 h-3.5 text-accent" data-lucide="sparkles"></i>
+            Try sample case: Hawala syndicate dump (₹1.8 Cr)
+          </button>
+<button class="w-full sm:w-auto px-8 py-3 rounded-xl bg-accent text-ink font-semibold text-xs tracking-wider uppercase hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20" id="analyse-btn" onclick="startAnalysisFlow()">
+<span>Analyse Case</span>
+<i class="w-3.5 h-3.5" data-lucide="arrow-right"></i>
+</button>
+</div>
+<!-- Quick Access Saved Tags -->
+<div class="mt-10 pt-5 border-t border-white/5 flex flex-wrap items-center justify-center gap-2.5 text-xs">
+<span class="font-mono text-muted text-[10px] uppercase tracking-wider">Recent:</span>
+<button class="glass-sm px-3 py-1.5 hover:border-accent/40 text-muted hover:text-text transition flex items-center gap-2" onclick="loadRecentCase('Crypto Scam — Thane Sector 4')">
+<span>Crypto Scam Thane</span>
+<span class="text-alert font-mono text-[10px]">92%</span>
+</button>
+<button class="glass-sm px-3 py-1.5 hover:border-accent/40 text-muted hover:text-text transition flex items-center gap-2" onclick="loadRecentCase('Ghost Accounts — Kolkata FinTech')">
+<span>Ghost Accounts Kolkata</span>
+<span class="text-accent font-mono text-[10px]">76%</span>
+</button>
+<button class="glass-sm px-3 py-1.5 hover:border-accent/40 text-muted hover:text-text transition flex items-center gap-2" onclick="loadRecentCase('SIM Box Bypass — Jaipur')">
+<span>SIM Box Bypass</span>
+<span class="text-data font-mono text-[10px]">48%</span>
+</button>
+</div>
+</div>
+</section>
+<!-- PROCESSING OVERLAY MODAL -->
+<div class="fixed inset-0 z-50 bg-ink/90 backdrop-blur-2xl flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-500" id="loading-overlay">
+<div class="max-w-md w-full px-6 text-center">
+<div class="relative w-32 h-32 mx-auto mb-8">
+<svg class="w-full h-full" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="42" stroke="rgba(255,255,255,0.06)" stroke-width="3"></circle>
+<circle class="ring-circle" cx="50" cy="50" fill="none" id="loading-progress-circle" r="42" stroke="var(--accent)" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-mono text-2xl font-semibold text-text" id="loading-percentage">0%</span>
+<span class="font-mono text-[8px] uppercase tracking-widest text-muted">Ingesting</span>
+</div>
+</div>
+<p class="font-mono text-xs text-accent min-h-[20px]" id="loading-step-text">Reading files...</p>
+<p class="text-[11px] text-muted mt-2">Correlating 1,842 calls, 31 accounts, 8 cell towers</p>
+</div>
+</div>
+<!-- SECTION 02 · SUSPECT RESULT DOSSIER (S1 & S2) -->
+<section class="scroll-mt-28" id="suspects-section">
+<div class="flex items-center justify-between mb-6">
+<div>
+<span class="font-mono text-[10px] uppercase tracking-widest text-accent">Section 01 • Priority Threat</span>
+<h2 class="font-serif text-4xl md:text-5xl text-text mt-1">Lead suspect identified.</h2>
+<p class="text-xs text-muted mt-1">Primary orchestrator mapped across overlapping phone towers and mule accounts.</p>
+</div>
+<div class="hidden sm:flex items-center gap-2 font-mono text-[10px] text-alert glass-sm px-3 py-1.5">
+<span class="w-2 h-2 rounded-full bg-alert animate-ping"></span>
+<span>HIGH-RISK FLAG</span>
+</div>
+</div>
+<!-- Primary Suspect Glass Card -->
+<div class="glass p-8 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative overflow-hidden" id="hero-suspect-card">
+<!-- Avatar Silhouette (Initials Monogram) -->
+<div class="lg:col-span-4 flex flex-col items-center justify-center text-center border-b lg:border-b-0 lg:border-r border-white/10 pb-6 lg:pb-0 lg:pr-6">
+<div class="relative w-40 h-52 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col items-center justify-center shadow-inner">
+<div class="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+<span class="font-serif text-3xl text-text" id="hero-avatar-initials">RV</span>
+</div>
+<span class="font-mono text-[10px] text-muted tracking-wider uppercase">Default Dossier</span>
+<button class="mt-3 text-[10px] text-accent hover:underline flex items-center gap-1 font-mono" onclick="alert('Local biometric image attachment verified.')">
+<i class="w-3 h-3" data-lucide="camera"></i> Attach official photo
+            </button>
+</div>
+<span class="font-mono text-[11px] text-muted mt-4">UID: IN-DL-98210</span>
+</div>
+<!-- Central Criminal Telemetry -->
+<div class="lg:col-span-5 space-y-4">
+<div class="flex items-center gap-3">
+<span class="font-mono text-[10px] uppercase px-2.5 py-1 rounded bg-alert/15 text-alert border border-alert/30 font-medium" id="hero-badge">Orchestrator • Hawala Node</span>
+<span class="font-mono text-[11px] text-muted">Flagged in 3 FIRs</span>
+</div>
+<h3 class="font-serif text-5xl md:text-6xl text-text tracking-tight" id="hero-name">Rakesh Verma</h3>
+<p class="text-xs text-muted leading-relaxed">Operates routing hub spanning Chandni Chowk (Delhi) to Surat textile conduits.</p>
+<div class="grid grid-cols-3 gap-3 pt-2">
+<div class="glass-sm p-3">
+<span class="font-mono text-[9px] text-muted uppercase block">Phones Active</span>
+<span class="font-mono text-base font-semibold text-text" id="hero-phones">3 devices</span>
+</div>
+<div class="glass-sm p-3">
+<span class="font-mono text-[9px] text-muted uppercase block">Mule Accounts</span>
+<span class="font-mono text-base font-semibold text-text" id="hero-accounts">5 accounts</span>
+</div>
+<div class="glass-sm p-3">
+<span class="font-mono text-[9px] text-muted uppercase block">Discovered IPs</span>
+<span class="font-mono text-base font-semibold text-text" id="hero-ips">2 static</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-3 font-mono text-xs text-muted pt-2 border-t border-white/5">
+<span class="text-text font-medium">₹ 1.84 Cr routed</span>
+<span>•</span>
+<span class="text-accent">41 call spike on 14-Oct</span>
+<span>•</span>
+<span class="text-data">Surat nexus verified</span>
+</div>
+<!-- Why Flagged For Arrest Accordion -->
+<div class="pt-1">
+<button class="text-xs font-mono text-accent hover:underline flex items-center gap-1.5" onclick="toggleWhyFlagged()">
+<span>Why flagged for arrest?</span>
+<i class="w-3 h-3 transition-transform" data-lucide="chevron-down" id="why-arrow"></i>
+</button>
+<div class="hidden mt-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2 text-xs" id="why-content">
+<div class="flex justify-between items-center">
+<span class="text-muted">Degree Centrality Vector</span>
+<span class="font-mono text-alert">0.89 (Dominant)</span>
+</div>
+<div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+<div class="bg-alert h-full w-[89%]"></div>
+</div>
+<div class="flex justify-between items-center text-[11px] pt-1">
+<span class="text-muted">Mule pass-through turnaround (&lt;12m)</span>
+<a class="text-data hover:underline font-mono" href="#evidence-section">Proof #EV-901</a>
+</div>
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-muted">Simultaneous IMEI burn anomaly</span>
+<a class="text-data hover:underline font-mono" href="#evidence-section">Proof #EV-412</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Animated SVG Risk Ring (87% High Risk) -->
+<div class="lg:col-span-3 flex flex-col items-center justify-center text-center p-4">
+<div class="relative w-36 h-36 mb-2">
+<svg class="w-full h-full" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="5"></circle>
+<circle class="ring-circle" cx="50" cy="50" fill="none" id="hero-risk-ring" r="40" stroke="var(--alert)" stroke-dasharray="251" stroke-dashoffset="32" stroke-linecap="round" stroke-width="5"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-mono text-3xl font-bold text-text" id="hero-risk-score">87%</span>
+<span class="font-mono text-[8px] uppercase tracking-wider text-alert">High Risk</span>
+</div>
+</div>
+<span class="font-mono text-[10px] text-muted uppercase tracking-widest">Confidence Index</span>
+<p class="text-[11px] text-muted mt-1">Cross-corroborated via 3 distinct forensic vectors</p>
+</div>
+</div>
+<!-- Secondary Suspect Micro-Cards Row -->
+<div class="mt-6">
+<div class="flex items-center justify-between mb-3">
+<span class="font-mono text-[10px] uppercase tracking-wider text-muted">Correlated Secondary Entities (Click to inspect)</span>
+<span class="font-mono text-[10px] text-muted">4 entities mapped</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1: Vicky S. -->
+<div class="glass-sm p-4 hover:border-accent/40 cursor-pointer transition-all duration-200 group" onclick="swapSuspect('Vicky Sharma', 'VS', 'Mule Controller', '74%', 'var(--accent)', '2 phones', '9 accounts', 'Surat')">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-xs">VS</div>
+<span class="font-mono text-sm font-semibold text-accent">74%</span>
+</div>
+<h4 class="font-serif text-lg text-text group-hover:text-accent transition">Vicky Sharma</h4>
+<p class="font-mono text-[11px] text-muted">Mule Controller • Surat</p>
+<div class="w-full bg-white/5 h-1 rounded-full mt-3 overflow-hidden">
+<div class="bg-accent h-full w-[74%]"></div>
+</div>
+</div>
+<!-- Card 2: Anil K. -->
+<div class="glass-sm p-4 hover:border-accent/40 cursor-pointer transition-all duration-200 group" onclick="swapSuspect('Anil Kulkarni', 'AK', 'SIM Provider', '68%', 'var(--accent)', '1 phone', '1 account', 'Mumbai')">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-xs">AK</div>
+<span class="font-mono text-sm font-semibold text-accent">68%</span>
+</div>
+<h4 class="font-serif text-lg text-text group-hover:text-accent transition">Anil Kulkarni</h4>
+<p class="font-mono text-[11px] text-muted">SIM Provider • Mumbai</p>
+<div class="w-full bg-white/5 h-1 rounded-full mt-3 overflow-hidden">
+<div class="bg-accent h-full w-[68%]"></div>
+</div>
+</div>
+<!-- Card 3: Farooq M. -->
+<div class="glass-sm p-4 hover:border-data/40 cursor-pointer transition-all duration-200 group" onclick="swapSuspect('Farooq Malik', 'FM', 'Layering Proxy', '61%', 'var(--data)', '2 phones', '3 accounts', 'Ahmedabad')">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-xs">FM</div>
+<span class="font-mono text-sm font-semibold text-data">61%</span>
+</div>
+<h4 class="font-serif text-lg text-text group-hover:text-data transition">Farooq Malik</h4>
+<p class="font-mono text-[11px] text-muted">Layering Proxy • Ahmedabad</p>
+<div class="w-full bg-white/5 h-1 rounded-full mt-3 overflow-hidden">
+<div class="bg-data h-full w-[61%]"></div>
+</div>
+</div>
+<!-- Card 4: Meera D. -->
+<div class="glass-sm p-4 hover:border-white/30 cursor-pointer transition-all duration-200 group" onclick="swapSuspect('Meera Desai', 'MD', 'Crypto Cashout', '42%', 'var(--muted)', '1 phone', '1 account', 'Kolkata')">
+<div class="flex items-center justify-between mb-2">
+<div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-xs">MD</div>
+<span class="font-mono text-sm font-semibold text-muted">42%</span>
+</div>
+<h4 class="font-serif text-lg text-text group-hover:text-white transition">Meera Desai</h4>
+<p class="font-mono text-[11px] text-muted">Crypto Cashout • Kolkata</p>
+<div class="w-full bg-white/5 h-1 rounded-full mt-3 overflow-hidden">
+<div class="bg-muted h-full w-[42%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 03 · "FOLLOW THE MONEY AND CALLS ACROSS INDIA" CENTERPIECE -->
+<section class="scroll-mt-28" id="centerpiece-section">
+<div class="flex items-center justify-between mb-6">
+<div>
+<span class="font-mono text-[10px] uppercase tracking-widest text-accent">Section 02 • Geo-Financial Flow</span>
+<h2 class="font-serif text-4xl md:text-5xl text-text mt-1">Follow the money.</h2>
+<p class="text-xs text-muted mt-1">Visualizing cross-border interbank transfers and concurrent tower pings.</p>
+</div>
+<div class="glass-sm px-3.5 py-1.5 font-mono text-[10px] text-accent tracking-wider">
+<span>ACTIVE SIMULATION: LIVE</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+<!-- Interactive 3D Spatial Vector Flow Glass Stage -->
+<div class="lg:col-span-8 glass p-6 md:p-8 relative min-h-[440px] flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between z-10">
+<div class="flex items-center gap-4 text-[11px] font-mono">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-data inline-block"></span> Call Arcs (VoIP &amp; GSM)</span>
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-1 bg-accent inline-block"></span> Hawala Flow</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-alert inline-block"></span> Return Loop</span>
+</div>
+<span class="font-mono text-[10px] text-muted">Spatial Geodesic Projection</span>
+</div>
+<!-- Curved Ballistic Arcs over Geographic Coordinates -->
+<div class="relative w-full h-72 my-2">
+<svg class="w-full h-full" fill="none" viewbox="0 0 700 300">
+<defs>
+<lineargradient id="grad-gold" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#F2A33A" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#F2A33A" stop-opacity="0.2"></stop>
+</lineargradient>
+<lineargradient id="grad-teal" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#3FB6A8" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#3FB6A8" stop-opacity="0.2"></stop>
+</lineargradient>
+</defs>
+<!-- Hub: Delhi -->
+<circle class="animate-ping" cx="280" cy="75" fill="var(--accent)" r="5"></circle>
+<circle cx="280" cy="75" fill="var(--accent)" r="4"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="11" x="292" y="80">Delhi (Origin Hub)</text>
+<!-- Node: Surat -->
+<circle cx="180" cy="180" fill="var(--accent)" r="4"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="11" x="115" y="184">Surat</text>
+<!-- Node: Mumbai -->
+<circle cx="190" cy="235" fill="var(--accent)" r="4"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="11" x="125" y="240">Mumbai</text>
+<!-- Node: Kolkata -->
+<circle cx="520" cy="165" fill="var(--accent)" r="4"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="11" x="532" y="170">Kolkata</text>
+<!-- Node: Hyderabad -->
+<circle cx="310" cy="225" fill="var(--data)" r="3.5"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="11" x="322" y="230">Hyderabad</text>
+<!-- Hawala Money Ballistic Arcs (Amber) -->
+<path class="flow-dash" d="M 280 75 Q 210 110 180 180" stroke="var(--accent)" stroke-dasharray="6,4" stroke-width="2.5"></path>
+<path class="flow-dash" d="M 180 180 Q 230 200 310 225" stroke="var(--accent)" stroke-dasharray="6,4" stroke-width="2"></path>
+<path class="flow-dash" d="M 310 225 Q 425 200 520 165" stroke="var(--accent)" stroke-dasharray="6,4" stroke-width="2.5"></path>
+<!-- Call Vector Arcs (Teal) -->
+<path d="M 280 75 Q 380 90 520 165" opacity="0.8" stroke="var(--data)" stroke-width="1.2"></path>
+<path d="M 280 75 Q 220 160 190 235" opacity="0.8" stroke="var(--data)" stroke-width="1.2"></path>
+<!-- Tamper / Layering Return Loop (Crimson Alert) -->
+<path class="animate-pulse" d="M 520 165 C 450 65, 360 35, 280 75" stroke="var(--alert)" stroke-dasharray="4,3" stroke-width="2.5"></path>
+</svg>
+</div>
+<!-- Bottom Alert Bar inside Glass -->
+<div class="glass-sm p-3.5 flex items-center justify-between text-xs z-10 border-alert/30 bg-alert/5">
+<div class="flex items-center gap-2">
+<i class="w-4 h-4 text-alert" data-lucide="alert-triangle"></i>
+<span class="text-text font-medium">Layering Detected:</span>
+<span class="text-muted">₹ 42,00,000 looped back to Delhi through shell garment exporter.</span>
+</div>
+<span class="font-mono text-[10px] text-alert font-semibold uppercase">Loop Confirmed</span>
+</div>
+</div>
+<!-- Telemetry Metrics Card in Frosted Glass -->
+<div class="lg:col-span-4 glass p-6 md:p-8 flex flex-col justify-between space-y-6">
+<div>
+<span class="font-mono text-[9px] uppercase tracking-widest text-muted">Aggregated Trail Metrics</span>
+<h3 class="font-serif text-2xl text-text mt-1">Financial Trajectory</h3>
+</div>
+<div class="space-y-3.5">
+<div class="glass-sm p-4">
+<span class="font-mono text-[10px] text-muted uppercase block">Total Routed Volume</span>
+<span class="font-mono text-3xl font-semibold text-accent">₹ 1,84,50,000</span>
+<span class="text-[11px] text-muted block mt-1">Across 18 pass-through transactions</span>
+</div>
+<div class="glass-sm p-4">
+<span class="font-mono text-[10px] text-muted uppercase block">Corroborated Calls</span>
+<span class="font-mono text-3xl font-semibold text-data">1,842</span>
+<span class="text-[11px] text-muted block mt-1">Peak window: 23:00 - 02:30 IST</span>
+</div>
+<div class="glass-sm p-4">
+<span class="font-mono text-[10px] text-muted uppercase block">Active Cell Towers</span>
+<span class="font-mono text-3xl font-semibold text-text">14 Towers</span>
+<span class="text-[11px] text-muted block mt-1">Chandni Chowk / Connaught Place nexus</span>
+</div>
+</div>
+<button class="w-full py-3 rounded-xl glass-sm text-xs font-mono text-text hover:border-accent/40 transition flex items-center justify-center gap-2" onclick="document.getElementById('network-section').scrollIntoView({behavior: 'smooth'})">
+<span>Inspect Node Topology</span>
+<i class="w-3.5 h-3.5" data-lucide="arrow-down"></i>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION 04 · MULTI-ENTITY LINKAGE TOPOLOGY (NETWORK GRAPH) -->
+<section class="scroll-mt-28" id="network-section">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+<div>
+<span class="font-mono text-[10px] uppercase tracking-widest text-accent">Section 03 • Link Analysis</span>
+<h2 class="font-serif text-4xl md:text-5xl text-text mt-1">Network linkage graph.</h2>
+<p class="text-xs text-muted mt-1">Interactive entity graph. Search by phone, IP, bank account, or suspect name.</p>
+</div>
+<!-- Node Search Input -->
+<div class="flex items-center gap-3">
+<div class="glass-sm px-3.5 py-2 flex items-center gap-2 w-64 md:w-80">
+<i class="w-3.5 h-3.5 text-muted" data-lucide="search"></i>
+<input class="bg-transparent border-none text-xs text-text focus:outline-none w-full font-mono" id="graph-search-input" onkeyup="filterGraph(this.value)" placeholder="Search phone, name, IP, account..." type="text"/>
+</div>
+<button class="p-2 glass-sm text-muted hover:text-text transition" onclick="resetGraphView()" title="Reset View">
+<i class="w-4 h-4" data-lucide="rotate-ccw"></i>
+</button>
+</div>
+</div>
+<!-- Filter Pills -->
+<div class="flex flex-wrap items-center gap-2 mb-4 text-xs font-mono">
+<span class="text-muted mr-1">Filter:</span>
+<button class="px-3 py-1 rounded-lg bg-accent/15 text-accent border border-accent/30">All Entities (18)</button>
+<button class="px-3 py-1 rounded-lg glass-sm text-muted hover:text-text">Persons (5)</button>
+<button class="px-3 py-1 rounded-lg glass-sm text-muted hover:text-text">Mule Accounts (7)</button>
+<button class="px-3 py-1 rounded-lg glass-sm text-muted hover:text-text">Phones (4)</button>
+<button class="px-3 py-1 rounded-lg glass-sm text-muted hover:text-text">IPs (2)</button>
+</div>
+<!-- Graph Canvas Panel in Pure Glass -->
+<div class="glass p-6 md:p-8 relative min-h-[480px] overflow-hidden flex flex-col justify-between">
+<!-- Force-Directed Topology Mock Visualization -->
+<div class="relative w-full h-[360px] flex items-center justify-center" id="mock-cytoscape-graph">
+<svg class="w-full h-full" viewbox="0 0 800 360">
+<!-- Edges -->
+<line stroke="rgba(255,255,255,0.15)" stroke-dasharray="4" stroke-width="1.5" x1="400" x2="260" y1="180" y2="100"></line>
+<line stroke="var(--accent)" stroke-width="2" x1="400" x2="540" y1="180" y2="100"></line>
+<line stroke="rgba(255,255,255,0.15)" stroke-width="1.5" x1="400" x2="230" y1="180" y2="260"></line>
+<line stroke="var(--alert)" stroke-width="2" x1="400" x2="570" y1="180" y2="260"></line>
+<line stroke="var(--accent)" stroke-width="1.5" x1="540" x2="680" y1="100" y2="140"></line>
+<line stroke="rgba(255,255,255,0.15)" stroke-width="1.5" x1="260" x2="120" y1="100" y2="120"></line>
+<!-- Center Node: Rakesh Verma -->
+<g class="cursor-pointer" onclick="alert('Node: Rakesh Verma [Kingpin]\nConnected to 6 nodes\nTotal flow: ₹1.84 Cr')">
+<circle cx="400" cy="180" fill="#0D1117" r="32" stroke="var(--alert)" stroke-width="2"></circle>
+<text fill="var(--text)" font-family="Instrument Serif" font-size="14" text-anchor="middle" x="400" y="177">Rakesh</text>
+<text fill="var(--alert)" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="400" y="193">KINGPIN</text>
+</g>
+<!-- Node: Vicky Sharma -->
+<g class="cursor-pointer" onclick="alert('Node: Vicky Sharma [Bridge Node]\nSurat mule handler')">
+<circle cx="540" cy="100" fill="#0D1117" r="26" stroke="var(--accent)" stroke-width="2"></circle>
+<text fill="var(--text)" font-family="Instrument Serif" font-size="12" text-anchor="middle" x="540" y="97">Vicky</text>
+<text fill="var(--accent)" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="540" y="112">BRIDGE</text>
+</g>
+<!-- Node: Account 9014 -->
+<g class="cursor-pointer" onclick="alert('Node: Axis Bank A/C **9014\n₹42L transaction')">
+<circle cx="260" cy="100" fill="#0D1117" r="24" stroke="var(--data)" stroke-width="1.5"></circle>
+<text fill="var(--data)" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="260" y="98">A/C 9014</text>
+<text fill="var(--muted)" font-family="JetBrains Mono" font-size="7" text-anchor="middle" x="260" y="112">AXIS MULE</text>
+</g>
+<!-- Node: Burner Phone +91 98210 -->
+<g class="cursor-pointer">
+<circle cx="230" cy="260" fill="#0D1117" r="22" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"></circle>
+<text fill="var(--text)" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="230" y="263">+91 98210</text>
+</g>
+<!-- Node: Kolkata Cashout -->
+<g class="cursor-pointer">
+<circle cx="570" cy="260" fill="#0D1117" r="24" stroke="var(--alert)" stroke-width="1.5"></circle>
+<text fill="var(--text)" font-family="Instrument Serif" font-size="12" text-anchor="middle" x="570" y="258">Meera</text>
+<text fill="var(--alert)" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="570" y="272">CASHOUT</text>
+</g>
+<!-- Outer IP Node -->
+<g class="cursor-pointer">
+<circle cx="680" cy="140" fill="#0D1117" r="20" stroke="rgba(255,255,255,0.2)" stroke-width="1"></circle>
+<text fill="var(--muted)" font-family="JetBrains Mono" font-size="7" text-anchor="middle" x="680" y="143">103.21.58.12</text>
+</g>
+<!-- Outer Exporter Node -->
+<g class="cursor-pointer">
+<circle cx="120" cy="120" fill="#0D1117" r="20" stroke="rgba(255,255,255,0.2)" stroke-width="1"></circle>
+<text fill="var(--muted)" font-family="JetBrains Mono" font-size="7" text-anchor="middle" x="120" y="123">Surat Tex</text>
+</g>
+</svg>
+</div>
+<!-- Connection Summary Footer -->
+<div class="border-t border-white/5 pt-4 mt-2">
+<span class="font-mono text-[9px] uppercase text-muted tracking-widest block mb-2">Automated Path Summary</span>
+<div class="flex flex-wrap items-center gap-2 font-mono text-xs text-text">
+<span class="bg-alert/10 text-alert px-2 py-0.5 rounded border border-alert/20 font-medium">Rakesh V.</span>
+<span class="text-muted">called (14×)</span>
+<span class="text-accent">→</span>
+<span class="bg-accent/10 text-accent px-2 py-0.5 rounded border border-accent/20">Vicky S. (Surat)</span>
+<span class="text-muted">transferred ₹42L via IMPS</span>
+<span class="text-accent">→</span>
+<span class="bg-data/10 text-data px-2 py-0.5 rounded border border-data/20">A/C **9014</span>
+<span class="text-muted">cashed out at ATM</span>
+<span class="text-alert">→</span>
+<span class="text-alert">Delhi Return Loop</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 05 · QUANTITATIVE FORENSICS GRID -->
+<section class="scroll-mt-28" id="charts-section">
+<div class="mb-6">
+<span class="font-mono text-[10px] uppercase tracking-widest text-accent">Section 04 • Quantitative Forensics</span>
+<h2 class="font-serif text-4xl md:text-5xl text-text mt-1">Analytical metrics.</h2>
+<p class="text-xs text-muted mt-1">Strict restrained palettes (teal, amber, red). Zero rainbow noise.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Chart 1: Calls Per Day -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Calls per day</h4>
+<p class="text-[11px] text-muted">Spike detected prior to withdrawal</p>
+</div>
+<span class="font-mono text-xs text-accent">SPIKE 41</span>
+</div>
+<div class="h-40 w-full flex items-end pt-4">
+<svg class="w-full h-full" viewbox="0 0 300 120">
+<line stroke="rgba(255,255,255,0.08)" x1="0" x2="300" y1="100" y2="100"></line>
+<line stroke="rgba(255,255,255,0.05)" stroke-dasharray="2" x1="0" x2="300" y1="50" y2="50"></line>
+<polyline fill="none" points="10,95 40,88 80,92 120,80 160,85 200,20 240,65 280,78" stroke="var(--data)" stroke-width="2"></polyline>
+<circle cx="200" cy="20" fill="var(--alert)" r="4"></circle>
+<text fill="var(--alert)" font-family="JetBrains Mono" font-size="9" x="180" y="15">14-Oct Spike</text>
+</svg>
+</div>
+<div class="flex justify-between font-mono text-[10px] text-muted mt-2 border-t border-white/5 pt-2">
+<span>01-Oct</span>
+<span>10-Oct</span>
+<span>14-Oct</span>
+<span>20-Oct</span>
+</div>
+</div>
+<!-- Chart 2: Daily Transaction Volume -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Daily Volume</h4>
+<p class="text-[11px] text-muted">IMPS &amp; RTGS layering spikes</p>
+</div>
+<span class="font-mono text-xs text-accent">₹ 1.84 Cr</span>
+</div>
+<div class="h-40 w-full flex items-end justify-between gap-2 pt-4 px-2">
+<div class="w-1/6 bg-white/10 h-[20%] rounded-t"></div>
+<div class="w-1/6 bg-white/10 h-[35%] rounded-t"></div>
+<div class="w-1/6 bg-accent/70 h-[92%] rounded-t relative group">
+<span class="hidden group-hover:block absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-[9px] text-accent">₹68L</span>
+</div>
+<div class="w-1/6 bg-accent/90 h-[75%] rounded-t"></div>
+<div class="w-1/6 bg-white/10 h-[30%] rounded-t"></div>
+<div class="w-1/6 bg-white/10 h-[15%] rounded-t"></div>
+</div>
+<div class="flex justify-between font-mono text-[10px] text-muted mt-2 border-t border-white/5 pt-2">
+<span>W1</span>
+<span>W2</span>
+<span>W3 (Peak)</span>
+<span>W4</span>
+<span>W5</span>
+</div>
+</div>
+<!-- Chart 3: Evidence Distribution -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Vector Distribution</h4>
+<p class="text-[11px] text-muted">Extracted artifact proportion</p>
+</div>
+<span class="font-mono text-xs text-data">382 ITEMS</span>
+</div>
+<div class="h-40 w-full flex items-center justify-center">
+<svg class="w-32 h-32" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="38" stroke="rgba(255,255,255,0.06)" stroke-width="10"></circle>
+<circle cx="50" cy="50" fill="none" r="38" stroke="var(--data)" stroke-dasharray="238" stroke-dashoffset="100" stroke-width="10"></circle>
+<circle cx="50" cy="50" fill="none" r="38" stroke="var(--accent)" stroke-dasharray="238" stroke-dashoffset="180" stroke-width="10"></circle>
+<circle cx="50" cy="50" fill="none" r="38" stroke="var(--alert)" stroke-dasharray="238" stroke-dashoffset="220" stroke-width="10"></circle>
+</svg>
+</div>
+<div class="flex justify-around font-mono text-[10px] text-muted mt-2 border-t border-white/5 pt-2">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-data"></span> CDR (58%)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-accent"></span> Bank (28%)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-alert"></span> IP/SDR (14%)</span>
+</div>
+</div>
+<!-- Chart 4: Curfew Activity Density Matrix -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Density Matrix</h4>
+<p class="text-[11px] text-muted">Hour × Day frequency pattern</p>
+</div>
+<span class="font-mono text-xs text-alert">NIGHT SURGE</span>
+</div>
+<div class="grid grid-cols-6 gap-1.5 h-36 pt-2">
+<div class="bg-white/5 rounded"></div><div class="bg-white/5 rounded"></div><div class="bg-white/10 rounded"></div><div class="bg-data/30 rounded"></div><div class="bg-accent/40 rounded"></div><div class="bg-alert/80 rounded"></div>
+<div class="bg-white/5 rounded"></div><div class="bg-white/5 rounded"></div><div class="bg-white/5 rounded"></div><div class="bg-white/10 rounded"></div><div class="bg-accent/60 rounded"></div><div class="bg-alert rounded"></div>
+<div class="bg-white/5 rounded"></div><div class="bg-white/10 rounded"></div><div class="bg-data/20 rounded"></div><div class="bg-data/40 rounded"></div><div class="bg-accent/30 rounded"></div><div class="bg-alert/60 rounded"></div>
+<div class="bg-white/5 rounded"></div><div class="bg-white/5 rounded"></div><div class="bg-white/5 rounded"></div><div class="bg-white/10 rounded"></div><div class="bg-white/20 rounded"></div><div class="bg-alert/90 rounded"></div>
+</div>
+<div class="flex justify-between font-mono text-[10px] text-muted mt-2 border-t border-white/5 pt-2">
+<span>00:00 Morning</span>
+<span>12:00 Midday</span>
+<span>23:00 Peak</span>
+</div>
+</div>
+<!-- Chart 5: Centrality Index Rank -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Centrality Rank</h4>
+<p class="text-[11px] text-muted">Degree connection rank</p>
+</div>
+<span class="font-mono text-xs text-muted">TOP 4</span>
+</div>
+<div class="space-y-3 pt-2">
+<div>
+<div class="flex justify-between text-xs font-mono mb-1">
+<span>Rakesh Verma</span>
+<span class="text-alert font-semibold">0.89</span>
+</div>
+<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+<div class="bg-alert h-full w-[89%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1">
+<span>Vicky Sharma</span>
+<span class="text-accent font-semibold">0.74</span>
+</div>
+<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+<div class="bg-accent h-full w-[74%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1">
+<span>Axis A/C 9014</span>
+<span class="text-data font-semibold">0.58</span>
+</div>
+<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+<div class="bg-data h-full w-[58%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1">
+<span>Anil Kulkarni</span>
+<span class="text-muted font-semibold">0.41</span>
+</div>
+<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+<div class="bg-muted h-full w-[41%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Chart 6: Sub-cluster Partitioning -->
+<div class="glass p-6">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-serif text-xl text-text">Sub-clusters</h4>
+<p class="text-[11px] text-muted">Louvain community partition</p>
+</div>
+<span class="font-mono text-xs text-data">3 CELLS</span>
+</div>
+<div class="flex items-center justify-center gap-3 h-36">
+<div class="w-24 h-24 rounded-full bg-accent/10 border border-accent/40 flex flex-col items-center justify-center text-center p-2">
+<span class="font-mono text-sm font-bold text-accent">68%</span>
+<span class="text-[9px] text-muted">Hawala Cell</span>
+</div>
+<div class="w-16 h-16 rounded-full bg-data/10 border border-data/40 flex flex-col items-center justify-center text-center">
+<span class="font-mono text-xs font-bold text-data">22%</span>
+<span class="text-[8px] text-muted">VoIP</span>
+</div>
+<div class="w-12 h-12 rounded-full bg-alert/10 border border-alert/40 flex flex-col items-center justify-center text-center">
+<span class="font-mono text-[10px] font-bold text-alert">10%</span>
+<span class="text-[7px] text-muted">Cash</span>
+</div>
+</div>
+<p class="font-mono text-[10px] text-center text-muted border-t border-white/5 pt-2">Tight co-occurrence score: 0.812</p>
+</div>
+</div>
+</section>
+<!-- SECTION 06 · VERIFIED FORENSIC EVIDENCE LEDGER -->
+<section class="scroll-mt-28" id="evidence-section">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+<div>
+<span class="font-mono text-[10px] uppercase tracking-widest text-accent">Section 05 • Chain of Custody</span>
+<h2 class="font-serif text-4xl md:text-5xl text-text mt-1">Evidence chain of custody.</h2>
+<p class="text-xs text-muted mt-1">Cryptographically hashed records and cross-verified artifacts.</p>
+</div>
+<!-- Provenance Tabs -->
+<div class="glass-sm p-1 flex items-center gap-1 font-mono text-xs">
+<button class="px-3 py-1.5 rounded-lg bg-white/10 text-text font-medium" id="tab-time" onclick="filterEvidenceTab('time')">Timeline</button>
+<button class="px-3 py-1.5 rounded-lg text-muted hover:text-text" id="tab-phone" onclick="filterEvidenceTab('phone')">Phone (CDR)</button>
+<button class="px-3 py-1.5 rounded-lg text-muted hover:text-text" id="tab-person" onclick="filterEvidenceTab('person')">Entities</button>
+</div>
+</div>
+<!-- Evidence Ledger Table in Frosted Glass -->
+<div class="glass overflow-hidden">
+<div class="p-4 border-b border-white/5 flex items-center justify-between gap-4">
+<div class="flex items-center gap-2 glass-sm px-3 py-1.5 w-72">
+<i class="w-3.5 h-3.5 text-muted" data-lucide="filter"></i>
+<input class="bg-transparent border-none text-xs text-text focus:outline-none w-full font-mono" placeholder="Filter evidence by hash or keywords..." type="text"/>
+</div>
+<span class="font-mono text-xs text-muted">SHA-256 Verified on Ingestion</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs font-mono">
+<thead>
+<tr class="border-b border-white/5 text-muted uppercase text-[9px] tracking-wider bg-white/[0.01]">
+<th class="py-3.5 px-6">Timestamp (IST)</th>
+<th class="py-3.5 px-6">Artifact Type</th>
+<th class="py-3.5 px-6">Observation / Finding</th>
+<th class="py-3.5 px-6">Source File</th>
+<th class="py-3.5 px-6">Integrity Hash</th>
+<th class="py-3.5 px-6 text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5 text-text" id="evidence-table-body">
+<tr class="hover:bg-white/[0.02] transition">
+<td class="py-4 px-6 text-muted">14-Oct-24 23:41</td>
+<td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 text-[9px]">BANK_TXN</span></td>
+<td class="py-4 px-6 font-sans text-xs">IMPS transfer ₹42,00,000 from Vicky S. to A/C 9014</td>
+<td class="py-4 px-6 text-muted">Hawala_AxisBank_Stmt.csv</td>
+<td class="py-4 px-6 text-data">e3b0c442...✓</td>
+<td class="py-4 px-6 text-right"><button class="text-accent hover:underline" onclick="viewEvidenceModal('EV-901')">Preview</button></td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition">
+<td class="py-4 px-6 text-muted">14-Oct-24 23:44</td>
+<td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-data/15 text-data border border-data/30 text-[9px]">CDR_CALL</span></td>
+<td class="py-4 px-6 font-sans text-xs">Voice call duration 340s (+91 98210 → +91 94100) Tower: CP-4</td>
+<td class="py-4 px-6 text-muted">CDR_Dump_Delhi_Noida.xlsx</td>
+<td class="py-4 px-6 text-data">7a892b11...✓</td>
+<td class="py-4 px-6 text-right"><button class="text-accent hover:underline" onclick="viewEvidenceModal('EV-412')">Preview</button></td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition">
+<td class="py-4 px-6 text-muted">15-Oct-24 01:12</td>
+<td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-alert/15 text-alert border border-alert/30 text-[9px]">IP_SESSION</span></td>
+<td class="py-4 px-6 font-sans text-xs">Encrypted VPN login to netbanking portal via IP 103.21.58.12</td>
+<td class="py-4 px-6 text-muted">Firewall_Radius_Log.pcap</td>
+<td class="py-4 px-6 text-data">90f230da...✓</td>
+<td class="py-4 px-6 text-right"><button class="text-accent hover:underline" onclick="viewEvidenceModal('EV-309')">Preview</button></td>
+</tr>
+<tr class="hover:bg-white/[0.02] transition">
+<td class="py-4 px-6 text-muted">15-Oct-24 02:05</td>
+<td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-white/10 text-muted border border-white/20 text-[9px]">FIR_COMPLAINT</span></td>
+<td class="py-4 px-6 font-sans text-xs">FIR 408/24 registered by Victim complainant at Cyber Police Station</td>
+<td class="py-4 px-6 text-muted">FIR_408_CyberCrime.pdf</td>
+<td class="py-4 px-6 text-data">3c9140aa...✓</td>
+<td class="py-4 px-6 text-right"><button class="text-accent hover:underline" onclick="viewEvidenceModal('EV-102')">Preview</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- SECTION 07 · REFINED UNITX EXECUTIVE FOOTER -->
+<footer class="pt-12 pb-10 border-t border-white/5 flex flex-col items-center text-center">
+<div class="mb-2">
+<span class="font-serif text-2xl md:text-3xl tracking-[0.18em] uppercase text-text font-medium">UNITx</span>
+</div>
+<p class="font-serif italic text-xs md:text-sm text-muted/90 max-w-lg mb-5">
+    Built by team UNITx for Smart India Hackathon. Air-gapped forensic intelligence.
+  </p>
+<div class="flex flex-wrap items-center justify-center gap-3 font-mono text-[11px] text-muted mb-4">
+<span class="px-2.5 py-0.5 rounded-full border border-white/5 bg-white/[0.02]">AI-Assisted Graphing</span>
+<span class="px-2.5 py-0.5 rounded-full border border-white/5 bg-white/[0.02]">SIH-2024</span>
+<span class="px-2.5 py-0.5 rounded-full border border-white/5 bg-white/[0.02]">NCRP Core Interop</span>
+</div>
+<p class="font-mono text-[9px] text-muted/50 tracking-wider">
+    Strict Zero-Hallucination Evidence Contract • Encrypted Local SQLite/PostGIS Store • 2024
+  </p>
+</footer>
+</main>
+<!-- ==================== FLOATING INVESTIGATION COPILOT DRAWER ==================== -->
+<button class="fixed bottom-8 right-8 z-40 px-4 py-3 rounded-full bg-accent text-ink shadow-2xl shadow-accent/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group" id="copilot-btn" onclick="toggleCopilot(true)">
+<i class="w-4 h-4" data-lucide="bot"></i>
+<span class="text-xs font-mono font-semibold tracking-wider">AI Case Copilot // UNITx</span>
+</button>
+<aside class="fixed top-0 right-0 w-full sm:w-[440px] h-full z-50 glass border-l border-white/10 flex flex-col justify-between translate-x-full transition-transform duration-300 shadow-2xl" id="copilot-drawer">
+<div class="p-6 border-b border-white/5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+<i class="w-4 h-4" data-lucide="shield-alert"></i>
+</div>
+<div>
+<h3 class="font-serif text-lg text-text">Investigation Copilot</h3>
+<p class="font-mono text-[10px] text-muted">Strict Grounded Context Mode</p>
+</div>
+</div>
+<button class="p-2 text-muted hover:text-text rounded-lg hover:bg-white/5" onclick="toggleCopilot(false)">
+<i class="w-4 h-4" data-lucide="x"></i>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-4 text-xs font-sans" id="copilot-messages">
+<div class="glass-sm p-3.5 border-l-2 border-accent text-muted">
+<p class="text-text font-medium mb-1">System Operational</p>
+        I am restricted to the ingested case files for <span class="text-accent font-mono">FIR-2024-DEL-0941</span>. I will answer only with verifiable evidence IDs and refusal on external queries.
+      </div>
+<div class="space-y-1">
+<span class="font-mono text-[10px] text-accent uppercase">Copilot</span>
+<div class="glass-sm p-3.5 rounded-xl text-text leading-relaxed">
+          Case Summary: Analysis indicates <a class="text-accent underline font-medium" href="javascript:void(0)" onclick="focusEntity('Rakesh Verma')">Rakesh Verma</a> is the primary organizer routing ₹1.84 Cr through 5 accounts. Vicky Sharma manages the Surat textile accounts.
+          <div class="mt-2 pt-2 border-t border-white/5 font-mono text-[10px] text-muted">
+            Evidence: <span class="text-data">#EV-901</span>, <span class="text-data">#EV-412</span>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-2 border-t border-white/5 flex flex-wrap gap-2 text-[11px] font-mono">
+<button class="glass-sm px-2.5 py-1 text-muted hover:text-accent" onclick="askCopilot('Case samjhao')">"Case samjhao"</button>
+<button class="glass-sm px-2.5 py-1 text-muted hover:text-accent" onclick="askCopilot('Rakesh se related proof do')">"Rakesh proof do"</button>
+<button class="glass-sm px-2.5 py-1 text-muted hover:text-accent" onclick="askCopilot('Paisa kahan gaya?')">"Paisa kahan gaya?"</button>
+</div>
+<div class="p-4 border-t border-white/5">
+<div class="glass-sm p-2 flex items-center gap-2">
+<input class="bg-transparent border-none text-xs text-text focus:outline-none w-full px-2" id="copilot-input" onkeydown="if(event.key==='Enter') sendCopilotMsg()" placeholder="Ask about entities, accounts, money trail..." type="text"/>
+<button class="p-2 rounded-lg bg-accent text-ink hover:brightness-110" onclick="sendCopilotMsg()">
+<i class="w-3.5 h-3.5" data-lucide="send"></i>
+</button>
+</div>
+</div>
+</aside>
+<!-- ==================== SAVED CASES MODAL OVERLAY ==================== -->
+<div class="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md hidden flex items-center justify-center p-6" id="saved-cases-modal">
+<div class="glass max-w-4xl w-full p-8 max-h-[85vh] overflow-y-auto">
+<div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+<div>
+<span class="font-mono text-xs uppercase tracking-widest text-accent">Repository</span>
+<h3 class="font-serif text-3xl text-text">Saved Investigations</h3>
+</div>
+<button class="p-2 text-muted hover:text-text rounded-lg hover:bg-white/5" onclick="toggleSavedCasesModal(false)">
+<i class="w-5 h-5" data-lucide="x"></i>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="glass-sm p-5 hover:border-accent/40 transition">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-xs text-alert font-medium">87% RISK</span>
+<span class="font-mono text-[10px] text-muted">14-OCT-2024</span>
+</div>
+<h4 class="font-serif text-xl text-text">Op Syndicate: North Corridor Hawala</h4>
+<p class="text-xs text-muted mt-1">4 suspects • ₹1.84 Cr • 382 Evidence items</p>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+<button class="text-xs font-mono text-accent hover:underline" onclick="toggleSavedCasesModal(false); alert('Loaded Op Syndicate active session.')">Open Case →</button>
+<button class="text-xs font-mono text-muted hover:text-text flex items-center gap-1" onclick="alert('Downloading Forensic Dossier PDF (2.4MB)...')">
+<i class="w-3 h-3" data-lucide="file-text"></i> PDF Report
+            </button>
+</div>
+</div>
+<div class="glass-sm p-5 hover:border-accent/40 transition">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-xs text-alert font-medium">92% RISK</span>
+<span class="font-mono text-[10px] text-muted">08-OCT-2024</span>
+</div>
+<h4 class="font-serif text-xl text-text">Thane Crypto Ponzi Network</h4>
+<p class="text-xs text-muted mt-1">6 suspects • ₹4.10 Cr • 890 Evidence items</p>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+<button class="text-xs font-mono text-accent hover:underline" onclick="toggleSavedCasesModal(false); alert('Loaded Thane Crypto Ponzi case.')">Open Case →</button>
+<button class="text-xs font-mono text-muted hover:text-text flex items-center gap-1" onclick="alert('Downloading Forensic Dossier PDF (3.1MB)...')">
+<i class="w-3 h-3" data-lucide="file-text"></i> PDF Report
+            </button>
+</div>
+</div>
+<div class="glass-sm p-5 hover:border-accent/40 transition">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-xs text-accent font-medium">76% RISK</span>
+<span class="font-mono text-[10px] text-muted">29-SEP-2024</span>
+</div>
+<h4 class="font-serif text-xl text-text">Kolkata Mule FinTech Ring</h4>
+<p class="text-xs text-muted mt-1">2 suspects • ₹92 Lakhs • 142 Evidence items</p>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+<button class="text-xs font-mono text-accent hover:underline" onclick="toggleSavedCasesModal(false); alert('Loaded Kolkata Mule case.')">Open Case →</button>
+<button class="text-xs font-mono text-muted hover:text-text flex items-center gap-1" onclick="alert('Downloading Forensic Dossier PDF...')">
+<i class="w-3 h-3" data-lucide="file-text"></i> PDF Report
+            </button>
+</div>
+</div>
+<div class="glass-sm p-5 hover:border-accent/40 transition">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-xs text-data font-medium">48% RISK</span>
+<span class="font-mono text-[10px] text-muted">15-AUG-2024</span>
+</div>
+<h4 class="font-serif text-xl text-text">Jaipur SIM Box VoIP Bypass</h4>
+<p class="text-xs text-muted mt-1">1 suspect • ₹12 Lakhs • 61 Evidence items</p>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+<button class="text-xs font-mono text-accent hover:underline" onclick="toggleSavedCasesModal(false); alert('Loaded Jaipur SIM Box case.')">Open Case →</button>
+<button class="text-xs font-mono text-muted hover:text-text flex items-center gap-1" onclick="alert('Downloading Forensic Dossier PDF...')">
+<i class="w-3 h-3" data-lucide="file-text"></i> PDF Report
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- EVIDENCE PREVIEW MODAL -->
+<div class="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md hidden flex items-center justify-center p-6" id="evidence-preview-modal">
+<div class="glass max-w-lg w-full p-6">
+<div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+<h4 class="font-serif text-xl text-text" id="ev-modal-title">Evidence Detail</h4>
+<button class="text-muted hover:text-text" onclick="document.getElementById('evidence-preview-modal').classList.add('hidden')">
+<i class="w-4 h-4" data-lucide="x"></i>
+</button>
+</div>
+<div class="space-y-3 font-mono text-xs text-muted" id="ev-modal-body"></div>
+</div>
+</div>
+<!-- ==================== THREE.JS 3D CYBER INDIA MAP ENGINE & LOGIC ==================== -->
+<script>
+    lucide.createIcons();
+
+    // ================= THREE.JS CYBER INDIA POINT-CLOUD =================
+    const canvas = document.getElementById('three-cyber-map');
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, -6, 26);
+    camera.lookAt(0, 0, 0);
+
+    // Group for entire India Map visualization
+    const indiaGroup = new THREE.Group();
+    scene.add(indiaGroup);
+
+    // Accurate Multi-polygon Point Cloud Definition of India Boundary & Interior Fill
+    // Coordinates normalized around center: Lat ~22°N, Lon ~82°E
+    function latLonToMap(lon, lat) {
+      const x = (lon - 81.5) * 0.95;
+      const y = (lat - 22.5) * 0.95;
+      return { x, y };
+    }
+
+    // India boundary polygon sample vertices
+    const boundaryCoords = [
+      [74.5, 37.0], [77.5, 35.5], [78.8, 32.5], [80.5, 30.5], [88.2, 27.8], 
+      [93.5, 28.5], [97.2, 28.2], [96.0, 26.5], [94.5, 24.0], [92.5, 23.8],
+      [91.8, 25.2], [89.8, 22.5], [88.2, 21.6], [85.5, 19.8], [82.8, 17.0],
+      [80.3, 13.0], [79.8, 10.2], [77.5, 8.1],  [76.3, 9.8],  [74.8, 13.0],
+      [73.5, 16.0], [72.8, 19.0], [72.5, 21.5], [69.2, 22.3], [68.5, 23.8],
+      [71.0, 24.5], [70.5, 27.5], [74.0, 31.5], [74.5, 34.5], [74.5, 37.0]
+    ];
+
+    function pointInPoly(x, y, poly) {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i][0], yi = poly[i][1];
+        const xj = poly[j][0], yj = poly[j][1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Generate Point Cloud inside India
+    const pointPositions = [];
+    const pointColors = [];
+    const colorAmber = new THREE.Color('#f2a33a');
+    const colorTeal = new THREE.Color('#3fb6a8');
+    const colorSlate = new THREE.Color('#1e3a5f');
+    const colorDim = new THREE.Color('#0e2439');
+
+    const step = 0.55;
+    for (let lon = 68.0; lon <= 97.5; lon += step) {
+      for (let lat = 8.0; lat <= 37.2; lat += step) {
+        if (pointInPoly(lon, lat, boundaryCoords)) {
+          const pt = latLonToMap(lon, lat);
+          const zJitter = (Math.sin(lon * 3.5) * Math.cos(lat * 3.5)) * 0.45;
+          pointPositions.push(pt.x, pt.y, zJitter);
+
+          const r = Math.random();
+          if (r > 0.88) {
+            pointColors.push(colorAmber.r, colorAmber.g, colorAmber.b);
+          } else if (r > 0.65) {
+            pointColors.push(colorTeal.r, colorTeal.g, colorTeal.b);
+          } else if (r > 0.3) {
+            pointColors.push(colorSlate.r, colorSlate.g, colorSlate.b);
+          } else {
+            pointColors.push(colorDim.r, colorDim.g, colorDim.b);
+          }
+        }
+      }
+    }
+
+    const cloudGeo = new THREE.BufferGeometry();
+    cloudGeo.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3));
+    cloudGeo.setAttribute('color', new THREE.Float32BufferAttribute(pointColors, 3));
+
+    const cloudMat = new THREE.PointsMaterial({
+      size: 0.22,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+
+    const indiaPointCloud = new THREE.Points(cloudGeo, cloudMat);
+    indiaGroup.add(indiaPointCloud);
+
+    // Strategic Cyber Beacons & Pulsing Nodes
+    const majorHubs = [
+      { name: "Delhi", lon: 77.2, lat: 28.6, col: 0xf2a33a },
+      { name: "Mumbai", lon: 72.8, lat: 19.0, col: 0x3fb6a8 },
+      { name: "Surat", lon: 72.8, lat: 21.1, col: 0xf2a33a },
+      { name: "Kolkata", lon: 88.3, lat: 22.5, col: 0xf2a33a },
+      { name: "Hyderabad", lon: 78.4, lat: 17.3, col: 0x3fb6a8 },
+      { name: "Bangalore", lon: 77.5, lat: 12.9, col: 0x3fb6a8 }
+    ];
+
+    const beaconPings = [];
+    majorHubs.forEach(hub => {
+      const pos = latLonToMap(hub.lon, hub.lat);
+      
+      // Vertical Cyber Beacon Beam
+      const beamGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(pos.x, pos.y, 0),
+        new THREE.Vector3(pos.x, pos.y, 4.2)
+      ]);
+      const beamMat = new THREE.LineBasicMaterial({
+        color: hub.col,
+        transparent: true,
+        opacity: 0.6,
+        linewidth: 1.5
+      });
+      const beamLine = new THREE.Line(beamGeo, beamMat);
+      indiaGroup.add(beamLine);
+
+      // Core Node Dot
+      const nodeGeo = new THREE.SphereGeometry(0.18, 12, 12);
+      const nodeMat = new THREE.MeshBasicMaterial({ color: hub.col });
+      const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
+      nodeMesh.position.set(pos.x, pos.y, 0.1);
+      indiaGroup.add(nodeMesh);
+
+      // Pulsing Ring
+      const ringGeo = new THREE.RingGeometry(0.2, 0.38, 24);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: hub.col,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.set(pos.x, pos.y, 0.12);
+      indiaGroup.add(ringMesh);
+      beaconPings.push(ringMesh);
+    });
+
+    // Ambient Cyber Grid Floor
+    const gridHelper = new THREE.GridHelper(40, 30, 0x1e3a5f, 0x091422);
+    gridHelper.rotation.x = Math.PI / 2.3;
+    gridHelper.position.set(0, -5, -4);
+    scene.add(gridHelper);
+
+    // Initial India tilt
+    indiaGroup.rotation.x = -0.35;
+    indiaGroup.rotation.y = 0.12;
+
+    // Smooth Scroll Integration
+    let targetRotY = 0.12;
+    let targetRotX = -0.35;
+    let targetCamZ = 26;
+    let targetCamY = -6;
+
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = Math.min(Math.max(scrollY / (docHeight || 1), 0), 1);
+
+      // Map transitions subtly across sections
+      targetRotY = 0.12 + Math.sin(progress * Math.PI) * 0.45;
+      targetRotX = -0.35 + (progress * 0.25);
+      targetCamZ = 26 - (progress * 5.0);
+      targetCamY = -6 + (progress * 3.5);
+
+      // Sync scan line
+      const scan = document.getElementById('scan-line');
+      if (scan) {
+        scan.style.top = `${(scrollY * 1.35) % window.innerHeight}px`;
+      }
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Render loop
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      // Smooth camera and rotation damping
+      indiaGroup.rotation.y += (targetRotY - indiaGroup.rotation.y) * 0.05;
+      indiaGroup.rotation.x += (targetRotX - indiaGroup.rotation.x) * 0.05;
+      camera.position.z += (targetCamZ - camera.position.z) * 0.05;
+      camera.position.y += (targetCamY - camera.position.y) * 0.05;
+
+      // Animate pulsing beacon rings
+      beaconPings.forEach((ring, i) => {
+        const s = 1 + Math.sin(elapsed * 3.5 + i * 1.2) * 0.6;
+        ring.scale.set(s, s, s);
+        ring.material.opacity = Math.max(0.1, 0.9 - (s * 0.45));
+      });
+
+      // Ambient subtle drift
+      gridHelper.position.y = -5 + Math.sin(elapsed * 0.5) * 0.2;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ================= DOM & CASE CONTROLS =================
+    function triggerFileInput() {
+      document.getElementById('file-input').click();
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      const container = document.getElementById('file-chips');
+      for (let i = 0; i < files.length; i++) {
+        const chip = document.createElement('div');
+        chip.className = 'glass-sm px-3.5 py-1.5 flex items-center gap-2 text-xs font-mono';
+        chip.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-accent"></span>
+          <span class="text-text">${files[i].name}</span>
+          <span class="text-muted bg-white/5 px-1.5 py-0.5 rounded text-[9px]">RAW</span>
+          <button onclick="event.stopPropagation(); this.parentElement.remove()" class="text-muted hover:text-alert"><i data-lucide="x" class="w-3 h-3"></i></button>
+        `;
+        container.appendChild(chip);
+      }
+      lucide.createIcons();
+    }
+
+    function loadSampleHawalaCase() {
+      document.getElementById('case-title-input').value = "Hawala Syndicate: North Corridor Ingestion";
+      startAnalysisFlow();
+    }
+
+    function startAnalysisFlow() {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.classList.remove('hidden');
+      setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+
+      const steps = [
+        "Reading raw files & sanitizing timestamps...",
+        "Mapping columns (CDR, IMPS, RTGS, SDR)...",
+        "Extracting names, IMEI numbers & bank accounts...",
+        "Linking entities via Louvain graph clustering...",
+        "Tracing cross-state layering loops...",
+        "Scoring suspect probability vectors..."
+      ];
+
+      let progress = 0;
+      const circle = document.getElementById('loading-progress-circle');
+      const text = document.getElementById('loading-percentage');
+      const stepText = document.getElementById('loading-step-text');
+
+      const interval = setInterval(() => {
+        progress += 4;
+        if (progress > 100) progress = 100;
+
+        const offset = 264 - (264 * progress) / 100;
+        circle.style.strokeDashoffset = offset;
+        text.innerText = progress + '%';
+
+        const sIdx = Math.min(Math.floor((progress / 100) * steps.length), steps.length - 1);
+        stepText.innerText = steps[sIdx];
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            overlay.classList.add('opacity-0');
+            setTimeout(() => {
+              overlay.classList.add('hidden');
+              document.getElementById('suspects-section').scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+          }, 400);
+        }
+      }, 65);
+    }
+
+    // Suspect Hero Swapping
+    function swapSuspect(name, initials, role, riskPercent, color, phones, accounts, city) {
+      document.getElementById('hero-name').innerText = name;
+      document.getElementById('hero-avatar-initials').innerText = initials;
+      document.getElementById('hero-badge').innerText = `${role} • ${city}`;
+      document.getElementById('hero-risk-score').innerText = riskPercent;
+      document.getElementById('hero-phones').innerText = phones;
+      document.getElementById('hero-accounts').innerText = accounts;
+      
+      const numVal = parseInt(riskPercent);
+      const ring = document.getElementById('hero-risk-ring');
+      ring.style.stroke = color;
+      ring.style.strokeDashoffset = 251 - (251 * numVal) / 100;
+
+      document.getElementById('hero-suspect-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function toggleWhyFlagged() {
+      const content = document.getElementById('why-content');
+      const arrow = document.getElementById('why-arrow');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        content.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    function resetToHome() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function filterEvidenceTab(tab) {
+      document.getElementById('tab-time').className = 'px-3 py-1.5 rounded-lg text-muted hover:text-text';
+      document.getElementById('tab-phone').className = 'px-3 py-1.5 rounded-lg text-muted hover:text-text';
+      document.getElementById('tab-person').className = 'px-3 py-1.5 rounded-lg text-muted hover:text-text';
+      document.getElementById(`tab-${tab}`).className = 'px-3 py-1.5 rounded-lg bg-white/10 text-text font-medium';
+    }
+
+    function viewEvidenceModal(id) {
+      const modal = document.getElementById('evidence-preview-modal');
+      const title = document.getElementById('ev-modal-title');
+      const body = document.getElementById('ev-modal-body');
+      
+      title.innerText = `Forensic Record: ${id}`;
+      body.innerHTML = `
+        <div class="p-3 bg-white/[0.02] rounded-lg border border-white/5">
+          <p class="text-text font-medium">Record Hash:</p>
+          <p class="text-accent break-all">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</p>
+        </div>
+        <p><span class="text-muted">Custodian:</span> Cyber Cell Zone IV Ingestion Engine</p>
+        <p><span class="text-muted">Extracted Entities:</span> 2 MSISDNs, 1 IFSC (UTIB000014), ₹42,00,000</p>
+        <p><span class="text-muted">Integrity:</span> Validated against National Cybercrime Database</p>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    // Copilot Drawer Chat
+    function toggleCopilot(open) {
+      const drawer = document.getElementById('copilot-drawer');
+      if (open) {
+        drawer.classList.remove('translate-x-full');
+      } else {
+        drawer.classList.add('translate-x-full');
+      }
+    }
+
+    function sendCopilotMsg() {
+      const input = document.getElementById('copilot-input');
+      const val = input.value.trim();
+      if (!val) return;
+      askCopilot(val);
+      input.value = '';
+    }
+
+    function askCopilot(query) {
+      const container = document.getElementById('copilot-messages');
+      const userDiv = document.createElement('div');
+      userDiv.className = 'text-right space-y-1';
+      userDiv.innerHTML = `
+        <span class="font-mono text-[9px] text-muted uppercase">Officer</span>
+        <div class="glass-sm p-2.5 rounded-xl text-text inline-block text-left">${query}</div>
+      `;
+      container.appendChild(userDiv);
+
+      setTimeout(() => {
+        const botDiv = document.createElement('div');
+        botDiv.className = 'space-y-1';
+        let answer = "";
+        if (query.toLowerCase().includes("rakesh")) {
+          answer = "Rakesh Verma (+91 98210 44102) is connected to 5 mule accounts. Primary proof is IMPS txn #EV-901 and CDR tower spike #EV-412.";
+        } else if (query.toLowerCase().includes("paisa") || query.toLowerCase().includes("money")) {
+          answer = "₹1.84 Cr was split into 5 tranches, channeled via Axis A/C 9014 (Surat), and withdrawn as cash in Chandni Chowk (#EV-901).";
+        } else {
+          answer = "Based strictly on the ingested FIR and bank statements: 4 primary actors identified with ₹1.84 Cr routed. No foreign entity confirmed in current records.";
+        }
+        botDiv.innerHTML = `
+          <span class="font-mono text-[9px] text-accent uppercase">Copilot</span>
+          <div class="glass-sm p-3 rounded-xl text-text leading-relaxed">
+            ${answer}
+          </div>
+        `;
+        container.appendChild(botDiv);
+        container.scrollTop = container.scrollHeight;
+      }, 450);
+    }
+
+    function focusEntity(name) {
+      document.getElementById('suspects-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Saved Cases Modal
+    function toggleSavedCasesModal(open) {
+      const modal = document.getElementById('saved-cases-modal');
+      if (open) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    function loadRecentCase(title) {
+      document.getElementById('case-title-input').value = title;
+      startAnalysisFlow();
+    }
+
+    function filterGraph(query) {
+      console.log("Filtering graph for:", query);
+    }
+
+    function resetGraphView() {
+      document.getElementById('graph-search-input').value = '';
+      alert('Graph layout reset to default force-directed view.');
+    }
+  </script>
+</body></html>

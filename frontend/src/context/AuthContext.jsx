@@ -19,14 +19,24 @@ export const AuthProvider = ({ children }) => {
           const profile = await authApi.getMe();
           setUser(profile);
           sessionStorage.setItem('case_connect_user', JSON.stringify(profile));
+          setLoading(false);
+          return;
         } catch (err) {
-          setUser(null);
-          setToken(null);
           sessionStorage.removeItem('case_connect_token');
           sessionStorage.removeItem('case_connect_user');
         }
       }
-      setLoading(false);
+
+      // Automatically auto-login as investigator so user immediately lands on direct upload screen
+      try {
+        const data = await authApi.quickLogin('investigator');
+        setToken(data.access_token);
+        setUser(data.user);
+      } catch (err) {
+        console.warn('[AUTH] Direct upload auto-login fallback:', err.message);
+      } finally {
+        setLoading(false);
+      }
     };
     verifyToken();
   }, []);

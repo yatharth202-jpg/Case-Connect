@@ -25,13 +25,17 @@ dist/
 build/
 .pytest_cache/
 
-# Node / Frontend
+# Node / Frontend / Gateway
 node_modules/
 frontend/node_modules/
 frontend/dist/
+server/node_modules/
 .eslintcache
 
 # Logs & temp
 *.log
+*.tmp
+.DS_Store
+Thumbs.db
 scratch/
 .system_generated/

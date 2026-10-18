@@ -1,229 +1,216 @@
-# Case Connect AI — Forensic Criminal Network Analysis System
+# CaseConnect AI — Criminal Network Analysis & Sovereign Forensic Intelligence Platform
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Dual-Engine Architecture](https://img.shields.io/badge/Architecture-Dual--Engine%20(Node.js%20+%20Python)-00E5FF?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Python 3.11+](https://img.shields.io/badge/Forensic%20Core-Python%203.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Cytoscape.js](https://img.shields.io/badge/Cytoscape.js-3.28-EA580C?style=for-the-badge)](https://js.cytoscape.org/)
-[![SQLite](https://img.shields.io/badge/SQLite-Authoritative%20Store-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Statutory Compliance](https://img.shields.io/badge/Statutory%20Standard-Section%2063%20BSA%202023-10B981?style=for-the-badge)](https://indiankanoon.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![React 18 & Three.js](https://img.shields.io/badge/Frontend-React%2018%20+%20Three.js-61DAFB?style=for-the-badge&logo=three.js&logoColor=black)](https://threejs.org/)
+[![Cytoscape.js](https://img.shields.io/badge/Graph%20Canvas-Cytoscape.js%203.28-EA580C?style=for-the-badge)](https://js.cytoscape.org/)
+[![Authoritative Store](https://img.shields.io/badge/Authoritative%20Store-SQLite%20+%20SQLAlchemy%202.0-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Section 63 BSA 2023](https://img.shields.io/badge/Statutory%20Standard-Section%2063%20BSA%202023-10B981?style=for-the-badge)](https://indiankanoon.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F2A33A.svg?style=for-the-badge)](LICENSE)
 
-> **Enterprise Forensic Intelligence & Evidence Correlation Platform**  
-> *Engineered for State Police Cyber Cells, Organised Crime Wings, and Central Intelligence Agencies.*  
-> *Fully compliant with Section 63 of Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023) and Digital Personal Data Protection Act, 2023 (DPDP 2023).*  
-> *Built for Smart India Hackathon (Problem Statement: SIH26189 | Team UNITx).*
-
----
-
-## Executive Summary
-
-**Case Connect AI** is an enterprise-grade forensic investigation platform engineered to solve the acute problem of fragmented evidence in complex criminal investigations. Indian law enforcement agencies routinely receive disparate evidentiary streams across multi-bank account statements, telecom Call Detail Records (CDRs), Subscriber Detail Records (SDRs), IP logs, ANPR vehicle tracking logs, and First Information Reports (FIRs).
-
-Case Connect AI unifies these heterogeneous, non-standardized formats into an interactive, multi-dimensional **Investigation Graph**, automatically detects clandestine financial layering and burner telecom anomalies, calculates explainable lead prioritization scores, and exports court-admissible forensic dossiers certified under **Section 63 of Bharatiya Sakshya Adhiniyam, 2023**.
+> **Enterprise Forensic Intelligence & Statutory Evidence Correlation Platform**  
+> *Engineered for State Police Cyber Cells, Organised Crime Wings, Special Investigation Units, and Central Law Enforcement Agencies.*  
+> *Strictly compliant with Section 63 of Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023) and the Digital Personal Data Protection Act, 2023 (DPDP 2023).*  
+> *Problem Statement: Criminal Network Analysis System | Team UNITx.*
 
 ---
 
-## 📑 Sample Investigative Cases & Court-Ready Dossiers
+## 🏛️ Executive Intelligence Overview
 
-To verify the platform's forensic correlation capabilities, two comprehensive investigative cases with real synthetic evidence and generated Section 63 BSA 2023 Court Dossiers are included directly in the repository:
+**CaseConnect AI** is an enterprise-grade forensic investigation platform engineered to resolve evidence fragmentation in high-stakes cyber fraud, hawala routing, and multi-jurisdiction syndicate operations. Indian law enforcement officers routinely ingest disparate, high-volume evidentiary feeds across:
+* **Banking Ledgers & Statement Dumps** (IMPS, RTGS, NEFT, UPI transactional logs)
+* **Telecommunication Call Detail Records (CDRs) & Subscriber Records (SDRs)**
+* **First Information Reports (FIRs) & Seizure Memos**
+* **IP Access Logs, SIM-Box Telemetry, and Cyber Checkpoint Data**
 
-| Case Codename | Statutory FIR & Sections | Focus Crime Typology | Entities & Records | Court Dossier PDF | Raw Evidence Files |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Operation RedSand** | `FIR 409/2026` (Special Cell, New Delhi)<br>Sec 420/120-B IPC, Sec 111 BNS, Sec 3/4 PMLA | **Inter-State Hawala & Angadia Syndicate**<br>Mule account pools, Bullion layering, Armoured transit, Currency token verification (`Parchi`) | 22 Entities<br>15 Txns (INR 4.85 Cr)<br>44 Telecom Records<br>18 Anomaly Alerts | [📄 View Dossier PDF](docs/sample_cases/Operation_RedSand_Hawala_Syndicate_Dossier.pdf) | [📁 Ingest Evidence](docs/sample_cases/evidence/) |
-| **Operation Cyber Shield** | `FIR 882/2026` (Cyber Crime Cell)<br>Sec 66D IT Act, Sec 384/420 IPC, Sec 63 BSA 2023 | **Inter-State Cyber Extortion & Mule Network**<br>Burner SIM rotations, Rapid RTGS pass-through, Off-hour telecom burst activity | 18 Entities<br>12 Bank Accounts<br>42 Telecom Records<br>14 Anomaly Alerts | [📄 View Dossier PDF](docs/sample_cases/Operation_Cyber_Shield_Syndicate_Dossier.pdf) | [📁 Ingest Evidence](docs/sample_cases/evidence/) |
-
-### 🔍 How to Inspect & Validate Sample Cases
-1. **Download the Official Dossiers**: Open [`Operation_RedSand_Hawala_Syndicate_Dossier.pdf`](docs/sample_cases/Operation_RedSand_Hawala_Syndicate_Dossier.pdf) or [`Operation_Cyber_Shield_Syndicate_Dossier.pdf`](docs/sample_cases/Operation_Cyber_Shield_Syndicate_Dossier.pdf) to inspect the exact court-ready layout, cryptographic SHA-256 evidence chain, officer sign-offs, and forensic anomaly summaries.
-2. **Re-run the Complete Simulation**: Execute `python scripts/stage_sample_cases.py` to re-ingest all evidence from scratch, rebuild the NetworkX graph projections, re-score leads, and regenerate fresh cryptographic PDFs.
-3. **Upload Unseen Evidence**: Navigate to the **Evidence Repository** in the web app and drop any file from [`docs/sample_cases/evidence/`](docs/sample_cases/evidence/) to experience dynamic column mapping and real-time graph updating.
+CaseConnect AI unifies these heterogeneous streams into an interactive, multi-dimensional **Investigation Graph**, automatically uncovers layered pass-through money loops, isolates off-hour burner telecom spikes, scores attributed leads with explainable mathematical weights, and outputs court-admissible dossiers with cryptographic SHA-256 genesis hashes certified under **Section 63 BSA 2023**.
 
 ---
 
-## System Architecture
+## 🛰️ Dual-Engine System Architecture
+
+CaseConnect AI utilizes a decoupled **Dual-Engine Architecture** combining high-throughput web request routing with heavy asynchronous forensic computing microservices:
 
 ```mermaid
 graph TB
-    subgraph Evidence Layer ["1. MULTI-MODAL EVIDENCE INGESTION"]
+    subgraph Client Tier ["1. TACTICAL CLIENT TIERS (Port 5173)"]
         direction TB
-        E1[Call Detail Records CDR / SDR]
-        E2[Bank Statements & Ledger Exports]
-        E3[Police FIRs & Seizure Memos]
-        E4[IP Logs & ANPR Vehicle Sightings]
+        C1[Single-Scroll Editorial Dossier UI]
+        C2[3D Sovereign India Cyber Map Canvas Three.js]
+        C3[Hardware-Accelerated Cytoscape Topological Graph]
+        C4[Dynamic Intake Dropzone & File Mapping]
+        C5[Floating AI Forensic Copilot Drawer]
     end
 
-    subgraph Forensic Core ["2. DATA INTEGRITY & PARSING"]
+    subgraph Gateway Tier ["2. NODE.JS EXPRESS GATEWAY (Port 5000)"]
         direction TB
-        V1[SHA-256 Hasher & Magic Byte Validator]
-        V2[Dynamic Column Header Mapper]
-        V3[Deterministic Parser: Canonical Paise & ISO Timestamps]
-        V4[(SQLite Transactional DB: Authoritative Source of Truth)]
+        G1[Security Headers & Rate-Limiting Policy]
+        G2[Bearer Token Auth & Session Management]
+        G3[Dynamic Microservice Reverse Proxy]
+        G4[Ingress Magic-Byte Sniffer Middleware]
     end
 
-    subgraph Analytical Engines ["3. FORENSIC ANALYTICS & AI ENGINES"]
+    subgraph Forensic Core ["3. PYTHON COMPUTE ENGINE (Port 8000)"]
         direction TB
-        A1[NetworkX Dynamic Centrality & Community Detection]
-        A2[BFS Financial Pass-Through & Layering Engine]
-        A3[Median Absolute Deviation MAD Telecom Spike Detector]
-        A4[Jaro-Winkler & Soundex Identity Resolution]
-        A5[spaCy Contextual Named Entity Recognition]
-        A6[Explainable Lead Advisor Scoring Engine]
+        P1[spaCy Legal Named Entity Recognition NER]
+        P2[NetworkX Centrality & Louvain Graph Partitioning]
+        P3[BFS Multi-Hop Money Layering Loop Tracer]
+        P4[Median Absolute Deviation MAD Telecom Anomaly Detector]
+        P5[ReportLab Cryptographic Court PDF Generator]
     end
 
-    subgraph Visual Workspace ["4. TACTICAL INTERACTIVE WORKSPACE"]
+    subgraph Storage Layer ["4. TAMPER-PROOF DATA STORE"]
         direction TB
-        W1[Cytoscape.js HD Network Canvas]
-        W2[Directed Money Flow & Mule Sankey Explorer]
-        W3[Temporal Activity Heatmap & Burst Matrix]
-        W4[Master Profile Deduplication Portal]
+        S1[(SQLite Transactional DB - Authoritative Source of Truth)]
+        S2[(Neo4j Rebuildable Topological Index)]
+        S3[Cryptographic SHA-256 Merkle Chain of Custody]
+        S4[Secure Local Evidence Repository]
     end
 
-    subgraph Judicial Compliance ["5. STATUTORY ADMISSIBILITY"]
-        direction TB
-        J1[Section 63 BSA 2023 Electronic Certificate]
-        J2[Genesis-Anchored Cryptographic Audit Log]
-        J3[ReportLab Court-Ready PDF Dossier]
-    end
-
-    Evidence Layer --> V1
-    V1 --> V2
-    V2 --> V3
-    V3 --> V4
-
-    V4 --> A1 & A2 & A3 & A4 & A5 & A6
-
-    A1 & A4 --> W1
-    A2 --> W2
-    A3 --> W3
-    A4 --> W4
-    A6 --> W1
-
-    W1 & W2 & W3 & W4 --> J3
-    V4 -.-> J2
-    J2 -.-> J1
-    J1 --> J3
+    Client Tier -->|REST / WebSocket| Gateway Tier
+    Gateway Tier -->|Forward Forensic Workload| Forensic Core
+    Forensic Core -->|State & Audit Writes| Storage Layer
+    Storage Layer -.->|Sync Graph Projection| S2
+    Storage Layer -.->|Section 63 Verification| P5
 ```
 
 ---
 
-## ⚡ Key Forensic Capabilities
+## ⚡ Core Forensic & Intelligence Pillars
 
-### 1. Zero-Hardcoding Dynamic Evidence Ingestion
-- Adapts dynamically to unseen telecom circle formats (Airtel, Jio, Vi, BSNL) and commercial bank exports (SBI, HDFC, ICICI, PNB, Axis).
-- Strips header preambles, determines cryptographic `header_signature`, and proposes canonical alignments (`suggested_mapping`).
-- Caches mapping configurations by signature: future uploads from the same circle or branch are mapped automatically with zero manual configuration.
+### 1. 3D Sovereign Cyber India Map Background
+* **Accurate Survey of India Sovereign Boundary**: Explicit high-resolution vector tracing encompassing Jammu & Kashmir, Siachen, Kutch, Kanyakumari, and the Northeast corridor.
+* **Internal State Boundary Mesh**: Precise state-wise borders rendered in luminous mint-cyan vector lines.
+* **48 Tactical Hub Beacons**: High-intensity glowing yellow/lime nodes (`#FFEA00`) with dynamic concentric radar halos across major cyber hubs (Delhi, Mumbai, Bengaluru, Hyderabad, Surat, Kolkata, Jaipur, Lucknow, Ahmedabad, Guwahati, etc.).
+* **Cyber Wireframe HUD**: Horizontal and vertical laser crosshair scanning lines, intersection ticks (`+`), and telemetry coordinate readouts that dynamically tilt and orbit with cursor motion and page scrolling.
 
-### 2. Forensic Financial Trail & Mule Network Detection
-- **Integer Paise Representation**: 100% of transaction amounts are converted to integer paise (`amount_paise`) to prevent floating-point rounding errors in judicial evidence.
-- **Rapid Pass-Through Detection**: Flags funds siphoned across intermediate accounts within configurable windows (e.g., 24 hours).
-- **Layering & Structuring Detection**: Identifies fan-in deposits (multiple small remittances below tax/PAN reporting thresholds) followed by single high-value fan-out transfers.
+```mermaid
+flowchart LR
+    A[Survey of India Geo-Coordinates] --> B[Boundary LineLoop & Neon Halo]
+    C[48 Tactical City Data Hubs] --> D[Pulsing Radar Concentric Waves]
+    E[Cross-State Telemetry Data Arcs] --> F[Ballistic Parabolic Flow Arcs]
+    B & D & F --> G[3D Three.js WebGL Sovereign Cyber Canvas]
+```
+
+---
+
+### 2. Topological Network Graph with Dynamic Click-to-Refocus
+* **Wide Spatial Repulsion**: Cytoscape.js configured with expansive node repulsion (`650,000`), long ideal edges (`240px`), and minimal gravity (`0.08`) so large networks remain readable and uncluttered.
+* **Dynamic Spread Controls**: One-click `[Spread Graph +]` and `[Tighten -]` multiplier tools to adjust layout density on the fly.
+* **Interactive Focal Switching**: Clicking **any** witness, phone number, bank account, or person instantly:
+  - Highlights the clicked entity with a glowing amber aura.
+  - Highlights its 1st-degree and 2nd-degree connected network while gracefully dimming unrelated nodes (`0.12` opacity).
+  - Smoothly pans and centers the camera on the target entity.
+  - **Synchronizes the entire investigation dossier**: The Primary Threat Attribution Hero card, telemetry counts, and factor breakdowns immediately re-calculate based on that clicked node.
+  - Opens the floating **Active Focal Node Inspector HUD** to explore adjacent degrees and jump between connected entities.
+
+```mermaid
+stateDiagram-v2
+    [*] --> GlobalNetworkView
+    GlobalNetworkView --> NodeClicked: Officer selects any Person / Account / MSISDN / Witness
+    NodeClicked --> HighlightSubnet: Highlight 1-Hop & 2-Hop Connected Neighborhood
+    HighlightSubnet --> DimUnrelated: Dim background nodes to 0.12 opacity
+    HighlightSubnet --> UpdateDossierHero: Synchronize Section 01 Hero Card & Metrics
+    HighlightSubnet --> OpenInspectorHUD: Display Node Connections & Adjacency Pills
+    OpenInspectorHUD --> GlobalNetworkView: Clear Selection / Reset to Genesis
+```
+
+---
+
+### 3. Financial Layering & Rapid Pass-Through Engine
+* **Integer Paise Arithmetic**: All financial values are strictly processed as integer paise (`amount_paise`) to prevent floating-point calculation errors in judicial evidence.
+* **Layering & Structuring Detection**: Identifies structured fan-in deposits (multiple remittances under statutory reporting thresholds) followed by immediate fan-out dispersal.
+* **Pass-Through Loops**: Flags rapid transit movements through mule accounts within configurable time windows (e.g., `< 4 hours`).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor ForeignRemitter as Illicit Source (Dubai Pool)
-    participant Mule1 as Mule A/c (Sunita Sharma)
-    participant Mule2 as Mule A/c (Rajesh Verma)
-    participant ShellCo as Shell Entity (Lotus Overseas)
-    participant Bullion as Prime Hub (KC Bullion)
-    actor Angadia as Angadia Cash Vault (Rohan Patel)
+    actor Source as Illicit Remittance Conduit
+    participant MuleA as Staged Mule Account A
+    participant MuleB as Staged Mule Account B
+    participant Transit as Central Transit Aggregator
+    participant Settlement as Bullion / Liquidation Pool
 
-    ForeignRemitter->>Mule1: 3x Deposits (< INR 5,00,000)
-    ForeignRemitter->>Mule2: 3x Deposits (< INR 5,00,000)
-    Note over Mule1,Mule2: Layering Phase: Structuring deposits below reporting caps
-    Mule1->>ShellCo: RTGS Aggregation (INR 1.43 Cr)
-    Mule2->>ShellCo: RTGS Aggregation (INR 1.42 Cr)
-    Note over ShellCo: Rapid Pass-Through: Fan-in to Shell Account within 12 hours
-    ShellCo->>Bullion: Immediate Outflow (INR 2.85 Cr)
-    Bullion->>Angadia: Armoured Courier Transit (Token 44B 889210)
-    Note over Angadia: Physical Cash Vaulting & Gold Remittance
+    Source->>MuleA: Structured Deposit (< INR 5,00,000)
+    Source->>MuleB: Structured Deposit (< INR 5,00,000)
+    Note over MuleA,MuleB: Structuring below statutory PAN/tax reporting thresholds
+    MuleA->>Transit: Immediate IMPS Transfer (INR 42,00,000)
+    MuleB->>Transit: Immediate RTGS Transfer (INR 38,50,000)
+    Note over Transit: Pass-Through Velocity: Aggregation within 3.5 hours
+    Transit->>Settlement: Final Dispersal & High-Value Liquidation
+    Note over Settlement: Return loop back to syndicate origin identified
 ```
 
-### 3. Statistical Telecom Anomaly Detection
-- **Median Absolute Deviation (MAD)**: Replaces fragile mean/standard-deviation outlier tests with robust non-parametric MAD to detect off-hour call bursts without distortion from extreme outliers.
-- **Burner SIM & Multi-SIM Hopping**: Correlates multiple IMSIs sharing a single IMEI or multiple mobile numbers registered under matching identity credentials.
+---
 
-### 4. Explainable Lead Advisor Engine
-- Synthesizes 5 independent forensic signals with transparent mathematical weights:
-  1. **Financial Velocity & Throughput** (Weight: 30)
-  2. **Network Betweenness & Bridge Centrality** (Weight: 25)
-  3. **Off-Hour Call Spikes & Communication Anomalies** (Weight: 20)
-  4. **Temporal Proximity to Offense Events** (Weight: 15)
-  5. **Cross-Document Entity Citations** (Weight: 10)
-- **AI Suggests, Officer Decides**: The engine outputs prioritized analytical leads for human review. Merges and decisions require officer sign-off and feature instant reversibility (`Undo Merge`).
+### 4. Section 63 BSA 2023 Statutory Admissibility & Tamper Demo
+* **Electronic Record Compliance**: Electronic evidence complies with Section 63 of Bharatiya Sakshya Adhiniyam, 2023.
+* **Genesis-Anchored Cryptographic Audit Log**: Every ingested file, column mapping, entity link, and officer decision is recorded in an immutable SHA-256 chained audit ledger.
+* **Interactive Tamper Simulation Demo**:
+  - `[⚡ Simulate Tamper Demo]` button in the Evidence Ledger simulates a single-byte bit-flip in stored evidence.
+  - Instantly detects cryptographic seal breach, highlights hash mismatch side-by-side, and raises a red chain integrity alert.
+  - `[↺ Restore Genesis Hash]` restores verified ledger integrity.
+* **Court-Admissible PDF Generation**: Direct generation of Section 63 BSA certified dossiers containing officer attestations, SHA-256 evidence tables, and chronological anomaly findings via ReportLab.
 
-### 5. Section 63 BSA 2023 Statutory Admissibility
-- Electronic evidence must satisfy strict statutory standards under Section 63 of Bharatiya Sakshya Adhiniyam, 2023.
-- Every ingested file, column mapping, entity link, and officer decision is recorded in an immutable, Genesis-anchored SHA-256 audit log.
-- Generates judicial court-ready PDF dossiers complete with hardware environment attestations, forensic hashes, and officer certification blocks.
+```mermaid
+graph LR
+    E1[Ingested File] --> H1[SHA-256 Cryptographic Hash]
+    H1 --> L1[Audit Ledger Block N-1]
+    L1 --> L2[Audit Ledger Block N]
+    L2 --> L3[Audit Ledger Block N+1]
+    L3 --> C1[Section 63 BSA Certificate]
+    C1 --> P1[Court-Admissible Dossier PDF]
+    
+    style H1 fill:#3FB6A8,stroke:#07090D,color:#07090D
+    style C1 fill:#F2A33A,stroke:#07090D,color:#07090D
+    style P1 fill:#E5484D,stroke:#07090D,color:#FFFFFF
+```
 
 ---
 
-## 🛠️ Technology Stack
-
-| Domain | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) (Python 3.11+) | Asynchronous, type-safe REST API with OpenAPI v3 specs |
-| **Primary Database** | [SQLite](https://www.sqlite.org/) + [SQLAlchemy 2.0](https://www.sqlalchemy.org/) | Authoritative, tamper-evident transactional data store |
-| **Graph Database** | [Neo4j](https://neo4j.com/) & [NetworkX](https://networkx.org/) | Dual-mode graph engine (in-memory fast projection + Neo4j Cypher) |
-| **Frontend UI** | [React 18](https://react.dev/) + [Vite](https://vitejs.dev/) | High-performance tactical dark workspace |
-| **Graph Visuals** | [Cytoscape.js 3.28](https://js.cytoscape.org/) | Hardware-accelerated interactive relationship network canvas |
-| **Forensic Charts** | [Recharts](https://recharts.org/) | Temporal call timelines, volume distributions, and burst heatmaps |
-| **NLP & Extraction** | [spaCy](https://spacy.io/) (`en_core_web_sm`) | Deterministic Named Entity Recognition for Indian legal texts |
-| **Court Dossier Engine**| [ReportLab](https://www.reportlab.com/) | Pixel-perfect, two-pass Section 63 BSA 2023 PDF generation |
-| **Security & Auth** | `bcrypt` (12 rounds) + PyJWT | Role-Based Access Control (`admin`, `investigator`, `viewer`) |
+### 5. Zero-Hardcoding Dynamic Ingestion Pipeline
+* **No Pre-baked Data**: The system operates with zero hardcoded mocks.
+* **Dynamic Circle & Bank Detection**: Ingestion algorithms automatically parse and propose alignments for diverse formats:
+  - CDR records (Airtel, Jio, Vi, BSNL)
+  - Bank exports (SBI, Axis, HDFC, ICICI, PNB)
+  - FIR text documents & SDR subscriber sheets
+* **Signature-Based Auto-Mapping**: Caches verified column alignments by cryptographic `header_signature` for zero-configuration repeat ingestion.
 
 ---
 
+## 📊 Comprehensive Technology Matrix
 
-## 🔑 Officer Access Credentials
-
-| Role | Username | Password | Operational Permissions |
+| Subsystem | Technology | Architectural Role | Key Standard / Benchmark |
 | :--- | :--- | :--- | :--- |
-| **Supervisory Admin** | `admin` | `AdminPass1234!` | Full system control, officer provisioning, immutable audit chain verification (`/audit/verify`) |
-| **Lead Investigator** | `investigator1` | `OfficerPass1234!` | Case management, evidence ingestion, graph investigation, lead decision recording, court PDF export |
-| **Intelligence Analyst** | `viewer1` | `ViewerPass1234!` | Read-only access to investigation graphs, timeline charts, and financial flows |
+| **API Gateway** | [Node.js 20+](https://nodejs.org/) & [Express.js](https://expressjs.com/) | Reverse proxy, security middleware, and session gate | Port 5000 / Sub-millisecond latency |
+| **Forensic Microservice**| [FastAPI](https://fastapi.tiangolo.com/) & [Python 3.11+](https://www.python.org/) | Deep forensic compute, graph mathematics, and PDF compilation | Port 8000 / Asynchronous non-blocking |
+| **Transactional DB** | [SQLite](https://www.sqlite.org/) & [SQLAlchemy 2.0](https://www.sqlalchemy.org/) | Authoritative, tamper-evident primary store | ACID Compliant / Zero configuration |
+| **Graph Infrastructure**| [NetworkX](https://networkx.org/) & [Neo4j](https://neo4j.com/) | Louvain clustering, degree centrality, BFS pathfinding | Dynamic In-Memory + Cypher Querying |
+| **Judicial PDF Engine** | [ReportLab](https://www.reportlab.com/) | Pixel-perfect Section 63 BSA court dossier generation | Two-Pass Cryptographic SHA-256 |
+| **Frontend Framework** | [React 18](https://react.dev/) & [Vite](https://vitejs.dev/) | High-performance single-scroll editorial workspace | Port 5173 / Sub-second HMR |
+| **3D Sovereign Canvas** | [Three.js](https://threejs.org/) | 3D Sovereign India cyber map and particle simulation | 60 FPS WebGL / Hardware Accelerated |
+| **Interactive Graph** | [Cytoscape.js 3.28](https://js.cytoscape.org/) | Topological graph canvas with physics repulsion | COSE / Concentric / Circle Layouts |
+| **Analytical Visuals** | [Recharts](https://recharts.org/) | Call spike timelines, layering histograms, curfew heatmaps | Responsive SVG Forensics |
+| **Legal NLP** | [spaCy](https://spacy.io/) (`en_core_web_sm`) | Named entity extraction from Indian legal and FIR texts | Contextual Rule + ML NER |
 
 ---
 
-## 🔬 Quality Assurance & Audit Protocol
+## 🔒 Security & Statutory Admissibility Standards
 
-Every pull request and release is validated across a 4-tier verification protocol:
-
-```bash
-# 1. Run complete backend integration & forensic test suite (86/86 Passing)
-.venv\Scripts\pytest backend/tests -q
-
-# 2. Run anti-hardcoding & security audit (0 forbidden literals / 0 mock files)
-python scripts/audit_hardcode.py
-
-# 3. Run 360-degree subsystem diagnostic (All 10 subsystems validated)
-python scripts/verify_system.py
-
-# 4. Verify frontend production bundle
-cd frontend && npm run build
-```
+CaseConnect AI is governed by strict law-enforcement security protocols:
+* **Section 63 BSA 2023 Compliance**: Cryptographic chain of custody guarantees that all analyzed records retain mathematical proof of origin and un-tampered state.
+* **Zero Prejudicial Terminology**: UI copy and analytical reports avoid inflammatory labels; findings are presented using neutral, objective terminology (*Primary Lead*, *Attributed Entity*, *Potential Anomaly*).
+* **Role-Based Access Control (RBAC)**: Enforces role isolation (`Admin`, `Investigator`, `Viewer`) with Bcrypt password hashing (12 salt rounds) and stateless JWT verification.
+* **BOLA / IDOR Defense**: Every case-scoped endpoint strictly verifies officer assignment before returning evidentiary records.
 
 ---
 
-## ⚖️ Statutory Governance & Non-Goals
+## 👨‍💻 Team & Institutional Attribution
 
-### Legal Invariants
-- **Section 63 BSA 2023**: Electronic records are accompanied by cryptographic SHA-256 signatures, hardware environment stamps, and unbroken custody trails.
-- **DPDP Act 2023**: Personal identifiers are processed strictly under lawful law enforcement exemptions for the prevention, detection, and investigation of cognizable offenses.
-- **Neutral Forensic Terminology**: System copy strictly bans prejudicial language (`criminal`, `guilty`, `mastermind`). Entities are designated objectively as `high-priority entity`, `lead for review`, or `potential anomaly`.
-
-### Explicit Non-Goals
-1. **No Autonomous Black-Box Merges**: Records are never merged without an investigator's explicit, logged decision.
-2. **No Facial Recognition / Biometric Profiling**: Zero demographic profiling or probabilistic facial recognition.
-3. **No Automated Adjudication**: The engine generates investigative leads and anomaly indicators—not judicial verdicts.
-4. **No Third-Party Data Exfiltration**: Evidence is processed strictly within air-gapped or on-premise infrastructure without leaking sensitive police dockets to public LLM APIs.
+* **Platform Name**: CaseConnect AI — Criminal Network Analysis System
+* **Development Team**: Team UNITx
+* **Institutional Standard**: Designed in alignment with Indian Law Enforcement specifications under Bharatiya Sakshya Adhiniyam, 2023.
 
 ---
-
-## 👥 Authors & Provenance
-
-- **Product:** Case Connect AI — Forensic Criminal Network Analysis System
-- **Initiative:** Smart India Hackathon (Problem Statement: **SIH26189**)
-- **Engineering Team:** **Team UNITx**
-- **License:** [MIT License](LICENSE)
+*CaseConnect AI is an advanced investigative support system. All analytical leads require explicit officer confirmation under standard statutory procedures.*

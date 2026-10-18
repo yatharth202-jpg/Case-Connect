@@ -8,10 +8,23 @@ import CaseDetail from './pages/CaseDetail';
 import AuditLog from './pages/AuditLog';
 import { Shield, Lock, UserCheck, Network, Database, X } from 'lucide-react';
 
+import ScrollProvider from './components/shell/ScrollProvider';
+import { CaseFlowProvider, useCaseFlow } from './context/CaseFlowContext';
+import IndiaMapBackground from './components/shell/IndiaMapBackground';
+import Header from './components/shell/Header';
+import UploadScreen from './components/upload/UploadScreen';
+import LoadingScreen from './components/upload/LoadingScreen';
+import CopilotDrawer from './components/chat/CopilotDrawer';
+import SavedCasesModal from './components/cases/SavedCasesModal';
+
+import MainCaseDossier from './components/case/MainCaseDossier';
+
 function MainRouter() {
   const { isAuthenticated, loading } = useAuth();
+  const { phase, activeCaseId, resetToUpload } = useCaseFlow();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [activeLegalModal, setActiveLegalModal] = useState(null);
+  const [savedCasesOpen, setSavedCasesOpen] = useState(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -34,52 +47,58 @@ function MainRouter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#040711] flex items-center justify-center text-white text-xs font-mono">
+      <div className="min-h-screen bg-ink flex items-center justify-center text-text text-xs font-mono">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-slate-700 border-t-[#00F0FF] rounded-full animate-spin" />
-          <span className="text-cyan-400 font-semibold tracking-wider">Validating Officer Credentials...</span>
+          <div className="w-5 h-5 border-2 border-white/20 border-t-accent rounded-full animate-spin" />
+          <span className="text-accent font-semibold tracking-wider">Validating Officer Credentials...</span>
         </div>
       </div>
     );
   }
 
-  // Route matching
-  if (!isAuthenticated && currentPath !== '/login') {
-    window.history.replaceState(null, '', '/login');
-    return <Login />;
-  }
-
+  // Direct access: If on /login or not yet authenticated, fallback cleanly to root upload screen
   if (currentPath === '/login') {
-    if (isAuthenticated) {
-      window.history.replaceState(null, '', '/');
-      return (
-        <div className="min-h-screen bg-[#040711] text-slate-100 flex flex-col font-sans">
-          <Navbar onOpenLegalModal={setActiveLegalModal} />
-          <QuickCrimeAnalyser />
-        </div>
-      );
-    }
-    return <Login />;
+    window.history.replaceState(null, '', '/');
   }
 
   // Handle /cases/:id
   const caseMatch = currentPath.match(/^\/cases\/([a-zA-Z0-9_-]+)/);
 
   return (
-    <div className="min-h-screen bg-[#040711] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
-      <Navbar onOpenLegalModal={setActiveLegalModal} />
+    <div className="min-h-screen bg-ink text-text flex flex-col font-sans selection:bg-accent selection:text-ink relative overflow-x-hidden">
+      {/* 3D Cyber India Map Background Canvas */}
+      <IndiaMapBackground />
 
-      <main className="flex-1 flex flex-col">
+      {/* Global Frosted Header */}
+      <Header
+        onOpenSavedCases={() => setSavedCasesOpen(true)}
+      />
+
+      <main className="flex-1 flex flex-col relative z-10">
         {caseMatch ? (
           <CaseDetail caseId={caseMatch[1]} />
         ) : currentPath === '/audit' ? (
           <AuditLog />
         ) : currentPath === '/cases' ? (
           <Cases />
+        ) : phase === 'case' ? (
+          <MainCaseDossier />
         ) : (
-          <QuickCrimeAnalyser onOpenLegalModal={setActiveLegalModal} />
+          <UploadScreen />
         )}
       </main>
+
+      {/* Real-time Dynamic Ingestion Loading Screen */}
+      <LoadingScreen />
+
+      {/* Persistent Floating AI Copilot Glass Drawer */}
+      <CopilotDrawer />
+
+      {/* Section 63 BSA 2023 Investigation Dossiers Ledger Modal */}
+      <SavedCasesModal
+        isOpen={savedCasesOpen}
+        onClose={() => setSavedCasesOpen(false)}
+      />
 
       {/* BEGIN: MainFooter (Stitch Anti-Gravity Refined Footer) */}
       <footer className="relative z-20 border-t border-slate-800/80 bg-[#060B19]/95 backdrop-blur-lg pt-7 pb-5 px-6 lg:px-12 mt-auto" data-purpose="refined-footer">
@@ -295,7 +314,11 @@ function MainRouter() {
 export default function App() {
   return (
     <AuthProvider>
-      <MainRouter />
+      <ScrollProvider>
+        <CaseFlowProvider>
+          <MainRouter />
+        </CaseFlowProvider>
+      </ScrollProvider>
     </AuthProvider>
   );
 }
