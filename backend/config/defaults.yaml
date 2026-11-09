@@ -104,6 +104,7 @@ extraction:
       - ".jpg"
       - ".jpeg"
       - ".webp"
+      - ".bmp"
       - ".tiff"
       - ".tif"
       - ".zip"
@@ -121,16 +122,28 @@ extraction:
   image_quality:
     min_blur_score: 45.0
     min_dpi: 120
+    min_width_px: 150
+    min_height_px: 80
     max_skew_deg: 25.0
     min_contrast: 20.0
+    min_brightness: 15.0
+    max_brightness: 252.0
+    preprocess:
+      deskew_min_deg: 0.5
+      denoise_h: 8
+      adaptive_block_size: 31
+      adaptive_c: 10
   ocr:
     provider: "tesseract"
     languages:
       - "eng"
       - "hin"
     handwritten_conf_cap: 0.65
+    handwritten_mean_conf_threshold: 0.68
+    handwritten_stroke_cv_threshold: 0.55
     review_below_conf: 0.75
     tesseract_cmd_env: "TESSERACT_CMD"
+    phash_duplicate_max_dist: 4
   vision_provider:
     enabled: false               # OFF by default (air-gap safe)
     require_case_consent: true   # Requires explicit per-case officer consent + audit_log

@@ -481,6 +481,32 @@ Append-only investigator annotations and tags on a `record` or `entity` with sof
 | `deleted_by` | `VARCHAR` | NULL | User ID who soft-deleted the annotation |
 | `deleted_at` | `DATETIME` | NULL | Soft-deletion timestamp |
 
+### Table 31: `evidence_pages`
+Per-page OCR, digital PDF text layer, quality gate, EXIF, perceptual hash, and word-box provenance store.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Page record ID |
+| `case_id` | `VARCHAR` | FK `cases.id`, Index, NOT NULL | Scoped case docket |
+| `evidence_id` | `VARCHAR` | FK `evidence_files.id`, Index, NOT NULL | Originating evidence file ID |
+| `page_no` | `INTEGER` | NOT NULL | 1-based page or frame number |
+| `source_kind` | `VARCHAR` | NOT NULL, Default `'text_layer_pdf'` | `text_layer_pdf`, `ocr_printed`, `ocr_handwritten` |
+| `status` | `VARCHAR` | Index, NOT NULL, Default `'ready'` | `ready`, `needs_better_image`, `pending_review`, `ocr_unavailable` |
+| `quality_reason` | `TEXT` | NULL | Human-readable quality failure or OCR reason |
+| `quality_metrics_json` | `TEXT` | NOT NULL, Default `'{}'` | JSON metrics (`blur_score`, `contrast`, `brightness`, `skew_deg`, `dpi`) |
+| `preprocess_params_json` | `TEXT` | NOT NULL, Default `'{}'` | JSON preprocessing parameters (`deskew_applied_deg`, `denoise_h`, `adaptive_block_size`) |
+| `raw_text` | `TEXT` | NOT NULL, Default `''` | Original OCR or text-layer text (never overwritten) |
+| `corrected_text` | `TEXT` | NULL | Reconstructed page text after officer word/span corrections |
+| `words_json` | `TEXT` | NOT NULL, Default `'[]'` | JSON array of words (`word_id`, `text`, `conf`, `bbox`, `page`, `line_id`, `script_guess`) |
+| `page_image_sha256` | `VARCHAR` | NULL | SHA-256 of rendered page image bytes |
+| `perceptual_hash` | `VARCHAR` | Index, NULL | Perceptual hash (`imagehash.phash`) for duplicate detection |
+| `exif_json` | `TEXT` | NOT NULL, Default `'{}'` | EXIF capture metadata marked `"as reported by file"` |
+| `engine_name` | `VARCHAR` | NOT NULL | `pymupdf`, `tesseract`, etc. |
+| `engine_version` | `VARCHAR` | NOT NULL | Engine version string |
+| `mean_confidence` | `FLOAT` | NOT NULL, Default `1.0` | Mean word confidence (`0.0..1.0`) |
+| `is_handwritten` | `BOOLEAN` | NOT NULL, Default `False` | Handwritten page flag |
+| `created_at` | `DATETIME` | NOT NULL, Default UTC | Creation timestamp |
+| `updated_at` | `DATETIME` | NOT NULL, Default UTC | Last update timestamp |
+
 ---
 
 ## 4. Disposable Neo4j Graph Model

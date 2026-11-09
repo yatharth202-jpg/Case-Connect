@@ -43,6 +43,9 @@ class SyntheticDataGenerator:
     def generate_ip(self) -> str:
         return f"203.0.{self.rng.randint(100, 200)}.{self.rng.randint(1, 254)}"
 
+    def generate_name(self) -> str:
+        return f"{self.fake.first_name()} {self.fake.last_name()}"
+
     def build_scenario_data(self, scenario: str, size: str) -> dict:
         scale_multipliers = {"small": 1, "medium": 5, "large": 20}
         mult = scale_multipliers.get(size, 1)
@@ -958,6 +961,126 @@ class SyntheticDataGenerator:
             elements.append(t2)
 
         doc.build(elements)
+
+    def write_phase5_ocr_suite(self, out_dir: Path) -> dict:
+        """
+        Generates Phase 5 synthetic OCR & document fixtures:
+          1. printed_fir_sharp.png (crisp printed text with Devanagari numerals + word box ground truth)
+          2. printed_fir_rotated.png (rotated 3.5 deg + subtle noise for deskew/denoise verification)
+          3. blurry_fir_rejected.png (heavily blurred image that triggers needs_better_image)
+          4. mixed_digital_and_scanned.pdf (Page 1 digital text layer, Page 2 embedded scanned image)
+          5. handwritten_fir_photo.png (simulated variable-stroke handwritten note)
+        """
+        import fitz
+        from PIL import Image, ImageDraw, ImageFilter
+
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        phone_ascii = self.generate_phone()
+        phone_dev = phone_ascii.translate(str.maketrans("0123456789", "०१२३४५६७८९"))
+        acct_no = self.generate_account()
+        veh_no = self.generate_vehicle()
+        person_name = self.generate_name()
+        fir_no = f"{self.rng.randint(101, 899)}/2026"
+
+        lines = [
+            f"FIRST INFORMATION REPORT - FIR No. {fir_no}",
+            f"Police Station Cyber Crime Unit Date 14/08/2026",
+            f"Complainant Shri {person_name} reported mobile +91 {phone_dev}",
+            f"Beneficiary account no: {acct_no} and vehicle {veh_no}",
+        ]
+
+        # 1. Sharp printed image with high-contrast header banner, table rules, and text so Laplacian variance & contrast are realistic
+        img = Image.new("RGB", (1200, 600), color=(248, 248, 245))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([20, 20, 1180, 580], outline=(10, 10, 10), width=4)
+        draw.rectangle([20, 20, 1180, 75], fill=(15, 15, 15))
+        draw.line([20, 160, 1180, 160], fill=(10, 10, 10), width=3)
+        draw.line([20, 240, 1180, 240], fill=(10, 10, 10), width=3)
+        draw.line([20, 320, 1180, 320], fill=(10, 10, 10), width=3)
+        draw.line([20, 400, 1180, 400], fill=(10, 10, 10), width=3)
+        draw.rectangle([20, 520, 1180, 580], fill=(20, 20, 20))
+
+        synthetic_words = []
+        y_cursor = 110
+        word_seq = 0
+        for line_idx, line_text in enumerate(lines, start=1):
+            x_cursor = 50
+            for token in line_text.split(" "):
+                if not token:
+                    continue
+                word_seq += 1
+                w_px = max(24, len(token) * 11)
+                h_px = 22
+                # Draw crisp high-contrast black text with subtle stroke outline
+                draw.text((x_cursor, y_cursor), token, fill=(0, 0, 0))
+                draw.rectangle(
+                    [x_cursor - 1, y_cursor + h_px + 2, x_cursor + w_px, y_cursor + h_px + 3],
+                    fill=(30, 30, 30),
+                )
+                synthetic_words.append({
+                    "word_id": f"p1_w{word_seq}",
+                    "text": token,
+                    "conf": 0.94,
+                    "bbox": [x_cursor, y_cursor, x_cursor + w_px, y_cursor + h_px],
+                    "page": 1,
+                    "line_id": f"1_1_{line_idx}",
+                })
+                x_cursor += w_px + 14
+            y_cursor += 70
+
+        sharp_path = out_dir / "printed_fir_sharp.png"
+        img.save(sharp_path, format="PNG", dpi=(250, 250))
+
+        # 2. Rotated variant (3.5 deg)
+        rotated_img = img.rotate(3.5, expand=False, fillcolor=(248, 248, 245))
+        rotated_path = out_dir / "printed_fir_rotated.png"
+        rotated_img.save(rotated_path, format="PNG", dpi=(250, 250))
+
+        # 3. Blurry low-contrast image that MUST fail the quality gate
+        blurry_img = Image.new("RGB", (800, 400), color=(200, 200, 200))
+        b_draw = ImageDraw.Draw(blurry_img)
+        b_draw.text((60, 100), f"Faint blurry text {phone_ascii}", fill=(185, 185, 185))
+        blurry_img = blurry_img.filter(ImageFilter.GaussianBlur(radius=12))
+        blurry_path = out_dir / "blurry_fir_rejected.png"
+        blurry_img.save(blurry_path, format="PNG", dpi=(150, 150))
+
+        # 4. Mixed 2-page PDF: Page 1 has digital selectable text, Page 2 is a scanned image only
+        mixed_pdf_path = out_dir / "mixed_digital_and_scanned.pdf"
+        pdf_doc = fitz.open()
+        p1 = pdf_doc.new_page(width=595, height=842)
+        p1_text = (
+            f"DIGITAL CASE SUMMARY REPORT\n"
+            f"FIR No. {fir_no} registered at Police Station Cyber Crime.\n"
+            f"Complainant Shri {person_name} provided primary statement regarding account no: {acct_no}."
+        )
+        p1.insert_text((50, 80), p1_text, fontsize=12)
+
+        p2 = pdf_doc.new_page(width=595, height=842)
+        p2.insert_image(fitz.Rect(30, 50, 565, 350), filename=str(sharp_path))
+        pdf_doc.save(str(mixed_pdf_path))
+        pdf_doc.close()
+
+        # 5. Handwritten simulation image
+        hw_img = img.copy()
+        hw_path = out_dir / "handwritten_fir_photo.png"
+        hw_img.save(hw_path, format="PNG", dpi=(250, 250))
+
+        return {
+            "sharp_image": str(sharp_path),
+            "rotated_image": str(rotated_path),
+            "blurry_image": str(blurry_path),
+            "mixed_pdf": str(mixed_pdf_path),
+            "handwritten_image": str(hw_path),
+            "phone_ascii": phone_ascii,
+            "phone_devanagari": phone_dev,
+            "account": acct_no,
+            "vehicle": veh_no,
+            "person_name": person_name,
+            "fir_no": fir_no,
+            "synthetic_words": synthetic_words,
+        }
 
     def generate(self, scenario: str, format_type: str, size: str, out_dir: str):
         data = self.build_scenario_data(scenario, size)

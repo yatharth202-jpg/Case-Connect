@@ -388,9 +388,21 @@ Server-side authorization verifies:
   - **Returns:** Chronological changelog of merge `apply` and `rollback` runs with counts and timestamps.
 
 ### 9.5 Investigator Annotations (Soft-Delete Only)
-* **`POST /cases/{id}/annotations`** — Create an investigator annotation on a `record`, `entity`, `evidence`, or `conflict` (logs `ANNOTATION_CREATE` to `audit_log`).
-* **`GET /cases/{id}/annotations`** — List annotations for a case (`subject_type`, `subject_id`, `include_deleted`).
-* **`DELETE /cases/{id}/annotations/{aid}`** — Soft-delete an annotation (`status='deleted'`, logs `ANNOTATION_DELETE` to `audit_log`).
+* **`POST /cases/{id}/annotations`** — Create an investigator annotation on a `record` or `entity` (logs `create_annotation` to `audit_log`).
+* **`GET /cases/{id}/annotations`** — List annotations for a case (`subject_id`, `include_deleted`).
+* **`DELETE /cases/{id}/annotations/{aid}`** — Soft-delete an annotation (`is_deleted=True`, logs `soft_delete_annotation` to `audit_log`).
+
+### 9.6 Scanned PDF, Image & Handwritten OCR Review Endpoints (Phase 5)
+* **`GET /evidence/{id}/pages`**
+  - **Description:** Lists all pages/frames of an evidence document or image with `source_kind` (`text_layer_pdf`, `ocr_printed`, `ocr_handwritten`), `status` (`ready`, `needs_better_image`, `pending_review`, `ocr_unavailable`), OpenCV `quality_metrics`, `mean_confidence`, `perceptual_hash`, `duplicate_of_evidence_id`, and `exif` metadata (`"disclaimer": "as reported by file"`).
+* **`GET /evidence/{id}/pages/{n}/ocr`**
+  - **Description:** Returns per-word OCR bounding boxes (`bbox: [x0, y0, x1, y1]`), word confidences, script guesses, `raw_text` (immutable), `corrected_text`, and extracted entities with their page bounding boxes.
+* **`POST /evidence/{id}/pages/{n}/corrections`**
+  - **Request Body:** `{"word_id": "p1_w5", "span": null, "corrected_text": "9876543210", "note": "Verified on physical FIR"}`
+  - **Description:** Applies an officer word or span correction without overwriting `raw_text`, re-extracts affected entities, stores them as locked officer claims (`source_kind='officer'`, `locked=True`) via the Merge Engine, and logs `OCR_CORRECTION` to `audit_log`.
+* **`PATCH /evidence/{id}/handwritten`**
+  - **Request Body:** `{"is_handwritten": true}`
+  - **Description:** Marks or unmarks an evidence file as handwritten and re-runs extraction with `source_kind='ocr_handwritten'`, confidence capped by `extraction.ocr.handwritten_conf_cap`, and mandatory `pending_review` status.
 
 ---
 

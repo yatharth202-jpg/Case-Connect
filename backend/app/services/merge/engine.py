@@ -240,6 +240,13 @@ def _sync_staged_row(
             staged_ip.is_active = is_active
 
     elif rtype == "entity":
+        # Document/OCR entities in pending_review or ocr_handwritten stay in unified records + claims
+        # and are only staged to the active graph `entities` table once approved by an officer.
+        if (
+            ext_rec.source_kind == "ocr_handwritten"
+            or str(golden_data.get("review_status") or "") == "pending_review"
+        ) and ext_rec.source_kind != "officer":
+            return
         label = str(golden_data.get("label") or golden_data.get("entity_type") or "Entity")
         canon_id = str(golden_data.get("canonical_id") or golden_data.get("normalized_value") or "")
         disp = str(golden_data.get("display_name") or canon_id)

@@ -65,8 +65,12 @@ class EvidenceFile(Base):
     sha256 = Column(String, index=True, nullable=False)
     file_size = Column(Integer, nullable=False)
     detected_type = Column(String, nullable=True) # cdr, bank_transactions, bank_statement, etc.
-    status = Column(String, default="uploaded", nullable=False) # uploaded, mapped, ingesting, ingested, failed
+    status = Column(String, default="uploaded", nullable=False) # uploaded, mapped, ingesting, ingested, failed, needs_better_image
     uploader_id = Column(String, ForeignKey("users.id"), nullable=False)
+    perceptual_hash = Column(String, index=True, nullable=True)
+    exif_json = Column(Text, default="{}", nullable=True)
+    is_handwritten = Column(Boolean, default=False, nullable=False)
+    quality_json = Column(Text, default="{}", nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 # 6. Column Mappings
@@ -209,6 +213,9 @@ class ExtractedEntity(Base):
     raw_value = Column(String, nullable=False)
     normalized_value = Column(String, index=True, nullable=False)
     page_or_paragraph = Column(String, nullable=False)
+    page_no = Column(Integer, nullable=True)
+    bbox_json = Column(Text, nullable=True)
+    source_kind = Column(String, default="text_layer_pdf", nullable=True)
     char_span_start = Column(Integer, nullable=True)
     char_span_end = Column(Integer, nullable=True)
     confidence = Column(Float, default=0.5, nullable=False)
@@ -436,6 +443,34 @@ class Annotation(Base):
     is_deleted = Column(Boolean, default=False, index=True, nullable=False)
     deleted_by = Column(String, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
+
+# 31. Evidence Document/OCR Pages (Per-Page Provenance, Quality Gate & Word Boxes)
+class EvidencePage(Base):
+    __tablename__ = "evidence_pages"
+    __table_args__ = (
+        UniqueConstraint("evidence_id", "page_no", name="uq_evidence_page_no"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    evidence_id = Column(String, ForeignKey("evidence_files.id"), index=True, nullable=False)
+    page_no = Column(Integer, nullable=False)
+    source_kind = Column(String, default="text_layer_pdf", nullable=False) # text_layer_pdf | ocr_printed | ocr_handwritten
+    status = Column(String, default="ready", index=True, nullable=False) # ready | needs_better_image | pending_review | ocr_unavailable
+    quality_reason = Column(Text, nullable=True)
+    quality_metrics_json = Column(Text, default="{}", nullable=False)
+    preprocess_params_json = Column(Text, default="{}", nullable=False)
+    raw_text = Column(Text, default="", nullable=False) # Original OCR/text-layer text (never overwritten)
+    corrected_text = Column(Text, nullable=True) # Reconstructed text after officer corrections
+    words_json = Column(Text, default="[]", nullable=False) # List of {word_id, text, conf, bbox, page, line_id, script_guess, ...}
+    page_image_sha256 = Column(String, nullable=True)
+    perceptual_hash = Column(String, index=True, nullable=True)
+    exif_json = Column(Text, default="{}", nullable=False)
+    engine_name = Column(String, default="pymupdf", nullable=False)
+    engine_version = Column(String, default="1.0", nullable=False)
+    mean_confidence = Column(Float, default=1.0, nullable=False)
+    is_handwritten = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 def get_db():
     db = SessionLocal()

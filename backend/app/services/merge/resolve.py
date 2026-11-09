@@ -170,17 +170,22 @@ def resolve_field_claims(
             if existing_match is not None:
                 rep = existing_match
 
-        reason = "CORROBORATED_BY_MULTIPLE_SOURCES" if vg["distinct_sources"] > 1 else "SINGLE_UNCONTESTED_VALUE"
+        is_officer = str(rep.get("source_kind", "")) == "officer"
+        reason = (
+            "OFFICER_CORRECTION"
+            if is_officer
+            else ("CORROBORATED_BY_MULTIPLE_SOURCES" if vg["distinct_sources"] > 1 else "SINGLE_UNCONTESTED_VALUE")
+        )
         return {
             "selected_claim_id": rep["id"],
             "selected_value": vg["value_norm"],
-            "selected_by": "auto",
-            "locked": False,
+            "selected_by": "officer" if is_officer else "auto",
+            "locked": True if is_officer else False,
             "has_conflict": False,
             "conflicting_claim_ids": [],
             "reason_code": reason,
             "notice": None,
-            "effective_confidence": vg["effective_confidence"],
+            "effective_confidence": 1.0 if is_officer else vg["effective_confidence"],
         }
 
     # 4. Multiple distinct normalized values -> Compare top two using order-independent rank
@@ -211,16 +216,17 @@ def resolve_field_claims(
 
     if auto_win:
         rep = top1["representative"]
+        is_officer = str(rep.get("source_kind", "")) == "officer"
         return {
             "selected_claim_id": rep["id"],
             "selected_value": top1["value_norm"],
-            "selected_by": "auto",
-            "locked": False,
+            "selected_by": "officer" if is_officer else "auto",
+            "locked": True if is_officer else False,
             "has_conflict": False,
             "conflicting_claim_ids": [],
-            "reason_code": win_reason,
+            "reason_code": "OFFICER_CORRECTION" if is_officer else win_reason,
             "notice": None,
-            "effective_confidence": top1["effective_confidence"],
+            "effective_confidence": 1.0 if is_officer else top1["effective_confidence"],
         }
 
     # 5. Conflict: top two have different normalized values and cannot be auto-resolved

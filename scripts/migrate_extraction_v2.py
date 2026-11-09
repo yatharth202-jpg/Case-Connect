@@ -45,6 +45,17 @@ ADDITIVE_COLUMNS: Dict[str, List[Tuple[str, str]]] = {
     "entity_links": [
         ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
     ],
+    "evidence_files": [
+        ("perceptual_hash", "TEXT"),
+        ("exif_json", "TEXT DEFAULT '{}'"),
+        ("is_handwritten", "BOOLEAN DEFAULT 0 NOT NULL"),
+        ("quality_json", "TEXT DEFAULT '{}'"),
+    ],
+    "extracted_entities": [
+        ("page_no", "INTEGER"),
+        ("bbox_json", "TEXT"),
+        ("source_kind", "TEXT DEFAULT 'text_layer_pdf'"),
+    ],
 }
 
 
