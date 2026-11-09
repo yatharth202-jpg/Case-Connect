@@ -1,129 +1,99 @@
 import re
 import ipaddress
 from decimal import Decimal, InvalidOperation
-from datetime import datetime, date, time
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 
-TITLE_PREFIXES = re.compile(r"^(mr\.|mrs\.|ms\.|shri|smt\.|dr\.|adv\.)\s+", re.IGNORECASE)
+from backend.app.services.ingestion.validators import (
+    to_ascii_digits,
+    validate_phone,
+    validate_bank_account,
+    validate_amount,
+    validate_vehicle,
+    validate_aadhaar,
+    validate_pan,
+    validate_imei,
+    validate_imsi,
+    validate_ifsc,
+    validate_upi_vpa,
+    infer_column_dayfirst,
+    parse_forensic_datetime,
+    utc_to_display_tz,
+    is_curfew_hour,
+    classify_numeric_identifier,
+)
 
-def normalize_phone(raw: Any) -> Optional[Dict[str, Any]]:
+TITLE_PREFIXES = re.compile(r"^(mr\.|mrs\.|ms\.|shri|smt\.|dr\.|adv\.|mohd\.|md\.)\s+", re.IGNORECASE)
+
+
+def normalize_phone(raw: Any, default_region: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
-    Normalizes telephone / mobile numbers.
-    Rules:
-      - Strips non-alphanumeric characters.
-      - If starts with +91 or 91 (12 digits), strips leading country code.
-      - If starts with 0 (11 digits), strips leading 0.
-      - Valid mobile = 10 digits starting with 6, 7, 8, 9.
-      - Landlines, toll-free, short-codes kept with valid_mobile=False.
-      - Alphanumeric sender IDs (e.g., AD-HDFCBK) classified as sms_header.
+    Normalizes telephone / mobile numbers by delegating to `validators.validate_phone` (`phonenumbers`).
+    Returns a dictionary containing both backward-compatible keys (`number`, `valid_mobile`, `kind`)
+    and Extraction V2 metadata (`e164`, `national_number`, `number_type`, `region`, `carrier_hint`,
+    `is_masked`, `source_raw`, `line_status`, `carrier_disclaimer`).
+    Note: Carrier metadata reflects original allocation and cannot prove current ownership or active status.
     """
-    if raw is None:
+    res = validate_phone(raw, default_region=default_region)
+    if not res["ok"] or not res["normalized"]:
         return None
-    s = str(raw).strip()
-    if not s:
-        return None
-
-    # Check for alphanumeric SMS headers
-    clean_alpha = re.sub(r"[^A-Za-z0-9]", "", s)
-    if any(c.isalpha() for c in clean_alpha) and len(clean_alpha) <= 12:
-        return {
-            "number": clean_alpha.upper(),
-            "valid_mobile": False,
-            "kind": "sms_header"
-        }
-
-    # Digits only
-    digits = re.sub(r"\D", "", s)
-    if not digits:
-        return None
-
-    # Strip Indian country code or trunk 0
-    if len(digits) == 12 and digits.startswith("91"):
-        digits = digits[2:]
-    elif len(digits) == 11 and digits.startswith("0"):
-        digits = digits[1:]
-
-    is_valid_mobile = (len(digits) == 10 and digits[0] in "6789")
-
+    meta = res["meta"]
     return {
-        "number": digits,
-        "valid_mobile": is_valid_mobile,
-        "kind": "mobile" if is_valid_mobile else "other"
+        "number": res["normalized"],
+        "valid_mobile": meta.get("valid_mobile", False),
+        "kind": meta.get("kind", "other"),
+        "e164": meta.get("e164"),
+        "national_number": meta.get("national_number"),
+        "format_valid": meta.get("format_valid", False),
+        "number_type": meta.get("number_type", "UNKNOWN"),
+        "region": meta.get("region"),
+        "carrier_hint": meta.get("carrier_hint"),
+        "location_hint": meta.get("location_hint"),
+        "is_masked": meta.get("is_masked", False),
+        "line_status": meta.get("line_status", "unverified"),
+        "source_raw": meta.get("source_raw"),
+        "carrier_disclaimer": meta.get("carrier_disclaimer"),
+        "reason_code": res["reason_code"],
     }
+
 
 def normalize_account(raw: Any) -> Optional[str]:
     """
-    Normalizes bank account identifier.
-    Trims, converts to uppercase, removes spaces and hyphens.
+    Normalizes bank account identifier via `validators.validate_bank_account` and `to_ascii_digits`.
+    Trims, converts Unicode digits to ASCII, converts to uppercase, removes spaces and hyphens.
     """
     if raw is None:
         return None
-    s = str(raw).strip()
+    res = validate_bank_account(raw)
+    if res["normalized"]:
+        return res["normalized"]
+    s = to_ascii_digits(raw).strip()
     if not s:
         return None
     cleaned = re.sub(r"[\s\-]", "", s).upper()
     return cleaned if cleaned else None
 
-def normalize_amount(raw: Any) -> Optional[int]:
+
+def normalize_amount(raw: Any, dr_cr_indicator: Optional[str] = None) -> Optional[int]:
     """
-    Parses currency amounts into integer PAISE using Decimal (NEVER float).
+    Parses currency amounts into integer PAISE using Decimal via `validators.validate_amount` (NEVER float).
     1 Rupee = 100 Paise.
-    Handles Indian formatted numbers ('5,00,000.00'), units ('38.5 lakh', '1.8 crore'),
-    accounting negatives ('(1,200)'), currency symbols (Rs., INR, ₹, /-).
+    Handles Devanagari digits, Indian formatted numbers ('5,00,000.00'), units ('38.5 lakh', '1.8 crore'),
+    accounting negatives ('(1,200)'), Cr/Dr indicators, and currency symbols (Rs., INR, ₹, /-).
     """
-    if raw is None:
+    res = validate_amount(raw, dr_cr_indicator=dr_cr_indicator)
+    if not res["ok"]:
         return None
-    s = str(raw).strip()
-    if not s or s.lower() in ["nan", "null", "none", "-"]:
-        return None
+    return res["normalized"]
 
-    # Check negative in accounting format (1,200)
-    is_negative = False
-    if s.startswith("(") and s.endswith(")"):
-        is_negative = True
-        s = s[1:-1].strip()
-
-    s_lower = s.lower()
-
-    # Detect Indian financial multiplier units
-    multiplier = Decimal(1)
-    if "crore" in s_lower or " cr" in s_lower:
-        multiplier = Decimal(10000000)
-    elif "lakh" in s_lower or "lac" in s_lower:
-        multiplier = Decimal(100000)
-
-    # Check accounting Dr / Cr indicator if not a crore multiplier
-    if multiplier == Decimal(1) and s_lower.endswith("dr"):
-        is_negative = True
-
-    # Strip currency words, symbols, and trailing slashes
-    s_cleaned = re.sub(r"[₹$€£\s]|rs\.?|inr|cash|rupees|lakh|lac|crore|cr|dr|\/-|\/", "", s, flags=re.IGNORECASE)
-    # Remove commas
-    s_cleaned = s_cleaned.replace(",", "")
-
-    # Extract first valid numeric float/int from the cleaned string
-    num_match = re.search(r"[-+]?\d*\.?\d+", s_cleaned)
-    if not num_match:
-        return None
-
-    try:
-        d = Decimal(num_match.group(0)) * multiplier
-        if is_negative:
-            d = -abs(d)
-        # Convert to paise
-        paise = int((d * Decimal(100)).quantize(Decimal("1")))
-        return paise
-    except (InvalidOperation, ValueError):
-        return None
 
 def normalize_duration(raw: Any) -> int:
     """
-    Normalizes call duration into integer seconds.
-    Supports integer seconds, 'mm:ss', or 'hh:mm:ss'.
+    Normalizes call duration into integer seconds using Decimal (never float).
+    Supports Devanagari/Indic digits, integer seconds, 'mm:ss', or 'hh:mm:ss'.
     """
     if raw is None:
         return 0
-    s = str(raw).strip()
+    s = to_ascii_digits(raw).strip()
     if not s:
         return 0
 
@@ -138,84 +108,42 @@ def normalize_duration(raw: Any) -> int:
             return 0
 
     try:
-        return int(float(s))
-    except ValueError:
+        return int(Decimal(s))
+    except (InvalidOperation, ValueError):
         return 0
 
-def normalize_datetime(raw_date: Any, raw_time: Any = None, dayfirst: bool = True) -> Tuple[str, str, str]:
+
+def normalize_datetime(
+    raw_date: Any,
+    raw_time: Any = None,
+    dayfirst: Optional[bool] = None,
+    default_tz: Optional[str] = None,
+) -> Tuple[str, str, str]:
     """
-    Parses date and time into: (YYYY-MM-DD, HH:MM:SS, ISO-8601).
-    Handles dd/mm/yyyy, yyyy-mm-dd, Excel timestamps, combined strings.
+    Parses date and time via `validators.parse_forensic_datetime` into:
+      (local_date 'YYYY-MM-DD', local_time 'HH:MM:SS', utc_iso 'YYYY-MM-DDTHH:MM:SSZ').
+    Attaches configured display timezone (default Asia/Kolkata) to naive timestamps and converts
+    to UTC ISO-8601 for storage. Returns ('', '', '') if unparsable (never invents a fake date).
     """
-    dt_obj = None
+    res = parse_forensic_datetime(raw_date, raw_time=raw_time, dayfirst=dayfirst, default_tz=default_tz)
+    if not res["ok"]:
+        return "", "", ""
+    meta = res["meta"]
+    return meta["local_date"], meta["local_time"], meta["utc_iso"]
 
-    # Already datetime
-    if isinstance(raw_date, datetime):
-        dt_obj = raw_date
-    elif isinstance(raw_date, date):
-        dt_obj = datetime.combine(raw_date, time(0, 0, 0))
 
-    if dt_obj is None and raw_date is not None:
-        s = str(raw_date).strip()
-        if s:
-            # First try fast common Indian & ISO formats
-            for fmt in [
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M:%S",
-                "%Y-%m-%d",
-                "%d/%m/%Y %H:%M:%S",
-                "%d/%m/%Y %H:%M",
-                "%d/%m/%Y",
-                "%d-%m-%Y %H:%M:%S",
-                "%d-%m-%Y",
-                "%Y/%m/%d",
-                "%d-%b-%Y",
-                "%d-%b-%Y %H:%M:%S",
-                "%d-%b-%y",
-                "%d/%m/%y",
-                "%d-%m-%y"
-            ]:
-                try:
-                    dt_obj = datetime.strptime(s, fmt)
-                    break
-                except ValueError:
-                    continue
+def normalize_datetime_detailed(
+    raw_date: Any,
+    raw_time: Any = None,
+    dayfirst: Optional[bool] = None,
+    default_tz: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Returns full structured datetime parse result including `tz_source` ('assumed_local' vs 'explicit'),
+    `utc_iso`, `local_date`, `local_time`, `local_iso`, and `dayfirst_used`.
+    """
+    return parse_forensic_datetime(raw_date, raw_time=raw_time, dayfirst=dayfirst, default_tz=default_tz)
 
-            # Fallback to dateutil universal parser
-            if dt_obj is None:
-                try:
-                    from dateutil import parser as dt_parser
-                    dt_obj = dt_parser.parse(s, dayfirst=dayfirst)
-                except Exception:
-                    pass
-
-    # Fallback to default if unparsable
-    if dt_obj is None:
-        dt_obj = datetime(2026, 1, 1, 0, 0, 0)
-
-    # Attach separate time if provided
-    if raw_time is not None and not (isinstance(raw_date, datetime) and (dt_obj.hour != 0 or dt_obj.minute != 0)):
-        ts = str(raw_time).strip()
-        if ts:
-            for t_fmt in ["%H:%M:%S", "%H:%M", "%I:%M:%S %p", "%I:%M %p"]:
-                try:
-                    t_val = datetime.strptime(ts, t_fmt).time()
-                    dt_obj = datetime.combine(dt_obj.date(), t_val)
-                    break
-                except ValueError:
-                    continue
-            else:
-                try:
-                    from dateutil import parser as dt_parser
-                    t_parsed = dt_parser.parse(ts).time()
-                    dt_obj = datetime.combine(dt_obj.date(), t_parsed)
-                except Exception:
-                    pass
-
-    d_str = dt_obj.strftime("%Y-%m-%d")
-    t_str = dt_obj.strftime("%H:%M:%S")
-    iso_str = f"{d_str}T{t_str}Z"
-    return d_str, t_str, iso_str
 
 def normalize_name(raw: Any) -> Tuple[str, str]:
     """
@@ -225,38 +153,67 @@ def normalize_name(raw: Any) -> Tuple[str, str]:
     if raw is None:
         return "", ""
     orig = str(raw).strip()
-    # Strip honorifics
     canon = TITLE_PREFIXES.sub("", orig)
     canon = re.sub(r"[^\w\s]", "", canon)
     canon = re.sub(r"\s+", " ", canon).strip().lower()
     return orig, canon
 
+
 def normalize_vehicle(raw: Any) -> Optional[str]:
-    """Normalizes Indian vehicle registration (DL01AB1234)."""
+    """Normalizes Indian vehicle registration (DL01AB1234) via `validators.validate_vehicle`."""
     if raw is None:
         return None
-    s = str(raw).strip()
-    if not s:
-        return None
-    cleaned = re.sub(r"[\s\-]", "", s).upper()
-    return cleaned if len(cleaned) >= 6 else None
+    res = validate_vehicle(raw)
+    return res["normalized"]
+
 
 def normalize_email(raw: Any) -> Optional[str]:
     """Normalizes email address."""
     if raw is None:
         return None
-    s = str(raw).strip().lower()
-    if "@" in s and "." in s:
+    s = to_ascii_digits(raw).strip().lower()
+    if "@" in s and "." in s.split("@")[-1]:
         return s
     return None
 
+
 def normalize_ip(raw: Any) -> Tuple[Optional[str], bool]:
-    """Validates IPv4 or IPv6 address."""
+    """Validates IPv4 or IPv6 address (converts Indic digits first)."""
     if raw is None:
         return None, False
-    s = str(raw).strip()
+    s = to_ascii_digits(raw).strip()
     try:
-        ipaddress.ip_address(s)
-        return s, True
+        ip_obj = ipaddress.ip_address(s)
+        return str(ip_obj), True
     except ValueError:
         return s, False
+
+
+__all__ = [
+    "normalize_phone",
+    "normalize_account",
+    "normalize_amount",
+    "normalize_duration",
+    "normalize_datetime",
+    "normalize_datetime_detailed",
+    "normalize_name",
+    "normalize_vehicle",
+    "normalize_email",
+    "normalize_ip",
+    "to_ascii_digits",
+    "validate_phone",
+    "validate_bank_account",
+    "validate_amount",
+    "validate_vehicle",
+    "validate_aadhaar",
+    "validate_pan",
+    "validate_imei",
+    "validate_imsi",
+    "validate_ifsc",
+    "validate_upi_vpa",
+    "infer_column_dayfirst",
+    "parse_forensic_datetime",
+    "utc_to_display_tz",
+    "is_curfew_hour",
+    "classify_numeric_identifier",
+]

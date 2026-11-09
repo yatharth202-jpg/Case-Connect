@@ -11,7 +11,8 @@ from backend.app.db.sql import (
 from backend.app.services.ingestion.readers import read_tabular_file
 from backend.app.services.ingestion.normalize import (
     normalize_phone, normalize_account, normalize_amount,
-    normalize_datetime, normalize_duration, normalize_name,
+    normalize_datetime, normalize_datetime_detailed, infer_column_dayfirst,
+    normalize_duration, normalize_name,
     normalize_vehicle, normalize_email, normalize_ip
 )
 from backend.app.services.ingestion.statement import parse_statement_narration
@@ -67,6 +68,17 @@ def stage_evidence_file(
     total_volume_paise = 0
     dates_seen = []
 
+    # Per-column dayfirst inference across all rows in the file
+    date_raw_headers = canon_to_raw.get("datetime", []) + canon_to_raw.get("date", [])
+    column_date_samples = []
+    for r_row in records:
+        for dh in date_raw_headers:
+            dv = r_row.get(dh)
+            if dv is not None and str(dv).strip():
+                column_date_samples.append(dv)
+                break
+    inferred_dayfirst, _ = infer_column_dayfirst(column_date_samples)
+
     for idx, raw_row in enumerate(records, 1):
         def get_val(canon_name):
             headers_list = canon_to_raw.get(canon_name, [])
@@ -94,8 +106,15 @@ def stage_evidence_file(
 
             raw_d = get_val("datetime") or get_val("date")
             raw_t = get_val("time")
-            d_str, t_str, iso_str = normalize_datetime(raw_d, raw_t)
-            dates_seen.append(d_str)
+            dt_res = normalize_datetime_detailed(raw_d, raw_t, dayfirst=inferred_dayfirst)
+            if dt_res["ok"]:
+                d_str = dt_res["meta"]["local_date"]
+                t_str = dt_res["meta"]["local_time"]
+                iso_str = dt_res["meta"]["utc_iso"]
+                tz_src = dt_res["meta"]["tz_source"]
+                dates_seen.append(d_str)
+            else:
+                d_str, t_str, iso_str, tz_src = "", "", "", "assumed_local"
 
             dur = normalize_duration(get_val("duration"))
             c_type = str(get_val("call_type") or "voice").lower()
@@ -123,11 +142,13 @@ def stage_evidence_file(
                 call_date=d_str,
                 call_time=t_str,
                 datetime_iso=iso_str,
+                tz_source=tz_src,
                 duration_seconds=dur,
                 call_type=c_type,
                 imei=str(get_val("imei") or "") or None,
                 imsi=str(get_val("imsi") or "") or None,
                 cell_id=str(get_val("cell_id") or "") or None,
+                raw_json=json.dumps(raw_row, default=str),
                 fingerprint=fp
             )
             db.add(record)
@@ -157,8 +178,14 @@ def stage_evidence_file(
                 rows_rejected += 1
                 continue
 
-            d_str, t_str, iso_str = normalize_datetime(get_val("datetime") or get_val("date"), get_val("time"))
-            dates_seen.append(d_str)
+            dt_res = normalize_datetime_detailed(get_val("datetime") or get_val("date"), get_val("time"), dayfirst=inferred_dayfirst)
+            if dt_res["ok"]:
+                d_str = dt_res["meta"]["local_date"]
+                iso_str = dt_res["meta"]["utc_iso"]
+                tz_src = dt_res["meta"]["tz_source"]
+                dates_seen.append(d_str)
+            else:
+                d_str, iso_str, tz_src = "", "", "assumed_local"
 
             ref = str(get_val("reference") or get_val("txn_id") or "")
 
@@ -190,8 +217,10 @@ def stage_evidence_file(
                 to_name=to_orig or None,
                 amount_paise=abs(amt_paise),
                 date_iso=d_str,
+                tz_source=tz_src,
                 reference=ref or None,
                 direction="transfer",
+                raw_json=json.dumps(raw_row, default=str),
                 fingerprint=fp
             )
             db.add(txn)
@@ -228,8 +257,13 @@ def stage_evidence_file(
                 rows_rejected += 1
                 continue
 
-            d_str, t_str, iso_str = normalize_datetime(get_val("date"))
-            dates_seen.append(d_str)
+            dt_res = normalize_datetime_detailed(get_val("date"), dayfirst=inferred_dayfirst)
+            if dt_res["ok"]:
+                d_str = dt_res["meta"]["local_date"]
+                tz_src = dt_res["meta"]["tz_source"]
+                dates_seen.append(d_str)
+            else:
+                d_str, tz_src = "", "assumed_local"
 
             counterparty = (
                 parsed_nar.get("counterparty_account")
@@ -267,8 +301,10 @@ def stage_evidence_file(
                 to_name=parsed_nar.get("counterparty_name") if direction == "debit" else None,
                 amount_paise=amt_paise,
                 date_iso=d_str,
+                tz_source=tz_src,
                 reference=ref,
                 direction=direction,
+                raw_json=json.dumps(raw_row, default=str),
                 fingerprint=fp
             )
             db.add(txn)
@@ -329,21 +365,28 @@ def stage_evidence_file(
                     label="BankAccount",
                     canonical_id=acct_clean,
                     display_name=acct_clean,
-                    properties_json=json.dumps({"account": acct_clean}),
+                    properties_json=json.dumps({
+                        "account": acct_clean,
+                        "source_raw": str(raw_acct) if raw_acct is not None else None
+                    }),
                     source_file=ev.original_name,
                     source_ref=str(idx),
                     method="identity_table",
                     confidence=1.0
                 ))
 
-            veh_clean = normalize_vehicle(get_val("vehicle") or get_val("registration"))
+            raw_veh = get_val("vehicle") or get_val("registration")
+            veh_clean = normalize_vehicle(raw_veh)
             if veh_clean:
                 db.add(Entity(
                     case_id=ev.case_id,
                     label="Vehicle",
                     canonical_id=veh_clean,
                     display_name=veh_clean,
-                    properties_json=json.dumps({"registration": veh_clean}),
+                    properties_json=json.dumps({
+                        "registration": veh_clean,
+                        "source_raw": str(raw_veh) if raw_veh is not None else None
+                    }),
                     source_file=ev.original_name,
                     source_ref=str(idx),
                     method="identity_table",
@@ -366,8 +409,14 @@ def stage_evidence_file(
                 rows_rejected += 1
                 continue
 
-            d_str, t_str, iso_str = normalize_datetime(get_val("datetime") or get_val("date"))
-            dates_seen.append(d_str)
+            dt_res = normalize_datetime_detailed(get_val("datetime") or get_val("date"), dayfirst=inferred_dayfirst)
+            if dt_res["ok"]:
+                d_str = dt_res["meta"]["local_date"]
+                iso_str = dt_res["meta"]["utc_iso"]
+                tz_src = dt_res["meta"]["tz_source"]
+                dates_seen.append(d_str)
+            else:
+                d_str, iso_str, tz_src = "", "", "assumed_local"
 
             ip_ev = IPEvent(
                 case_id=ev.case_id,
@@ -375,7 +424,9 @@ def stage_evidence_file(
                 source_ref=str(idx),
                 identifier=identifier,
                 ip_address=ip_val,
-                datetime_iso=iso_str
+                datetime_iso=iso_str,
+                tz_source=tz_src,
+                raw_json=json.dumps(raw_row, default=str)
             )
             db.add(ip_ev)
             rows_ingested += 1

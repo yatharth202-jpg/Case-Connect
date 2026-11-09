@@ -112,11 +112,13 @@ class CallRecord(Base):
     call_date = Column(String, nullable=True)
     call_time = Column(String, nullable=True)
     datetime_iso = Column(String, index=True, nullable=True)
+    tz_source = Column(String, default="assumed_local", nullable=True)
     duration_seconds = Column(Integer, default=0, nullable=False)
     call_type = Column(String, nullable=True)
     imei = Column(String, nullable=True)
     imsi = Column(String, nullable=True)
     cell_id = Column(String, nullable=True)
+    raw_json = Column(Text, default="{}", nullable=True)
     fingerprint = Column(String, index=True, nullable=False)
 
 # 10. Transactions (Bank Staging)
@@ -133,8 +135,10 @@ class Transaction(Base):
     to_name = Column(String, nullable=True)
     amount_paise = Column(Integer, index=True, nullable=False) # Stored in paise
     date_iso = Column(String, index=True, nullable=False)
+    tz_source = Column(String, default="assumed_local", nullable=True)
     reference = Column(String, nullable=True)
     direction = Column(String, nullable=True)
+    raw_json = Column(Text, default="{}", nullable=True)
     fingerprint = Column(String, index=True, nullable=False)
 
 # 11. IP Events
@@ -147,6 +151,8 @@ class IPEvent(Base):
     identifier = Column(String, index=True, nullable=False)
     ip_address = Column(String, index=True, nullable=False)
     datetime_iso = Column(String, index=True, nullable=False)
+    tz_source = Column(String, default="assumed_local", nullable=True)
+    raw_json = Column(Text, default="{}", nullable=True)
 
 # 12. Rejected Rows (Data Quality Audit)
 class RejectedRow(Base):

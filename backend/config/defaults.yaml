@@ -58,3 +58,160 @@ lead_advisor:
   levels:
     high_priority_min: 70
     medium_priority_min: 40
+
+# Extraction Module V2 — Normalization, Validators, OCR, NER & Safety Defaults
+extraction:
+  default_region: "IN"           # Default ISO-3166 region code for phonenumbers parsing
+  timezone_display: "Asia/Kolkata" # Default local timezone attached to naive timestamps & curfew display
+  curfew_hours:
+    start_hour: 0                # Start of nocturnal/curfew window in timezone_display (00:00)
+    end_hour: 5                  # End of nocturnal/curfew window in timezone_display (05:00)
+  date_parse:
+    dayfirst_inference: true     # Scan all column dates to infer DD/MM vs MM/DD per column
+    fallback_dayfirst: true      # Indian DD/MM/YYYY default when all components <= 12
+  amount:
+    allow_bracket_negative: true # Treat accounting (1,200.00) as negative paise
+    indian_grouping: true        # Support lakh/crore comma grouping and unit words
+  validators:
+    aadhaar_checksum: true       # Enforce 12-digit Verhoeff checksum and leading digit 2-9
+    imei_luhn: true              # Enforce 15-digit Luhn checksum on IMEIs
+    account_len_min: 9           # Minimum digits for standard bank account number
+    account_len_max: 18          # Maximum digits for standard bank account number
+  digit_scripts:                 # Unicode numeral scripts converted to ASCII 0-9 before parsing
+    - "devanagari"
+    - "bengali"
+    - "gujarati"
+    - "gurmukhi"
+    - "kannada"
+    - "malayalam"
+    - "odia"
+    - "tamil"
+    - "telugu"
+    - "arabic_indic"
+  upload:
+    max_file_mb: 200
+    max_doc_mb: 20
+    max_image_mb: 30
+    allowed_types:
+      - ".csv"
+      - ".xlsx"
+      - ".json"
+      - ".jsonl"
+      - ".pdf"
+      - ".docx"
+      - ".txt"
+      - ".png"
+      - ".jpg"
+      - ".jpeg"
+      - ".webp"
+      - ".tiff"
+      - ".tif"
+      - ".zip"
+    zip:
+      max_files: 50
+      max_uncompressed_mb: 500
+      max_ratio: 100.0
+      max_depth: 2
+  ingest:
+    chunk_rows: 2000
+    max_rows: 500000
+  pdf:
+    text_layer_min_chars: 40
+    render_dpi: 250
+  image_quality:
+    min_blur_score: 45.0
+    min_dpi: 120
+    max_skew_deg: 25.0
+    min_contrast: 20.0
+  ocr:
+    provider: "tesseract"
+    languages:
+      - "eng"
+      - "hin"
+    handwritten_conf_cap: 0.65
+    review_below_conf: 0.75
+    tesseract_cmd_env: "TESSERACT_CMD"
+  vision_provider:
+    enabled: false               # OFF by default (air-gap safe)
+    require_case_consent: true   # Requires explicit per-case officer consent + audit_log
+  ner:
+    model: "en_core_web_sm"
+    min_conf: 0.65
+  media:
+    enabled: false
+    whisper_model: "base"
+    whisper_compute: "int8"
+    language: "auto"
+    frame_interval_sec: 2.0
+    max_duration_min: 60
+  masking:
+    fields:
+      - "aadhaar"
+      - "account"
+      - "pan"
+      - "phone"
+    reveal_roles:
+      - "admin"
+      - "investigator"
+  anomalies:
+    pattern_min_run: 5
+    night_ratio_threshold: 0.50
+    unique_counterparty_threshold: 15
+    short_call_seconds: 15
+    min_calls_for_ratio: 5
+    short_window_hours: 24
+  completeness:
+    required_fields:
+      call:
+        - "caller"
+        - "receiver"
+        - "datetime_iso"
+        - "duration_seconds"
+      transaction:
+        - "from_account"
+        - "to_account"
+        - "amount_paise"
+        - "date_iso"
+      sdr:
+        - "phone"
+        - "name"
+        - "address"
+      fir:
+        - "fir_no"
+        - "police_station"
+        - "incident_date"
+        - "complainant"
+        - "sections"
+    gap_days_threshold: 3
+  banned_terms:
+    - "criminal"
+    - "suspect"
+    - "guilty"
+    - "mastermind"
+    - "fake"
+    - "fraud number"
+
+# Unified Record Store & Deterministic Merge Engine Defaults
+merge:
+  natural_keys:
+    call:
+      - ["caller", "receiver", "datetime_iso", "duration_seconds", "call_type"]
+      - ["caller", "receiver", "datetime_iso", "duration_seconds"]
+    transaction:
+      - ["txn_id", "from_account", "to_account", "amount_paise"]
+      - ["from_account", "to_account", "date_iso", "amount_paise", "direction", "reference"]
+    ip_event:
+      - ["phone", "ip_address", "timestamp_iso"]
+  source_trust_order:
+    - "officer"
+    - "structured_file"
+    - "text_layer_pdf"
+    - "ocr_printed"
+    - "ocr_handwritten"
+    - "asr_audio"
+    - "vision_cloud"
+  conflict_confidence_margin: 0.10
+  min_confidence_auto_accept: 0.75
+  needs_review_below: 0.70
+  confidence_boost_on_confirm: 0.05
+

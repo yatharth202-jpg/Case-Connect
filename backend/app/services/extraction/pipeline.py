@@ -1,10 +1,12 @@
 import json
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
+from backend.app.config import get_extraction_config
 from backend.app.db.sql import ExtractedEntity, EvidenceFile
 from backend.app.services.extraction.text import read_document_text
 from backend.app.services.extraction.rules import extract_rule_entities
 from backend.app.services.extraction.ner import extract_ner_entities, extract_cooccurrence_relationships
+from backend.app.services.ingestion.validators import to_ascii_digits
 
 def run_document_extraction(
     db: Session,
@@ -41,26 +43,32 @@ def run_document_extraction(
 
     by_type_counts: Dict[str, int] = {}
 
+    ext_cfg = get_extraction_config()
+    cloud_ai_enabled = bool(ext_cfg.get("vision_provider", {}).get("enabled", False))
+
     for page in pages:
         p_name = page["page_or_paragraph"]
         p_text = page["text"]
         p_offset = page["char_offset"]
 
-        # 1. Deterministic Rule Extraction
+        # 1. Deterministic Rule Extraction (delegates to shared validators & to_ascii_digits)
         rule_items = extract_rule_entities(p_text, p_name, base_char_offset=p_offset)
         existing_spans = [(item["char_span_start"], item["char_span_end"]) for item in rule_items]
 
-        # 2. NER & Heuristic Person Extraction
-        ner_items = extract_ner_entities(p_text, p_name, base_char_offset=p_offset, existing_spans=existing_spans)
+        # 2. NER & Heuristic Person Extraction (on ASCII-digit normalized text to preserve spans)
+        ner_items = extract_ner_entities(
+            to_ascii_digits(p_text), p_name, base_char_offset=p_offset, existing_spans=existing_spans
+        )
 
-        # 2b. Gemini LLM Extraction (If GEMINI_API_KEY is configured)
+        # 2b. Cloud AI Extraction (Strictly OFF by default for air-gap safety unless enabled in config)
         gemini_items = []
-        try:
-            from backend.app.services.ai.gemini_service import is_gemini_configured, extract_entities_with_gemini
-            if is_gemini_configured():
-                gemini_items = extract_entities_with_gemini(p_text, p_name)
-        except Exception:
-            gemini_items = []
+        if cloud_ai_enabled:
+            try:
+                from backend.app.services.ai.gemini_service import is_gemini_configured, extract_entities_with_gemini
+                if is_gemini_configured():
+                    gemini_items = extract_entities_with_gemini(p_text, p_name)
+            except Exception:
+                gemini_items = []
 
         page_entities = rule_items + ner_items + gemini_items
 

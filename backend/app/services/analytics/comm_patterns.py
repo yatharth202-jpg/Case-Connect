@@ -7,19 +7,67 @@ import networkx as nx
 from networkx.algorithms.community import louvain_communities
 
 from backend.app.db.sql import CallRecord
+from backend.app.services.ingestion.validators import utc_to_display_tz, is_curfew_hour
 
-def parse_date_str(d_str: Optional[str]) -> Optional[datetime]:
+
+def parse_date_str(d_str: Optional[str], display_tz: Optional[str] = None) -> Optional[datetime]:
+    """
+    Parses a timestamp or date string and converts any UTC ('Z' or '+00:00') value into
+    the configured display timezone (default 'Asia/Kolkata'), returning a naive wall-clock
+    datetime in that display timezone so daily grouping, heatmaps, and curfew (00:00-05:00 IST)
+    checks operate on accurate local Indian Standard Time.
+    """
     if not d_str:
         return None
-    for fmt in ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y/%m/%d", "%d/%m/%Y"]:
-        try:
-            return datetime.strptime(str(d_str)[:10], fmt)
-        except Exception:
-            pass
-    try:
-        return datetime.fromisoformat(str(d_str).replace("Z", "+00:00")).replace(tzinfo=None)
-    except Exception:
-        return None
+    local_dt = utc_to_display_tz(d_str, display_tz=display_tz)
+    if local_dt is not None:
+        return local_dt.replace(tzinfo=None)
+    return None
+
+
+def is_curfew_call(
+    call_or_iso: Any,
+    display_tz: Optional[str] = None,
+    start_hour: Optional[int] = None,
+    end_hour: Optional[int] = None,
+) -> bool:
+    """
+    Evaluates whether a CallRecord or ISO timestamp occurred during the curfew/nocturnal
+    window (default 00:00 to 05:00 in Asia/Kolkata) using `utc_to_display_tz`.
+    """
+    if isinstance(call_or_iso, CallRecord):
+        ts = call_or_iso.datetime_iso
+        if not ts and call_or_iso.call_date:
+            ts = f"{call_or_iso.call_date}T{call_or_iso.call_time or '00:00:00'}"
+        return is_curfew_hour(ts, display_tz=display_tz, start_hour=start_hour, end_hour=end_hour)
+    return is_curfew_hour(call_or_iso, display_tz=display_tz, start_hour=start_hour, end_hour=end_hour)
+
+
+def compute_curfew_call_summary(
+    call_records: List[CallRecord],
+    display_tz: Optional[str] = None,
+    start_hour: Optional[int] = None,
+    end_hour: Optional[int] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Computes per-phone nocturnal/curfew call counts and ratios in the configured display timezone (IST).
+    """
+    stats: Dict[str, Dict[str, Any]] = {}
+    for c in call_records or []:
+        in_curfew = is_curfew_call(c, display_tz=display_tz, start_hour=start_hour, end_hour=end_hour)
+        for ph in (c.caller, c.receiver):
+            if not ph:
+                continue
+            entry = stats.setdefault(ph, {"total_calls": 0, "curfew_calls": 0, "curfew_call_ids": []})
+            entry["total_calls"] += 1
+            if in_curfew:
+                entry["curfew_calls"] += 1
+                if c.id:
+                    entry["curfew_call_ids"].append(c.id)
+    for ph, entry in stats.items():
+        tot = entry["total_calls"]
+        entry["curfew_ratio"] = round(entry["curfew_calls"] / tot, 4) if tot > 0 else 0.0
+    return stats
 
 def detect_communication_patterns(
     call_records: List[CallRecord],
