@@ -9,6 +9,8 @@ env/
 app.db
 app.db-journal
 uploads/
+backups/
+backend/tests/fixtures_real/
 
 # Data privacy rules
 data/private/
