@@ -747,6 +747,218 @@ class SyntheticDataGenerator:
             with open(out_dir / f"{fir['fir_id']}.txt", "w", encoding="utf-8") as f:
                 f.write(fir["text"])
 
+    def write_phase2_messy_suite(self, data: dict, out_dir: Path) -> dict:
+        """
+        Generates the complete Phase 2 torture-test suite of messy real-world files:
+        1. statement_preamble_balances.csv (preamble, opening balance, repeated header, closing balance, grand total)
+        2. bank_multiline_header.csv (2-line column headers)
+        3. cdr_cp1252_semicolon.csv (CP1252 encoded with semicolon delimiter)
+        4. multi_sheet_merged.xlsx (merged parent header cells, hidden junk row, 2 typed sheets: CDR + Identity Table)
+        5. statement_multipage.pdf (multi-page PDF statement with account owner, wrapped narrations, repeated page headers)
+        6. statement_ownerless.pdf (PDF statement missing account owner header -> triggers needs_owner_confirmation)
+        7. mixed_cdr_and_bank.csv (single CSV containing two distinct typed sections: CDR + Bank Transactions)
+        8. cdr_dd_mm.csv and cdr_mm_dd.csv (DD/MM/YYYY vs MM/DD/YYYY column-level inference)
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+        calls = data["calls"][:12]
+        txns = data["transactions"][:10]
+        sdr_rows = data["sdr"][:8] if data.get("sdr") else data["people"][:8]
+
+        owner_acct = txns[0]["from_account"] if txns else self.generate_account()
+        opening_paise = 25000000  # Rs 2,50,000.00
+        running_paise = opening_paise
+        stmt_rows = []
+        for idx, t in enumerate(txns[:6]):
+            amt_paise = t["amount_paise"]
+            is_debit = (idx % 2 == 0)
+            running_paise = running_paise - amt_paise if is_debit else running_paise + amt_paise
+            stmt_rows.append({
+                "date": t["date"],
+                "narration": f"NEFT/{t['txn_id']}/{t['to_name']}/{t['to_account']}",
+                "debit": f"{amt_paise / 100.0:,.2f}" if is_debit else "",
+                "credit": "" if is_debit else f"{amt_paise / 100.0:,.2f}",
+                "balance": f"{running_paise / 100.0:,.2f}",
+                "amt_paise": amt_paise,
+            })
+        closing_paise = running_paise
+
+        # 1. statement_preamble_balances.csv
+        stmt_csv_path = out_dir / "statement_preamble_balances.csv"
+        with open(stmt_csv_path, "w", encoding="utf-8", newline="") as f:
+            f.write("STATEFORENSIC BANK OF INDIA - ACCOUNT PASSBOOK\n")
+            f.write(f"Account No: {owner_acct}\n")
+            f.write("Account Holder: Synthetic Holder Alpha\n")
+            f.write("IFSC: SBIN0001234\n")
+            f.write("Date,Narration,Withdrawal/Debit,Deposit/Credit,Balance\n")
+            f.write(f"Opening Balance,,,,\"{opening_paise / 100.0:,.2f}\"\n")
+            for idx, sr in enumerate(stmt_rows):
+                if idx == 3:
+                    # Repeated header mid-file (simulating page break)
+                    f.write("Date,Narration,Withdrawal/Debit,Deposit/Credit,Balance\n")
+                f.write(f"{sr['date']},\"{sr['narration']}\",\"{sr['debit']}\",\"{sr['credit']}\",\"{sr['balance']}\"\n")
+            f.write(f"Closing Balance,,,,\"{closing_paise / 100.0:,.2f}\"\n")
+            f.write("GRAND TOTAL,,\"1,00,000.00\",\"1,00,000.00\",\n")
+
+        # 2. bank_multiline_header.csv
+        multiline_csv_path = out_dir / "bank_multiline_header.csv"
+        with open(multiline_csv_path, "w", encoding="utf-8", newline="") as f:
+            f.write("Transaction,Remitter,Beneficiary,Transaction,Transaction\n")
+            f.write("Date,Remitter A/c,Beneficiary A/c,Amount,Reference\n")
+            for t in txns[:5]:
+                f.write(f"{t['date']},{t['from_account']},{t['to_account']},{t['amount_paise'] / 100.0:.2f},{t['reference']}\n")
+
+        # 3. cdr_cp1252_semicolon.csv
+        cp1252_path = out_dir / "cdr_cp1252_semicolon.csv"
+        with open(cp1252_path, "w", encoding="cp1252", errors="replace", newline="") as f:
+            f.write("TELECOM GATEWAY EXPORT — CIRCLE WEST\n")
+            f.write("A-Party;B-Party;Call Date;Call Time;Dur(sec);Call Type\n")
+            for c in calls[:6]:
+                f.write(f"{c['caller']};{c['receiver']};{c['date']};{c['time']};{c['duration_seconds']};{c['call_type']}\n")
+
+        # 4. multi_sheet_merged.xlsx (Merged parent header + hidden junk row + 2 typed sheets)
+        xlsx_path = out_dir / "multi_sheet_merged.xlsx"
+        wb = openpyxl.Workbook()
+        ws1 = wb.active
+        ws1.title = "CDR_Log"
+        ws1.append(["TELECOM EVIDENCE DOCKET"])
+        # Merged 2-row header on rows 2 and 3
+        ws1.append(["Party Details", "Party Details", "Timing", "Timing", "Metrics", "Metrics"])
+        ws1.append(["A-Party", "B-Party", "Call Date", "Call Time", "Dur(sec)", "Call Type"])
+        ws1.merge_cells("A2:B2")
+        ws1.merge_cells("C2:D2")
+        ws1.merge_cells("E2:F2")
+        # Hidden junk row at row 4
+        ws1.append(["9999999999", "8888888888", "2026-01-01", "00:00:00", "9999", "JUNK_HIDDEN"])
+        ws1.row_dimensions[4].hidden = True
+        for c in calls[:5]:
+            ws1.append([c["caller"], c["receiver"], c["date"], c["time"], c["duration_seconds"], c["call_type"]])
+
+        ws2 = wb.create_sheet(title="SDR_Identity")
+        ws2.append(["Subscriber Name", "Registered Mobile", "Bank Account", "Address"])
+        for p in sdr_rows[:4]:
+            ws2.append([
+                p.get("name", "Holder"),
+                p.get("phone", self.generate_phone()),
+                p.get("account", self.generate_account()),
+                p.get("address", "Sector 12"),
+            ])
+        wb.save(xlsx_path)
+
+        # 5 & 6. Multi-page wrapped PDF statements (with and without owner account)
+        pdf_with_owner = out_dir / "statement_multipage.pdf"
+        pdf_ownerless = out_dir / "statement_ownerless.pdf"
+        self._write_synthetic_pdf_statement(
+            pdf_with_owner,
+            stmt_rows=stmt_rows,
+            owner_account=owner_acct,
+            opening_paise=opening_paise,
+            closing_paise=closing_paise,
+        )
+        self._write_synthetic_pdf_statement(
+            pdf_ownerless,
+            stmt_rows=stmt_rows[:3],
+            owner_account=None,
+            opening_paise=opening_paise,
+            closing_paise=closing_paise,
+        )
+
+        # 7. mixed_cdr_and_bank.csv
+        mixed_path = out_dir / "mixed_cdr_and_bank.csv"
+        with open(mixed_path, "w", encoding="utf-8", newline="") as f:
+            f.write("A-Party,B-Party,Call Date,Call Time,Dur(sec),Call Type\n")
+            for c in calls[:4]:
+                f.write(f"{c['caller']},{c['receiver']},{c['date']},{c['time']},{c['duration_seconds']},{c['call_type']}\n")
+            f.write("Txn Date,Remitter A/c,Beneficiary A/c,Amount (INR),Reference\n")
+            for t in txns[:4]:
+                f.write(f"{t['date']},{t['from_account']},{t['to_account']},{t['amount_paise'] / 100.0:.2f},{t['reference']}\n")
+
+        # 8. DD/MM vs MM/DD CSV files
+        dd_mm_path = out_dir / "cdr_dd_mm.csv"
+        mm_dd_path = out_dir / "cdr_mm_dd.csv"
+        with open(dd_mm_path, "w", encoding="utf-8", newline="") as f:
+            f.write("A-Party,B-Party,Call Date,Call Time,Dur(sec)\n")
+            f.write(f"{calls[0]['caller']},{calls[0]['receiver']},05/08/2026,10:00:00,45\n")
+            f.write(f"{calls[1]['caller']},{calls[1]['receiver']},21/08/2026,11:30:00,60\n")
+
+        with open(mm_dd_path, "w", encoding="utf-8", newline="") as f:
+            f.write("A-Party,B-Party,Call Date,Call Time,Dur(sec)\n")
+            f.write(f"{calls[0]['caller']},{calls[0]['receiver']},08/05/2026,10:00:00,45\n")
+            f.write(f"{calls[1]['caller']},{calls[1]['receiver']},08/21/2026,11:30:00,60\n")
+
+        manifest = {
+            "owner_account": owner_acct,
+            "opening_balance_paise": opening_paise,
+            "closing_balance_paise": closing_paise,
+            "statement_txn_count": len(stmt_rows),
+            "multiline_txn_count": min(5, len(txns)),
+            "cp1252_call_count": min(6, len(calls)),
+            "xlsx_cdr_count": min(5, len(calls)),
+            "xlsx_sdr_count": min(4, len(sdr_rows)),
+            "mixed_cdr_count": min(4, len(calls)),
+            "mixed_bank_count": min(4, len(txns)),
+        }
+        with open(out_dir / "phase2_manifest.json", "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+        return manifest
+
+    def _write_synthetic_pdf_statement(
+        self,
+        pdf_path: Path,
+        stmt_rows: list,
+        owner_account: str | None,
+        opening_paise: int,
+        closing_paise: int,
+    ):
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+
+        doc = SimpleDocTemplate(str(pdf_path), pagesize=A4)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph("NATIONAL FORENSIC BANK - STATEMENT OF ACCOUNT", styles["Heading2"]))
+        if owner_account:
+            elements.append(Paragraph(f"Account No: {owner_account}", styles["Normal"]))
+            elements.append(Paragraph("Account Holder: Synthetic Holder Alpha", styles["Normal"]))
+            elements.append(Paragraph("IFSC: SBIN0001234", styles["Normal"]))
+        elements.append(Paragraph(f"Opening Balance: {opening_paise / 100.0:,.2f}", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        header = ["Date", "Narration", "Debit", "Credit", "Balance"]
+        page1_data = [header]
+        half = max(1, len(stmt_rows) // 2)
+        for sr in stmt_rows[:half]:
+            parts = sr["narration"].split("/", 2)
+            first_line = "/".join(parts[:2])
+            wrapped_line = "/" + parts[2] if len(parts) > 2 else "REF-CONT"
+            page1_data.append([sr["date"], first_line, sr["debit"], sr["credit"], sr["balance"]])
+            # Wrapped narration continuation row (empty date, debit, credit, balance)
+            page1_data.append(["", wrapped_line, "", "", ""])
+
+        t1 = Table(page1_data, colWidths=[70, 190, 70, 70, 80])
+        t1.setStyle(TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ]))
+        elements.append(t1)
+
+        if len(stmt_rows) > half:
+            elements.append(PageBreak())
+            page2_data = [header]  # Repeated header on Page 2
+            for sr in stmt_rows[half:]:
+                page2_data.append([sr["date"], sr["narration"], sr["debit"], sr["credit"], sr["balance"]])
+            page2_data.append(["Closing Balance", "", "", "", f"{closing_paise / 100.0:,.2f}"])
+            t2 = Table(page2_data, colWidths=[70, 190, 70, 70, 80])
+            t2.setStyle(TableStyle([
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ]))
+            elements.append(t2)
+
+        doc.build(elements)
+
     def generate(self, scenario: str, format_type: str, size: str, out_dir: str):
         data = self.build_scenario_data(scenario, size)
         out_path = Path(out_dir)
@@ -759,6 +971,8 @@ class SyntheticDataGenerator:
             self.write_statement_format(data, out_path)
         elif format_type == "paysim":
             self.write_paysim_format(data, out_path)
+        elif format_type == "phase2_messy":
+            self.write_phase2_messy_suite(data, out_path)
 
         # Write ground_truth.json (ALWAYS created, test-only ground truth)
         with open(out_path / "ground_truth.json", "w", encoding="utf-8") as f:
@@ -771,7 +985,7 @@ def main():
     parser = argparse.ArgumentParser(description="Deterministic synthetic data generator for Case Connect AI")
     parser.add_argument("--scenario", default="ring", choices=["ring", "benign_heavy", "cdr_only", "bank_only", "chain", "hub_spoke", "two_rings", "sparse_tiny", "random_mix"])
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--format", default="clean", choices=["clean", "messy", "statement", "paysim"])
+    parser.add_argument("--format", default="clean", choices=["clean", "messy", "statement", "paysim", "phase2_messy"])
     parser.add_argument("--size", default="small", choices=["small", "medium", "large"])
     parser.add_argument("--out", default="data/synthetic/sample")
     args = parser.parse_args()
