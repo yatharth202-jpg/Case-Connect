@@ -348,6 +348,123 @@ Investigator-saved filter configurations and camera viewports for graph explorat
 | `view_config_json`| `TEXT` | NOT NULL | JSON dictionary of zoom, positions, and filters |
 | `created_at` | `DATETIME` | NOT NULL, Default UTC | View save timestamp |
 
+### Table 23: `extraction_records` (Extraction V2 Unified Store)
+Unified, append-only canonical record store across all evidence types with occurrence-indexed deduplication.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Unified extraction record ID |
+| `case_id` | `VARCHAR` | FK `cases.id`, Index, NOT NULL | Scoped case docket |
+| `evidence_id` | `VARCHAR` | Index, NOT NULL | Primary originating evidence file ID |
+| `record_type` | `VARCHAR` | Index, NOT NULL | `transaction`, `call`, `ip_event`, `entity`, `document_fact` |
+| `natural_key` | `VARCHAR` | Index, NOT NULL | Deterministic SHA-256 hash of configured natural key fields |
+| `occurrence_idx` | `INTEGER` | NOT NULL, Default `1` | Nth identical natural key within the same evidence file |
+| `data_json` | `TEXT` | NOT NULL, Default `'{}'` | Resolved golden known fields |
+| `extra_json` | `TEXT` | NOT NULL, Default `'{}'` | Resolved golden unknown/dynamic fields (never dropped) |
+| `raw_json` | `TEXT` | NOT NULL, Default `'{}'` | Original raw input values |
+| `source_ref` | `VARCHAR` | NULL | Row index or page/span locator |
+| `page_no` | `INTEGER` | NULL | Source page number (for PDFs/images) |
+| `bbox_json` | `TEXT` | NULL | Bounding box coordinates JSON |
+| `timestamp_sec` | `FLOAT` | NULL | Audio/video timestamp offset in seconds |
+| `method` | `VARCHAR` | NOT NULL, Default `'structured'` | Extraction method |
+| `source_kind` | `VARCHAR` | NOT NULL, Default `'structured_file'` | `officer`, `structured_file`, `text_layer_pdf`, `ocr_printed`, `ocr_handwritten`, `asr_audio`, `vision_cloud` |
+| `confidence` | `FLOAT` | NOT NULL, Default `1.0` | Effective record confidence |
+| `extractor_version` | `VARCHAR` | NOT NULL | Deterministic extractor + config hash version |
+| `status` | `VARCHAR` | Index, NOT NULL, Default `'active'` | `active`, `merged`, `retracted`, `rejected` |
+| `merged_into_id` | `VARCHAR` | Index, NULL | Target record ID if merged |
+| `staged_table` | `VARCHAR` | NULL | Linked staging table (`call_records`, `transactions`, `ip_events`, `entities`) |
+| `staged_id` | `VARCHAR` | Index, NULL | Primary key in linked staging table |
+| `first_seen_run_id` | `VARCHAR` | NULL | `ingest_runs.id` that created the record |
+| `last_seen_run_id` | `VARCHAR` | NULL | Most recent `ingest_runs.id` confirming/updating the record |
+| `created_at` | `DATETIME` | NOT NULL, Default UTC | Creation timestamp |
+
+### Table 24: `record_sources`
+Multi-file confirmation links tracking every evidence file that observed a merged record.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Record source link ID |
+| `record_id` | `VARCHAR` | FK `extraction_records.id`, Index | Unified extraction record ID |
+| `evidence_id` | `VARCHAR` | Index, NOT NULL | Confirming evidence file ID |
+| `source_ref` | `VARCHAR` | NULL | Row/page reference within `evidence_id` |
+| `seen_at` | `DATETIME` | NOT NULL, Default UTC | Observation timestamp |
+
+### Table 25: `field_claims`
+Append-only per-field evidence claims with provenance, trust rank, and validator status.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Claim ID |
+| `case_id` | `VARCHAR` | Index, NOT NULL | Scoped case docket |
+| `subject_type` | `VARCHAR` | Index, NOT NULL | `record` or `entity` |
+| `subject_id` | `VARCHAR` | Index, NOT NULL | Target `extraction_records.id` |
+| `field_name` | `VARCHAR` | Index, NOT NULL | Canonical or dynamic field name |
+| `value_norm` | `TEXT` | NULL | Normalized field value |
+| `value_raw` | `TEXT` | NULL | Raw field value as observed |
+| `evidence_id` | `VARCHAR` | Index, NOT NULL | Originating evidence file ID |
+| `source_ref` | `VARCHAR` | NULL | Row or span reference |
+| `source_kind` | `VARCHAR` | NOT NULL | Source trust tier |
+| `method` | `VARCHAR` | NOT NULL | Extraction method |
+| `confidence` | `FLOAT` | NOT NULL, Default `1.0` | Claim confidence |
+| `validator_ok` | `BOOLEAN` | NOT NULL, Default `True` | Whether the value passed format/checksum validation |
+| `status` | `VARCHAR` | Index, NOT NULL, Default `'active'` | `active` or `retracted` |
+| `observed_at` | `DATETIME` | NOT NULL, Default UTC | Observation timestamp |
+| `run_id` | `VARCHAR` | Index, NULL | Associated `ingest_runs.id` |
+
+### Table 26: `golden_fields`
+Selected winning claim per `(subject_type, subject_id, field_name)` with officer lock protection.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Golden field row ID |
+| `subject_type` | `VARCHAR` | Index, NOT NULL | `record` or `entity` |
+| `subject_id` | `VARCHAR` | Index, NOT NULL | Target subject ID |
+| `field_name` | `VARCHAR` | Index, NOT NULL | Field name |
+| `selected_claim_id` | `VARCHAR` | Index, NULL | Winning `field_claims.id` |
+| `selected_by` | `VARCHAR` | NOT NULL, Default `'auto'` | `auto` or `officer` |
+| `locked` | `BOOLEAN` | NOT NULL, Default `False` | True when locked by an explicit officer decision |
+| `reason_code` | `VARCHAR` | NULL | Deterministic selection reason code |
+| `updated_at` | `DATETIME` | NOT NULL, Default UTC | Last resolution timestamp |
+
+### Table 27: `merge_conflicts`
+Open and resolved field-level conflicts where competing claims tie on trust or fall within the confidence margin.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Conflict ID |
+| `case_id` | `VARCHAR` | Index, NOT NULL | Scoped case docket |
+| `subject_type` | `VARCHAR` | Index, NOT NULL | `record` or `entity` |
+| `subject_id` | `VARCHAR` | Index, NOT NULL | Target subject ID |
+| `field_name` | `VARCHAR` | Index, NOT NULL | Conflicting field name |
+| `claim_ids_json` | `TEXT` | NOT NULL, Default `'[]'` | JSON array of competing `field_claims.id` |
+| `status` | `VARCHAR` | Index, NOT NULL, Default `'open'` | `open`, `resolved`, `dismissed` |
+| `resolution_claim_id` | `VARCHAR` | NULL | Claim chosen on resolution |
+| `resolved_by` | `VARCHAR` | NULL | Officer user ID |
+| `resolved_at` | `DATETIME` | NULL | Resolution timestamp |
+| `reason_code` | `VARCHAR` | NULL | Conflict/resolution reason code |
+| `created_at` | `DATETIME` | NOT NULL, Default UTC | Creation timestamp |
+
+### Table 28: `ingest_runs`
+Changelog and audit ledger for every merge `preview`, `apply`, and `rollback` operation.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Run ID |
+| `case_id` | `VARCHAR` | Index, NOT NULL | Scoped case docket |
+| `evidence_id` | `VARCHAR` | Index, NOT NULL | Target evidence file ID |
+| `job_id` | `VARCHAR` | NULL | Associated background job ID |
+| `mode` | `VARCHAR` | NOT NULL | `preview`, `apply`, `rollback` |
+| `counts_json` | `TEXT` | NOT NULL, Default `'{}'` | JSON counts (`new`, `same`, `updated`, `new_fields`, `conflicts`, `rejected`) |
+| `status` | `VARCHAR` | NOT NULL, Default `'done'` | Run completion status |
+| `extractor_version` | `VARCHAR` | NOT NULL | Extractor + config hash version |
+| `started_at` | `DATETIME` | NOT NULL, Default UTC | Start timestamp |
+| `finished_at` | `DATETIME` | NULL | Completion timestamp |
+
+### Table 29: `schema_registry`
+Dynamic field discovery registry tracking extra/unknown columns encountered during ingestion.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Registry entry ID |
+| `record_type` | `VARCHAR` | Index, NOT NULL | Record type where field was observed |
+| `field_name` | `VARCHAR` | Index, NOT NULL | Dynamic field name |
+| `seen_count` | `INTEGER` | NOT NULL, Default `1` | Total occurrences across records |
+| `first_seen_at` | `DATETIME` | NOT NULL, Default UTC | First observation timestamp |
+| `promoted` | `BOOLEAN` | NOT NULL, Default `False` | Whether promoted to standard column view |
+
 ---
 
 ## 4. Disposable Neo4j Graph Model

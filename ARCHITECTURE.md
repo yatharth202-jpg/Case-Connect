@@ -202,6 +202,14 @@ c:\Users\Anshuman Singh\AI-Crime-Analyser-(v1.0)\
 * `hash = SHA256(prev_hash + ts + user_id + action + case_id + object_id + details_json)`.
 * Genesis block anchored at system initialization. Any tampering or retroactive record deletion invalidates the subsequent chain and is immediately flagged upon audit verification.
 
+### 6.4 Extraction V2 Unified Record Store & Staging Linkage (`is_active`)
+* All extracted records and field-level evidence claims are stored append-only in `extraction_records`, `record_sources`, `field_claims`, `golden_fields`, and `merge_conflicts`.
+* Each canonical `extraction_records` entry points to its corresponding row in the legacy staging tables (`call_records`, `transactions`, `ip_events`, `entities`) via `(staged_table, staged_id)`.
+* **Active Record Filtering Decision**: Rather than requiring expensive multi-table polymorphic joins on every graph/analytics query, each staging table carries an indexed `is_active` boolean column (`DEFAULT 1 NOT NULL`).
+  - When a record is active and its `golden_fields` are updated by higher-trust evidence or officer conflict resolution, the merge engine updates the staged row in-place.
+  - When an evidence file is rolled back and a record has no remaining active claims from other files, `extraction_records.status` becomes `'retracted'` and the linked staged row is marked `is_active = False` (soft-retracted, never physically deleted).
+  - `build_detail_graph` in `backend/app/services/graph/builder.py` filters all staged tables by `is_active == True`, ensuring retracted records immediately disappear from the rebuilt graph while keeping legacy staging queries fast and backward-compatible.
+
 ---
 
 ## 7. AI Architecture & Forensic Lead Scoring

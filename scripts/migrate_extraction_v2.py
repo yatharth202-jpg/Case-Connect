@@ -27,14 +27,23 @@ ADDITIVE_COLUMNS: Dict[str, List[Tuple[str, str]]] = {
     "call_records": [
         ("tz_source", "TEXT DEFAULT 'assumed_local'"),
         ("raw_json", "TEXT DEFAULT '{}'"),
+        ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
     ],
     "transactions": [
         ("tz_source", "TEXT DEFAULT 'assumed_local'"),
         ("raw_json", "TEXT DEFAULT '{}'"),
+        ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
     ],
     "ip_events": [
         ("tz_source", "TEXT DEFAULT 'assumed_local'"),
         ("raw_json", "TEXT DEFAULT '{}'"),
+        ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
+    ],
+    "entities": [
+        ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
+    ],
+    "entity_links": [
+        ("is_active", "BOOLEAN DEFAULT 1 NOT NULL"),
     ],
 }
 

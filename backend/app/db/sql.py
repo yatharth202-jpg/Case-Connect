@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, String, Integer, Float, Boolean,
-    DateTime, Text, ForeignKey, Index
+    DateTime, Text, ForeignKey, Index, UniqueConstraint
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from backend.app.config import settings
@@ -119,6 +119,7 @@ class CallRecord(Base):
     imsi = Column(String, nullable=True)
     cell_id = Column(String, nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
     fingerprint = Column(String, index=True, nullable=False)
 
 # 10. Transactions (Bank Staging)
@@ -139,6 +140,7 @@ class Transaction(Base):
     reference = Column(String, nullable=True)
     direction = Column(String, nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
     fingerprint = Column(String, index=True, nullable=False)
 
 # 11. IP Events
@@ -153,6 +155,7 @@ class IPEvent(Base):
     datetime_iso = Column(String, index=True, nullable=False)
     tz_source = Column(String, default="assumed_local", nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
 
 # 12. Rejected Rows (Data Quality Audit)
 class RejectedRow(Base):
@@ -178,6 +181,7 @@ class Entity(Base):
     source_ref = Column(String, nullable=False)
     method = Column(String, default="structured", nullable=False)
     confidence = Column(Float, default=1.0, nullable=False)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
 
 # 14. Staged Entity Links
 class EntityLink(Base):
@@ -193,6 +197,7 @@ class EntityLink(Base):
     method = Column(String, default="structured", nullable=False)
     confidence = Column(Float, default=1.0, nullable=False)
     approved_by = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
 
 # 15. Extracted Entities (NLP / Review Queue)
 class ExtractedEntity(Base):
@@ -294,6 +299,128 @@ class SavedView(Base):
     title = Column(String, nullable=False)
     view_config_json = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 23. Unified Extraction Records (Extraction V2 Store)
+class ExtractionRecord(Base):
+    __tablename__ = "extraction_records"
+    __table_args__ = (
+        UniqueConstraint(
+            "case_id", "record_type", "natural_key", "occurrence_idx", "evidence_id",
+            name="uq_extraction_record_occurrence",
+        ),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    evidence_id = Column(String, index=True, nullable=False)
+    record_type = Column(String, index=True, nullable=False) # transaction, call, ip_event, entity, document_fact
+    natural_key = Column(String, index=True, nullable=False) # deterministic hash of natural key fields
+    occurrence_idx = Column(Integer, default=1, nullable=False) # Nth identical key within the same evidence file
+    data_json = Column(Text, default="{}", nullable=False) # known canonical fields
+    extra_json = Column(Text, default="{}", nullable=False) # unknown/new fields, never dropped
+    raw_json = Column(Text, default="{}", nullable=False) # original raw values
+    source_ref = Column(String, nullable=True)
+    page_no = Column(Integer, nullable=True)
+    bbox_json = Column(Text, nullable=True)
+    timestamp_sec = Column(Float, nullable=True)
+    method = Column(String, default="structured", nullable=False)
+    source_kind = Column(String, default="structured_file", nullable=False)
+    confidence = Column(Float, default=1.0, nullable=False)
+    extractor_version = Column(String, default="2.0.0", nullable=False)
+    status = Column(String, default="active", index=True, nullable=False) # active | merged | retracted | rejected
+    merged_into_id = Column(String, index=True, nullable=True)
+    staged_table = Column(String, nullable=True)
+    staged_id = Column(String, index=True, nullable=True)
+    first_seen_run_id = Column(String, nullable=True)
+    last_seen_run_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 24. Record Sources (Multi-File Confirmation Provenance)
+class RecordSource(Base):
+    __tablename__ = "record_sources"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    record_id = Column(String, ForeignKey("extraction_records.id"), index=True, nullable=False)
+    evidence_id = Column(String, index=True, nullable=False)
+    source_ref = Column(String, nullable=True)
+    seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 25. Field Claims (Per-Field Evidence Claims)
+class FieldClaim(Base):
+    __tablename__ = "field_claims"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, index=True, nullable=False)
+    subject_type = Column(String, index=True, nullable=False) # entity | record
+    subject_id = Column(String, index=True, nullable=False)
+    field_name = Column(String, index=True, nullable=False)
+    value_norm = Column(Text, nullable=True)
+    value_raw = Column(Text, nullable=True)
+    evidence_id = Column(String, index=True, nullable=False)
+    source_ref = Column(String, nullable=True)
+    source_kind = Column(String, default="structured_file", nullable=False)
+    method = Column(String, default="structured", nullable=False)
+    confidence = Column(Float, default=1.0, nullable=False)
+    validator_ok = Column(Boolean, default=True, nullable=False)
+    status = Column(String, default="active", index=True, nullable=False) # active | retracted
+    observed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    run_id = Column(String, index=True, nullable=True)
+
+# 26. Golden Fields (Resolved Winner Per Subject & Field)
+class GoldenField(Base):
+    __tablename__ = "golden_fields"
+    __table_args__ = (
+        UniqueConstraint("subject_type", "subject_id", "field_name", name="uq_golden_field_subject"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    subject_type = Column(String, index=True, nullable=False) # entity | record
+    subject_id = Column(String, index=True, nullable=False)
+    field_name = Column(String, index=True, nullable=False)
+    selected_claim_id = Column(String, index=True, nullable=True)
+    selected_by = Column(String, default="auto", nullable=False) # auto | officer
+    locked = Column(Boolean, default=False, nullable=False)
+    reason_code = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 27. Merge Conflicts (Unresolved Competing Claims)
+class MergeConflict(Base):
+    __tablename__ = "merge_conflicts"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, index=True, nullable=False)
+    subject_type = Column(String, index=True, nullable=False) # entity | record
+    subject_id = Column(String, index=True, nullable=False)
+    field_name = Column(String, index=True, nullable=False)
+    claim_ids_json = Column(Text, default="[]", nullable=False)
+    status = Column(String, default="open", index=True, nullable=False) # open | resolved | dismissed
+    resolution_claim_id = Column(String, nullable=True)
+    resolved_by = Column(String, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    reason_code = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 28. Ingest Runs (Merge Changelog & Preview/Apply/Rollback Audit)
+class IngestRun(Base):
+    __tablename__ = "ingest_runs"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, index=True, nullable=False)
+    evidence_id = Column(String, index=True, nullable=False)
+    job_id = Column(String, nullable=True)
+    mode = Column(String, nullable=False) # preview | apply | rollback
+    counts_json = Column(Text, default="{}", nullable=False) # new, same, updated, new_fields, conflicts, rejected
+    status = Column(String, default="done", nullable=False)
+    extractor_version = Column(String, default="2.0.0", nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    finished_at = Column(DateTime, nullable=True)
+
+# 29. Dynamic Schema Registry (Unknown/Extra Field Discovery)
+class SchemaRegistry(Base):
+    __tablename__ = "schema_registry"
+    __table_args__ = (
+        UniqueConstraint("record_type", "field_name", name="uq_schema_registry_type_field"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    record_type = Column(String, index=True, nullable=False)
+    field_name = Column(String, index=True, nullable=False)
+    seen_count = Column(Integer, default=1, nullable=False)
+    first_seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    promoted = Column(Boolean, default=False, nullable=False)
 
 def get_db():
     db = SessionLocal()

@@ -24,7 +24,7 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
     g = nx.MultiDiGraph()
 
     # 1. Staged Entities (Persons, Vehicles, unassigned BankAccounts/Phones from identity tables)
-    entities = db.query(Entity).filter(Entity.case_id == case_id).all()
+    entities = db.query(Entity).filter(Entity.case_id == case_id, Entity.is_active.is_(True)).all()
 
     for ent in entities:
         props = {}
@@ -103,7 +103,7 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
             )
 
     # 2. Officer & staged entity links
-    links = db.query(EntityLink).filter(EntityLink.case_id == case_id).all()
+    links = db.query(EntityLink).filter(EntityLink.case_id == case_id, EntityLink.is_active.is_(True)).all()
     for link in links:
         # Resolve source key across all entity labels
         source_key = None
@@ -143,7 +143,7 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
         )
 
     # 3. Call Records -> Phone nodes and CALLED edges
-    calls = db.query(CallRecord).filter(CallRecord.case_id == case_id).all()
+    calls = db.query(CallRecord).filter(CallRecord.case_id == case_id, CallRecord.is_active.is_(True)).all()
     
     # Group calls by ordered pair
     call_pairs: Dict[Tuple[str, str], Dict[str, Any]] = {}
@@ -187,7 +187,7 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
         )
 
     # 4. Transactions -> BankAccount nodes and TRANSFERRED_TO edges
-    txns = db.query(Transaction).filter(Transaction.case_id == case_id).all()
+    txns = db.query(Transaction).filter(Transaction.case_id == case_id, Transaction.is_active.is_(True)).all()
     for t in txns:
         from_key = f"{case_id}|BankAccount|{t.from_account}"
         to_key = f"{case_id}|BankAccount|{t.to_account}"
@@ -226,7 +226,7 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
         )
 
     # 5. IP Events -> IP nodes and SEEN_ON_IP edges
-    ip_events = db.query(IPEvent).filter(IPEvent.case_id == case_id).all()
+    ip_events = db.query(IPEvent).filter(IPEvent.case_id == case_id, IPEvent.is_active.is_(True)).all()
     for ip_ev in ip_events:
         phone_key = f"{case_id}|Phone|{ip_ev.identifier}"
         ip_key = f"{case_id}|IP|{ip_ev.ip_address}"
@@ -264,4 +264,13 @@ def build_detail_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
         g.nodes[n]["degree"] = g.degree(n)
 
     return g
+
+
+def rebuild_graph(db: Session, case_id: str) -> nx.MultiDiGraph:
+    """
+    Invalidates any cached graph for case_id and rebuilds the active detail graph from SQLite.
+    """
+    invalidate_case_graph(case_id)
+    return build_detail_graph(db, case_id)
+
 
