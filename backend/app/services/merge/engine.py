@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import threading
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
@@ -1042,4 +1043,270 @@ def rollback_evidence_merge(
         }
     finally:
         case_lock.release()
+
+
+def extract_merge_payload_from_evidence(
+    db: Session,
+    ev: Any,
+) -> Tuple[str, List[Dict[str, Any]], str]:
+    """
+    Converts an uploaded EvidenceFile into `(record_type, normalized_records_with_extras, source_kind)`
+    ready for `apply_evidence_merge(..., preview=True|False)`.
+    Preserves unmapped/unknown columns in each record dictionary so they are stored in `extra_json`
+    and registered in `schema_registry`.
+    """
+    from pathlib import Path
+    from backend.app.db.sql import ColumnMapping, ExtractedEntity
+    from backend.app.services.ingestion.readers import read_tabular_file_detailed
+    from backend.app.services.ingestion.detect import detect_file_type
+    from backend.app.services.ingestion.mapping import suggest_column_mappings
+    from backend.app.services.ingestion.normalize import (
+        normalize_phone,
+        normalize_account,
+        normalize_amount,
+        normalize_datetime_detailed,
+        infer_column_dayfirst,
+        normalize_duration,
+        normalize_name,
+        normalize_vehicle,
+        normalize_ip,
+    )
+    from backend.app.services.ingestion.statement import parse_statement_narration
+
+    file_path = Path(ev.stored_path)
+    ext = file_path.suffix.lower()
+
+    # Check if this is an unstructured text document with ExtractedEntity rows
+    if ext in (".txt", ".docx"):
+        ext_ents = db.query(ExtractedEntity).filter(ExtractedEntity.evidence_id == ev.id).all()
+        out_ents: List[Dict[str, Any]] = []
+        for idx, ee in enumerate(ext_ents, start=1):
+            out_ents.append({
+                "label": ee.entity_type,
+                "canonical_id": ee.normalized_value,
+                "display_name": ee.raw_value,
+                "raw_value": ee.raw_value,
+                "_source_ref": ee.page_or_paragraph or str(idx),
+                "_confidence": ee.confidence,
+                "_method": ee.method,
+                "_source_kind": "text_layer_pdf" if ext == ".pdf" else "structured_file",
+            })
+        return "entity", out_ents, "structured_file"
+
+    detailed = read_tabular_file_detailed(file_path)
+    raw_records = detailed["records"]
+    headers = detailed["headers"]
+    banners = detailed["banner_rows"]
+    file_meta = detailed.get("file_metadata", {})
+
+    mapping_rec = (
+        db.query(ColumnMapping)
+        .filter(ColumnMapping.evidence_id == ev.id)
+        .order_by(ColumnMapping.confirmed_at.desc())
+        .first()
+    )
+    if mapping_rec:
+        m_data = json.loads(mapping_rec.mapping_json)
+        file_type = m_data.get("file_type") or ev.detected_type or "cdr"
+        mapping = m_data.get("mapping") or {}
+        stmt_acct = m_data.get("statement_account")
+    else:
+        det = detect_file_type(headers, raw_records, filename=ev.original_name, banners=banners)
+        file_type = det["detected_type"] if det["detected_type"] != "unknown" else (ev.detected_type or "cdr")
+        sug = suggest_column_mappings(file_type, headers, raw_records)
+        mapping = {h: v["canonical"] for h, v in sug.items()}
+        stmt_acct = file_meta.get("statement_owner", {}).get("account_number")
+
+    canon_to_raw: Dict[str, List[str]] = {}
+    mapped_raw_cols = set()
+    for raw_col, canon_field in mapping.items():
+        if canon_field and canon_field != "ignore":
+            canon_to_raw.setdefault(canon_field, []).append(raw_col)
+            mapped_raw_cols.add(raw_col)
+
+    date_raw_headers = canon_to_raw.get("datetime", []) + canon_to_raw.get("date", [])
+    column_date_samples = []
+    for r_row in raw_records:
+        for dh in date_raw_headers:
+            dv = r_row.get(dh)
+            if dv is not None and str(dv).strip():
+                column_date_samples.append(dv)
+                break
+    inferred_dayfirst, _ = infer_column_dayfirst(column_date_samples)
+
+    source_kind = "text_layer_pdf" if ext == ".pdf" else "structured_file"
+    normalized_batch: List[Dict[str, Any]] = []
+
+    if file_type == "cdr":
+        record_type = "call"
+    elif file_type in ("bank_transactions", "bank_statement"):
+        record_type = "transaction"
+    elif file_type == "ip_log":
+        record_type = "ip_event"
+    else:
+        record_type = "entity"
+
+    for idx, raw_row in enumerate(raw_records, start=1):
+        def get_val(canon_name: str):
+            for h in canon_to_raw.get(canon_name, []):
+                v = raw_row.get(h)
+                if v is not None and str(v).strip():
+                    return v
+            return None
+
+        # Collect unmapped/extra columns from raw_row so unknown columns are never dropped
+        extras = {
+            re.sub(r"[^\w]+", "_", str(k).strip().lower()).strip("_"): v
+            for k, v in raw_row.items()
+            if k not in mapped_raw_cols and not str(k).startswith("_") and v is not None and str(v).strip() != ""
+        }
+
+        page_no = raw_row.get("_page_no")
+        base_meta = {
+            "_source_ref": f"p{page_no}:{idx}" if page_no else str(idx),
+            "_page_no": page_no,
+            "_raw": {k: v for k, v in raw_row.items() if not str(k).startswith("_")},
+            "_source_kind": source_kind,
+            "_method": file_type,
+            "_confidence": 1.0,
+        }
+
+        if file_type == "cdr":
+            p_caller = normalize_phone(get_val("caller"))
+            p_receiver = normalize_phone(get_val("receiver"))
+            if not p_caller or not p_receiver:
+                continue
+            dt_res = normalize_datetime_detailed(get_val("datetime") or get_val("date"), get_val("time"), dayfirst=inferred_dayfirst)
+            rec = {
+                **extras,
+                **base_meta,
+                "caller": p_caller["number"],
+                "receiver": p_receiver["number"],
+                "call_date": dt_res["meta"]["local_date"] if dt_res["ok"] else "",
+                "call_time": dt_res["meta"]["local_time"] if dt_res["ok"] else "",
+                "datetime_iso": dt_res["meta"]["utc_iso"] if dt_res["ok"] else "",
+                "tz_source": dt_res["meta"]["tz_source"] if dt_res["ok"] else "assumed_local",
+                "duration_seconds": normalize_duration(get_val("duration")),
+                "call_type": str(get_val("call_type") or "voice").lower(),
+            }
+            if get_val("imei"):
+                rec["imei"] = str(get_val("imei"))
+            if get_val("imsi"):
+                rec["imsi"] = str(get_val("imsi"))
+            if get_val("cell_id"):
+                rec["cell_id"] = str(get_val("cell_id"))
+            normalized_batch.append(rec)
+
+        elif file_type == "bank_transactions":
+            from_acc = normalize_account(get_val("from_account"))
+            to_acc = normalize_account(get_val("to_account"))
+            amt_paise = normalize_amount(get_val("amount") or get_val("debit") or get_val("credit"))
+            if not from_acc or not to_acc or not amt_paise:
+                continue
+            dt_res = normalize_datetime_detailed(get_val("datetime") or get_val("date"), get_val("time"), dayfirst=inferred_dayfirst)
+            from_orig, _ = normalize_name(get_val("from_name"))
+            to_orig, _ = normalize_name(get_val("to_name"))
+            rec = {
+                **extras,
+                **base_meta,
+                "txn_id": str(get_val("txn_id") or f"TXN-{idx}"),
+                "from_account": from_acc,
+                "to_account": to_acc,
+                "amount_paise": abs(amt_paise),
+                "date_iso": dt_res["meta"]["local_date"] if dt_res["ok"] else "",
+                "tz_source": dt_res["meta"]["tz_source"] if dt_res["ok"] else "assumed_local",
+                "direction": "transfer",
+            }
+            if from_orig:
+                rec["from_name"] = from_orig
+            if to_orig:
+                rec["to_name"] = to_orig
+            if get_val("reference"):
+                rec["reference"] = str(get_val("reference"))
+            normalized_batch.append(rec)
+
+        elif file_type == "bank_statement":
+            owner_acc = normalize_account(stmt_acct or get_val("statement_account"))
+            if not owner_acc:
+                continue
+            narration = str(get_val("narration") or get_val("reference") or "")
+            parsed_nar = parse_statement_narration(narration)
+            debit_amt = normalize_amount(get_val("debit"))
+            credit_amt = normalize_amount(get_val("credit"))
+            generic_amt = normalize_amount(get_val("amount"))
+            if debit_amt:
+                direction, amt_paise = "debit", abs(debit_amt)
+            elif credit_amt:
+                direction, amt_paise = "credit", abs(credit_amt)
+            elif generic_amt:
+                direction = "debit" if generic_amt < 0 else "credit"
+                amt_paise = abs(generic_amt)
+            else:
+                continue
+            dt_res = normalize_datetime_detailed(get_val("date"), dayfirst=inferred_dayfirst)
+            counterparty = (
+                parsed_nar.get("counterparty_account")
+                or parsed_nar.get("counterparty_vpa")
+                or "COUNTERPARTY_UNKNOWN"
+            )
+            from_acc = owner_acc if direction == "debit" else counterparty
+            to_acc = counterparty if direction == "debit" else owner_acc
+            bal_paise = normalize_amount(get_val("balance"))
+            rec = {
+                **extras,
+                **base_meta,
+                "account": owner_acc,
+                "from_account": from_acc,
+                "to_account": to_acc,
+                "amount_paise": amt_paise,
+                "date_iso": dt_res["meta"]["local_date"] if dt_res["ok"] else "",
+                "tz_source": dt_res["meta"]["tz_source"] if dt_res["ok"] else "assumed_local",
+                "direction": direction,
+                "reference": parsed_nar.get("reference") or narration[:40],
+                "narration": narration,
+            }
+            if bal_paise is not None:
+                rec["balance_after_paise"] = bal_paise
+            normalized_batch.append(rec)
+
+        elif file_type == "ip_log":
+            ident = str(get_val("identifier") or "").strip()
+            ip_val, is_ok = normalize_ip(get_val("ip"))
+            if not ident or not ip_val or not is_ok:
+                continue
+            dt_res = normalize_datetime_detailed(get_val("datetime") or get_val("date"), dayfirst=inferred_dayfirst)
+            rec = {
+                **extras,
+                **base_meta,
+                "identifier": ident,
+                "ip_address": ip_val,
+                "datetime_iso": dt_res["meta"]["utc_iso"] if dt_res["ok"] else "",
+                "tz_source": dt_res["meta"]["tz_source"] if dt_res["ok"] else "assumed_local",
+            }
+            normalized_batch.append(rec)
+
+        else:
+            orig_name, canon_name = normalize_name(get_val("name"))
+            if not orig_name:
+                continue
+            rec = {
+                **extras,
+                **base_meta,
+                "label": "Person",
+                "canonical_id": canon_name,
+                "display_name": orig_name,
+            }
+            p_res = normalize_phone(get_val("phone") or get_val("registered_mobile"))
+            if p_res:
+                rec["phone"] = p_res["number"]
+            a_res = normalize_account(get_val("account"))
+            if a_res:
+                rec["account"] = a_res
+            v_res = normalize_vehicle(get_val("vehicle"))
+            if v_res:
+                rec["vehicle"] = v_res
+            normalized_batch.append(rec)
+
+    return record_type, normalized_batch, source_kind
+
 

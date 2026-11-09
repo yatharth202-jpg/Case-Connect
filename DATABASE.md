@@ -465,6 +465,22 @@ Dynamic field discovery registry tracking extra/unknown columns encountered duri
 | `first_seen_at` | `DATETIME` | NOT NULL, Default UTC | First observation timestamp |
 | `promoted` | `BOOLEAN` | NOT NULL, Default `False` | Whether promoted to standard column view |
 
+### Table 30: `annotations`
+Append-only investigator annotations and tags on a `record` or `entity` with soft-delete only (`is_deleted=True`).
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Annotation ID |
+| `case_id` | `VARCHAR` | FK `cases.id`, Index, NOT NULL | Scoped case docket |
+| `subject_type` | `VARCHAR` | Index, NOT NULL | `record` or `entity` |
+| `subject_id` | `VARCHAR` | Index, NOT NULL | Target subject ID |
+| `note_text` | `TEXT` | NULL | Investigator note body |
+| `tags_json` | `TEXT` | NOT NULL, Default `'[]'` | JSON array of tag strings |
+| `created_by` | `VARCHAR` | Index, NOT NULL | Author user ID |
+| `created_at` | `DATETIME` | NOT NULL, Default UTC | Creation timestamp |
+| `is_deleted` | `BOOLEAN` | Index, NOT NULL, Default `False` | Soft-delete flag |
+| `deleted_by` | `VARCHAR` | NULL | User ID who soft-deleted the annotation |
+| `deleted_at` | `DATETIME` | NULL | Soft-deletion timestamp |
+
 ---
 
 ## 4. Disposable Neo4j Graph Model

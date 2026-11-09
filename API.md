@@ -354,7 +354,47 @@ Server-side authorization verifies:
 
 ---
 
-## 9. Error Conventions & HTTP Status Codes
+## 9. Extraction V2 — Merge Engine, Master Sheet & Conflict Resolution Endpoints
+
+### 9.1 Merge Preview & Apply
+* **`POST /cases/{id}/evidence/{eid}/merge/preview`**
+  - **Description:** Computes deterministic dry-run merge counts (`new`, `same`, `updated`, `new_fields`, `conflicts`, `rejected`) and sample diffs for an evidence file without writing to the database.
+* **`POST /cases/{id}/evidence/{eid}/merge/apply`**
+  - **Description:** Creates an `ingestion` job, merges evidence records into the unified store (`extraction_records`, `field_claims`, `golden_fields`, `merge_conflicts`), rebuilds the case graph (`rebuild_graph(case_id)`), and appends `INGEST_APPLY` to `audit_log`.
+* **`POST /cases/{id}/evidence/{eid}/rollback`**
+  - **Description:** Creates an `ingestion` job, soft-retracts all claims from `eid`, re-runs field resolution on affected records, marks records with zero active claims as `retracted` (`is_active=False`), rebuilds the case graph, and appends `INGEST_ROLLBACK` to `audit_log`.
+
+### 9.2 Unified Record Browser & Claim History
+* **`GET /cases/{id}/records`**
+  - **Query Parameters:** `type` (Record type filter), `status` (Default: `active`), `q` (Search across `data_json` and `extra_json`), `page` (Default: `1`), `page_size` (Default: `50`).
+  - **Returns:** Paginated unified records with resolved known fields, dynamic `extra_json` fields, and confirming source evidence IDs.
+* **`GET /cases/{id}/entities/{eid}/history`** & **`GET /cases/{id}/records/{rid}/history`**
+  - **Returns:** Full append-only `field_claims` history and current `golden_fields` selection per field (including locked status and reason code).
+
+### 9.3 Field Conflict Queue & Officer Resolution
+* **`GET /cases/{id}/conflicts`**
+  - **Query Parameters:** `status` (Default: `open`).
+  - **Returns:** List of field-level merge conflicts with full competing `field_claims` metadata.
+* **`POST /conflicts/{cid}/resolve`** (and **`POST /cases/{id}/conflicts/{cid}/resolve`**)
+  - **Request Body:** `{"selected_claim_id": "...", "custom_value": null, "reason": "Verified against primary statement"}`
+  - **Description:** Locks `golden_fields` (`selected_by='officer'`, `locked=True`), marks conflict `resolved`, updates `extraction_records` and linked staging rows, calls `rebuild_graph(case_id)`, and logs `CONFLICT_RESOLVE` to `audit_log`.
+
+### 9.4 Dynamic Master Sheet Export & Ingest Runs
+* **`GET /cases/{id}/master-sheet`**
+  - **Query Parameters:** `format` (`json`, `csv`, `xlsx`), `view` (`wide`, `per_type`).
+  - **Headers:** `X-Export-SHA256` (SHA-256 hex digest of exported bytes).
+  - **Description:** Exports all active unified records for the case with the full union of known schema columns and dynamically discovered `extra_json` columns, plus provenance (`_sources`, `_confidence`, `_status`), and logs `EXPORT` to `audit_log`.
+* **`GET /cases/{id}/ingest-runs`**
+  - **Returns:** Chronological changelog of merge `apply` and `rollback` runs with counts and timestamps.
+
+### 9.5 Investigator Annotations (Soft-Delete Only)
+* **`POST /cases/{id}/annotations`** — Create an investigator annotation on a `record`, `entity`, `evidence`, or `conflict` (logs `ANNOTATION_CREATE` to `audit_log`).
+* **`GET /cases/{id}/annotations`** — List annotations for a case (`subject_type`, `subject_id`, `include_deleted`).
+* **`DELETE /cases/{id}/annotations/{aid}`** — Soft-delete an annotation (`status='deleted'`, logs `ANNOTATION_DELETE` to `audit_log`).
+
+---
+
+## 10. Error Conventions & HTTP Status Codes
 
 | Code | Meaning | Typical Trigger |
 | :--- | :--- | :--- |

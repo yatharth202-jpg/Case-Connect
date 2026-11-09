@@ -422,6 +422,21 @@ class SchemaRegistry(Base):
     first_seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     promoted = Column(Boolean, default=False, nullable=False)
 
+# 30. Officer Annotations & Tags (Append-Only with Soft Delete)
+class Annotation(Base):
+    __tablename__ = "annotations"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    subject_type = Column(String, index=True, nullable=False) # record | entity
+    subject_id = Column(String, index=True, nullable=False)
+    note_text = Column(Text, nullable=True)
+    tags_json = Column(Text, default="[]", nullable=False)
+    created_by = Column(String, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False, index=True, nullable=False)
+    deleted_by = Column(String, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
+
 def get_db():
     db = SessionLocal()
     try:
