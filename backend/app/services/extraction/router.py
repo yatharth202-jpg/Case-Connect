@@ -24,6 +24,10 @@ from backend.app.services.extraction.pipeline import (
     apply_page_ocr_correction,
     run_document_extraction,
 )
+from backend.app.services.extraction.rules import (
+    compute_fir_completeness,
+    extract_incident_facts,
+)
 from backend.app.services.extraction.text import read_document_text
 from backend.app.services.graph.builder import invalidate_case_graph
 
@@ -66,15 +70,26 @@ def _commit_approved_entity(db: Session, ee: ExtractedEntity, user_id: str):
     if ee.entity_type == "RELATIONSHIP":
         try:
             rel_info = json.loads(ee.normalized_value)
+            rel_method = str(rel_info.get("method") or ee.method or "regex")
+            if rel_method not in ("regex", "ner", "nlp_relationship", "officer"):
+                rel_method = "regex"
+            props = {
+                "sentence": rel_info.get("sentence", ""),
+                "char_span_start": rel_info.get("char_span_start", ee.char_span_start),
+                "char_span_end": rel_info.get("char_span_end", ee.char_span_end),
+            }
+            for opt_key in ("amount_paise", "amount_raw", "from_party", "to_party", "target_type"):
+                if opt_key in rel_info:
+                    props[opt_key] = rel_info[opt_key]
             link = EntityLink(
                 case_id=ee.case_id,
                 source_entity_id=rel_info["source"],
                 target_entity_id=rel_info["target"],
                 relationship_type=rel_info.get("relationship_type", "USES"),
-                properties_json=json.dumps({"sentence": rel_info.get("sentence", "")}),
+                properties_json=json.dumps(props),
                 source_file=src_file,
                 source_ref=ee.page_or_paragraph,
-                method="nlp_relationship",
+                method=rel_method,
                 confidence=ee.confidence,
                 approved_by=user_id,
             )
@@ -573,6 +588,94 @@ def get_evidence_document_text(
         "full_text": doc_data["full_text"],
         "entities": ent_list,
         "warning": doc_data.get("warning"),
+    }
+
+
+@router.get("/evidence/{evidence_id}/fir-analysis")
+def get_evidence_fir_analysis(
+    evidence_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns Phase 6 FIR analysis for a document evidence file:
+    - incident `facts` (`fir_no`, `police_station`, `incident_date`, `incident_time`, `incident_place`, `complainant`, `sections`) with character spans,
+    - `sections` with IPC <-> BNS / CrPC <-> BNSS / IT Act reference mappings and official gazette disclaimer,
+    - chronological incident `timeline`,
+    - proposed `relationship_proposals` (`status='pending_review'`),
+    - per-FIR `completeness` report (present vs missing required fields).
+    """
+    ev = db.query(EvidenceFile).filter(EvidenceFile.id == evidence_id).first()
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evidence not found")
+
+    get_case_for_user(case_id=ev.case_id, current_user=current_user, db=db)
+
+    entities_db = db.query(ExtractedEntity).filter(ExtractedEntity.evidence_id == evidence_id).all()
+    if not entities_db and ev.stored_path:
+        run_document_extraction(
+            db=db,
+            evidence_id=ev.id,
+            case_id=ev.case_id,
+            file_path=ev.stored_path,
+            user_id=current_user.id,
+        )
+        entities_db = db.query(ExtractedEntity).filter(ExtractedEntity.evidence_id == evidence_id).all()
+
+    doc_data = read_document_text(ev.stored_path, officer_marked_handwritten=bool(ev.is_handwritten))
+    full_text = doc_data.get("full_text") or ""
+
+    ent_dicts: List[Dict[str, Any]] = []
+    rel_proposals: List[Dict[str, Any]] = []
+    for e in entities_db:
+        d = {
+            "id": e.id,
+            "entity_type": e.entity_type,
+            "raw_value": e.raw_value,
+            "normalized_value": e.normalized_value,
+            "page_or_paragraph": e.page_or_paragraph,
+            "page_no": e.page_no,
+            "bbox": json.loads(e.bbox_json) if e.bbox_json else None,
+            "source_kind": e.source_kind,
+            "char_span_start": e.char_span_start,
+            "char_span_end": e.char_span_end,
+            "confidence": e.confidence,
+            "method": e.method,
+            "status": e.status,
+        }
+        ent_dicts.append(d)
+        if e.entity_type == "RELATIONSHIP":
+            try:
+                rel_meta = json.loads(e.normalized_value)
+            except Exception:
+                rel_meta = {}
+            rel_proposals.append({
+                "id": e.id,
+                "status": e.status,
+                "method": rel_meta.get("method") or e.method,
+                "confidence": e.confidence,
+                "char_span_start": e.char_span_start,
+                "char_span_end": e.char_span_end,
+                **rel_meta,
+            })
+
+    facts_res = extract_incident_facts(
+        text=full_text,
+        page_or_para="Document",
+        base_char_offset=0,
+        extracted_entities=ent_dicts,
+    )
+    completeness = compute_fir_completeness(facts_res, ent_dicts)
+
+    return {
+        "evidence_id": ev.id,
+        "case_id": ev.case_id,
+        "file_name": ev.original_name,
+        "facts": facts_res.get("facts", []),
+        "sections": facts_res.get("sections", []),
+        "timeline": facts_res.get("timeline", []),
+        "relationship_proposals": rel_proposals,
+        "completeness": completeness,
     }
 
 

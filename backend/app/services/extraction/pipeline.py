@@ -10,7 +10,11 @@ from backend.app.services.extraction.ner import (
     extract_cooccurrence_relationships,
     extract_ner_entities,
 )
-from backend.app.services.extraction.rules import extract_rule_entities
+from backend.app.services.extraction.rules import (
+    compute_fir_completeness,
+    extract_incident_facts,
+    extract_rule_entities,
+)
 from backend.app.services.extraction.text import compute_span_bbox, read_document_text
 from backend.app.services.ingestion.validators import to_ascii_digits
 from backend.app.services.merge.engine import apply_evidence_merge
@@ -94,6 +98,8 @@ def _build_merge_records_from_extracted(
         "IMEI": "IMEI",
         "EMAIL": "Email",
         "IP": "IP",
+        "LEGAL_SECTION": "LegalSection",
+        "POLICE_STATION": "PoliceStation",
     }
     merge_records: List[Dict[str, Any]] = []
     for idx, item in enumerate(items, start=1):
@@ -109,8 +115,9 @@ def _build_merge_records_from_extracted(
         page_no = item.get("page_no")
         bbox = item.get("bbox")
         label = label_map.get(etype, etype.title())
+        meta = item.get("meta") or {}
 
-        merge_records.append({
+        rec: Dict[str, Any] = {
             "label": label,
             "entity_type": etype,
             "canonical_id": norm_val,
@@ -128,9 +135,64 @@ def _build_merge_records_from_extracted(
                 "raw_value": raw_val,
                 "page_or_paragraph": item.get("page_or_paragraph"),
                 "bbox": bbox,
+                "meta": meta,
             },
-        })
+        }
+        if item.get("role"):
+            rec["role"] = item["role"]
+        if meta.get("candidate_variants"):
+            rec["candidate_variants"] = json.dumps(meta["candidate_variants"])
+        if meta.get("kinship_marker"):
+            rec["kinship_marker"] = meta["kinship_marker"]
+        if meta.get("residence"):
+            rec["address"] = meta["residence"]
+        if etype == "LEGAL_SECTION" and meta:
+            rec["act"] = meta.get("act")
+            rec["section_code"] = meta.get("section")
+            rec["mapped_act"] = meta.get("mapped_act")
+            rec["mapped_section"] = meta.get("mapped_section")
+            rec["mapping_status"] = meta.get("mapping_status")
+            rec["disclaimer"] = meta.get("disclaimer")
+
+        merge_records.append(rec)
     return merge_records
+
+
+def _build_document_fact_merge_records(
+    facts: List[Dict[str, Any]],
+    source_kind: str = "text_layer_pdf",
+) -> List[Dict[str, Any]]:
+    """Converts extracted FIR incident facts (`document_fact`) into Phase 3 Merge Engine records."""
+    out: List[Dict[str, Any]] = []
+    for idx, f in enumerate(facts, start=1):
+        f_key = str(f.get("fact_key") or "fact").strip()
+        f_val = str(f.get("normalized_value") or "").strip()
+        raw_val = str(f.get("raw_value") or f_val).strip()
+        if not f_val:
+            continue
+        rec: Dict[str, Any] = {
+            "fact_type": "fir_incident_fact",
+            "fact_key": f_key,
+            "fact_value": f_val,
+            "raw_value": raw_val,
+            "char_span_start": f.get("char_span_start", 0),
+            "char_span_end": f.get("char_span_end", 0),
+            "page_or_paragraph": f.get("page_or_paragraph", "Page 1"),
+            "review_status": "pending_review",
+            "_source_ref": f"fact:{f_key}:{f.get('char_span_start', idx)}",
+            "_source_kind": source_kind,
+            "_method": str(f.get("method") or "regex"),
+            "_confidence": float(f.get("confidence", 0.90)),
+            "_raw": f,
+        }
+        if f_key == "incident_date":
+            rec["date_iso"] = f_val
+        elif f_key == "incident_place":
+            rec["place"] = f_val
+        elif f_key == "sections":
+            rec["section_code"] = f_val
+        out.append(rec)
+    return out
 
 
 def run_document_extraction(
@@ -301,6 +363,11 @@ def run_document_extraction(
 
     # Feed extracted entities into Phase 3 Merge Engine (records + claims)
     merge_records = _build_merge_records_from_extracted(all_extracted)
+    primary_source_kind = (
+        merge_records[0].get("_source_kind", "text_layer_pdf")
+        if merge_records
+        else (str(pages[0].get("source_kind")) if pages else "text_layer_pdf")
+    )
     if merge_records:
         apply_evidence_merge(
             db=db,
@@ -309,9 +376,38 @@ def run_document_extraction(
             record_type="entity",
             records=merge_records,
             user_id=user_id,
-            source_kind=merge_records[0].get("_source_kind", "text_layer_pdf"),
+            source_kind=primary_source_kind,
             method="document_nlp",
             default_confidence=0.80,
+            preview=False,
+            source_file_name=ev.original_name if ev else evidence_id,
+        )
+
+    # Extract FIR incident facts, IPC<->BNS section mappings, timeline, and completeness
+    full_text = doc_res.get("full_text") or "\n".join(str(p.get("text") or "") for p in pages)
+    facts_res = extract_incident_facts(
+        text=full_text,
+        page_or_para="Document",
+        base_char_offset=0,
+        extracted_entities=all_extracted,
+    )
+    completeness_res = compute_fir_completeness(facts_res, all_extracted)
+
+    doc_fact_records = _build_document_fact_merge_records(
+        facts_res.get("facts", []),
+        source_kind=primary_source_kind,
+    )
+    if doc_fact_records:
+        apply_evidence_merge(
+            db=db,
+            case_id=case_id,
+            evidence_id=evidence_id,
+            record_type="document_fact",
+            records=doc_fact_records,
+            user_id=user_id,
+            source_kind=primary_source_kind,
+            method="regex",
+            default_confidence=0.90,
             preview=False,
             source_file_name=ev.original_name if ev else evidence_id,
         )
@@ -323,6 +419,12 @@ def run_document_extraction(
         "total_extracted": len(all_extracted),
         "by_type": by_type_counts,
         "pages_count": len(pages),
+        "fir_analysis": {
+            "facts": facts_res.get("facts", []),
+            "sections": facts_res.get("sections", []),
+            "timeline": facts_res.get("timeline", []),
+            "completeness": completeness_res,
+        },
         "warning": doc_res.get("warning"),
         "error": None,
     }

@@ -150,6 +150,17 @@ extraction:
   ner:
     model: "en_core_web_sm"
     min_conf: 0.65
+    confidence_cutoffs:
+      legal_regex: 0.92
+      proper_name: 0.88
+      title_heuristic: 0.85
+      spacy_ner: 0.85
+      all_caps: 0.75
+    label_mapping:
+      PERSON: "PERSON"
+      ORG: "ORGANIZATION"
+      GPE: "LOCATION"
+      LOC: "LOCATION"
   media:
     enabled: false
     whisper_model: "base"
@@ -193,8 +204,10 @@ extraction:
         - "fir_no"
         - "police_station"
         - "incident_date"
+        - "incident_place"
         - "complainant"
         - "sections"
+        - "identifier"
     gap_days_threshold: 3
   banned_terms:
     - "criminal"

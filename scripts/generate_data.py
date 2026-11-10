@@ -1082,6 +1082,78 @@ class SyntheticDataGenerator:
             "synthetic_words": synthetic_words,
         }
 
+    def write_phase6_fir_suite(self, out_dir: Path) -> dict:
+        """
+        Generates synthetic FIR documents for Phase 6 testing:
+        1. Complete English FIR (roles, kinship S/o & W/o & R/o, honorific variants Mohd. vs Mohammad,
+           sentence-level relations, chronological timeline, mapped + unmapped IPC/BNS/IT Act sections).
+        2. Hinglish + Devanagari-digit FIR (`dhara`, `shikayatkarta`, `abhiyukt`, Devanagari phone/dates/sections).
+        3. Incomplete FIR (missing `incident_place`, `sections`, and `identifier`) for completeness verification.
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        phone_1 = self.generate_phone()
+        phone_2 = self.generate_phone()
+        acct_1 = self.generate_account()
+        veh_1 = self.generate_vehicle()
+        fir_no = f"{self.rng.randint(200, 899)}/2026"
+
+        dev_table = str.maketrans("0123456789", "०१२३४५६७८९")
+        phone_2_dev = phone_2.translate(dev_table)
+        fir_no_dev = fir_no.translate(dev_table)
+
+        complete_fir_text = (
+            f"FIRST INFORMATION REPORT\n"
+            f"FIR No. {fir_no} registered at Police Station Hazratganj.\n"
+            f"Date of Occurrence: 14/08/2026 at 14:30 hrs.\n"
+            f"Place of Occurrence: Sector 18 Commercial Market, Noida.\n"
+            f"Acts and Sections: Registered u/s 420, 406, 120B IPC and Section 66D IT Act and Section 999 IPC.\n\n"
+            f"Complainant: Shri Rajesh Verma S/o Late Mohan Verma R/o 42 Civil Lines, Lucknow.\n"
+            f"Accused: Mohd. Imran S/o Abdul Karim R/o 19 Shastri Nagar, Kanpur.\n"
+            f"Another statement mentioned Mohammad Imran and associate R. K. Sharma in the same matter.\n"
+            f"Witness: Smt. Sunita Devi W/o Anil Devi.\n"
+            f"Investigating Officer: SI Vikram Rathore.\n\n"
+            f"During inquiry it was found that mobile no. {phone_1} of Mohd. Imran was used to contact the complainant on 13/08/2026.\n"
+            f"On 14/08/2026 Shri Rajesh Verma transferred Rs. 4,50,000 to account no. {acct_1} held by Mohd. Imran.\n"
+            f"Subsequently vehicle no. {veh_1} driven by R. K. Sharma was spotted near the branch.\n"
+            f"On 15/08/2026 FIR No. {fir_no} was formally registered at Police Station Hazratganj.\n"
+        )
+        complete_path = out_dir / "fir_complete_english.txt"
+        complete_path.write_text(complete_fir_text, encoding="utf-8")
+
+        hinglish_fir_text = (
+            f"FIRST INFORMATION REPORT (HINGLISH TRANSCRIPT)\n"
+            f"FIR No. {fir_no_dev} registered at Police Station Gomti Nagar.\n"
+            f"Incident Date: १४/०८/२०२६ at ११:१५ AM.\n"
+            f"Place of Occurrence: Aminabad Market, Lucknow.\n"
+            f"Offence registered under dhara ४२० IPC and Section ३१८(४) BNS.\n\n"
+            f"Shikayatkarta: Shri Alok Tiwari S/o Suresh Tiwari.\n"
+            f"Abhiyukt: Ramesh Chauhan.\n"
+            f"Gawah: Mahesh Prasad.\n"
+            f"Ramesh Chauhan ka mobile number {phone_2_dev} hai jis se call kiya gaya.\n"
+        )
+        hinglish_path = out_dir / "fir_hinglish_devanagari.txt"
+        hinglish_path.write_text(hinglish_fir_text, encoding="utf-8")
+
+        incomplete_fir_text = (
+            f"FIRST INFORMATION REPORT\n"
+            f"FIR No. 701/2026 registered at Police Station Kotwali.\n"
+            f"Complainant: Shri Deepak Mishra reported a grievance on 10/08/2026.\n"
+        )
+        incomplete_path = out_dir / "fir_incomplete.txt"
+        incomplete_path.write_text(incomplete_fir_text, encoding="utf-8")
+
+        return {
+            "complete_fir_path": str(complete_path),
+            "hinglish_fir_path": str(hinglish_path),
+            "incomplete_fir_path": str(incomplete_path),
+            "phone_1": phone_1,
+            "phone_2": phone_2,
+            "account_1": acct_1,
+            "vehicle_1": veh_1,
+            "fir_no": fir_no,
+        }
+
     def generate(self, scenario: str, format_type: str, size: str, out_dir: str):
         data = self.build_scenario_data(scenario, size)
         out_path = Path(out_dir)

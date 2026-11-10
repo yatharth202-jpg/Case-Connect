@@ -21,7 +21,8 @@ KNOWN_FIELDS_BY_RECORD_TYPE: Dict[str, set] = {
         "raw_value", "phone", "account", "vehicle", "email", "address", "ifsc", "vpa",
     },
     "document_fact": {
-        "fact_type", "fact_key", "fact_value", "date_iso", "place", "section_code",
+        "fact_type", "fact_key", "fact_value", "raw_value", "date_iso", "place",
+        "section_code", "char_span_start", "char_span_end", "page_or_paragraph",
     },
 }
 
@@ -107,6 +108,12 @@ def compute_natural_key(
         else:
             raw_key = f"{case_id}|entity|{label}|{canon_id.upper()}"
             return hashlib.sha256(raw_key.encode("utf-8")).hexdigest(), ["label", "canonical_id"]
+
+    if record_type == "document_fact":
+        f_key = str(data.get("fact_key") or data.get("fact_type") or "fact").strip().lower()
+        f_val = str(data.get("fact_value") or "").strip()
+        raw_key = f"{case_id}|document_fact|{evidence_id}|{f_key}|{f_val}"
+        return hashlib.sha256(raw_key.encode("utf-8")).hexdigest(), ["evidence_id", "fact_key", "fact_value"]
 
     if natural_keys_config is None:
         natural_keys_config = get_merge_config().get("natural_keys", {})

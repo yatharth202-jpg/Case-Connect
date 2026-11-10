@@ -404,6 +404,10 @@ Server-side authorization verifies:
   - **Request Body:** `{"is_handwritten": true}`
   - **Description:** Marks or unmarks an evidence file as handwritten and re-runs extraction with `source_kind='ocr_handwritten'`, confidence capped by `extraction.ocr.handwritten_conf_cap`, and mandatory `pending_review` status.
 
+### 9.7 FIR Understanding, IPC ↔ BNS Mapping & Completeness (Phase 6)
+* **`GET /evidence/{id}/fir-analysis`**
+  - **Description:** Returns structured FIR `facts` (`fir_no`, `police_station`, `incident_date`, `incident_time`, `incident_place`, `complainant`, `sections`) with character spans, `sections` with `IPC ↔ BNS` / `CrPC ↔ BNSS` / `IT Act` reference mappings (`"disclaimer": "reference — verify against the official gazette"` or `"mapping unavailable"`), chronological incident `timeline`, `relationship_proposals` (`status='pending_review'`), and per-FIR `completeness` report.
+
 ---
 
 ## 10. Error Conventions & HTTP Status Codes

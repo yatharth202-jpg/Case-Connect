@@ -1,0 +1,270 @@
+{
+  "_meta": {
+    "description": "Reference mapping between Indian Penal Code (IPC 1860), Bharatiya Nyaya Sanhita (BNS 2023), CrPC 1973, BNSS 2023, and IT Act 2000",
+    "disclaimer": "reference — verify against the official gazette"
+  },
+  "ipc_to_bns": {
+    "34": {
+      "bns_section": "3(5)",
+      "title": "Acts done by several persons in furtherance of common intention"
+    },
+    "109": {
+      "bns_section": "49",
+      "title": "Punishment of abetment if the act abetted is committed in consequence"
+    },
+    "120A": {
+      "bns_section": "61(1)",
+      "title": "Definition of criminal conspiracy"
+    },
+    "120B": {
+      "bns_section": "61(2)",
+      "title": "Punishment of criminal conspiracy"
+    },
+    "149": {
+      "bns_section": "190",
+      "title": "Every member of unlawful assembly guilty of offence committed in prosecution of common object"
+    },
+    "201": {
+      "bns_section": "238",
+      "title": "Causing disappearance of evidence of offence, or giving false information to screen offender"
+    },
+    "302": {
+      "bns_section": "103(1)",
+      "title": "Punishment for murder"
+    },
+    "307": {
+      "bns_section": "109",
+      "title": "Attempt to murder"
+    },
+    "323": {
+      "bns_section": "115(2)",
+      "title": "Punishment for voluntarily causing hurt"
+    },
+    "354": {
+      "bns_section": "74",
+      "title": "Assault or use of force to woman with intent to outrage her modesty"
+    },
+    "379": {
+      "bns_section": "303(2)",
+      "title": "Punishment for theft"
+    },
+    "380": {
+      "bns_section": "305",
+      "title": "Theft in a dwelling house, or means of transportation or place of worship"
+    },
+    "384": {
+      "bns_section": "308(2)",
+      "title": "Punishment for extortion"
+    },
+    "392": {
+      "bns_section": "309(4)",
+      "title": "Punishment for robbery"
+    },
+    "403": {
+      "bns_section": "314",
+      "title": "Dishonest misappropriation of property"
+    },
+    "406": {
+      "bns_section": "316(2)",
+      "title": "Punishment for criminal breach of trust"
+    },
+    "409": {
+      "bns_section": "316(5)",
+      "title": "Criminal breach of trust by public servant, or by banker, merchant or agent"
+    },
+    "411": {
+      "bns_section": "317(2)",
+      "title": "Dishonestly receiving stolen property"
+    },
+    "419": {
+      "bns_section": "319(2)",
+      "title": "Punishment for cheating by personation"
+    },
+    "420": {
+      "bns_section": "318(4)",
+      "title": "Cheating and dishonestly inducing delivery of property"
+    },
+    "465": {
+      "bns_section": "336(2)",
+      "title": "Punishment for forgery"
+    },
+    "467": {
+      "bns_section": "338",
+      "title": "Forgery of valuable security, will, etc."
+    },
+    "468": {
+      "bns_section": "336(3)",
+      "title": "Forgery for purpose of cheating"
+    },
+    "471": {
+      "bns_section": "340(2)",
+      "title": "Using as genuine a forged document or electronic record"
+    },
+    "506": {
+      "bns_section": "351(2)",
+      "title": "Punishment for criminal intimidation"
+    }
+  },
+  "bns_to_ipc": {
+    "3(5)": {
+      "ipc_section": "34",
+      "title": "Acts done by several persons in furtherance of common intention"
+    },
+    "61(2)": {
+      "ipc_section": "120B",
+      "title": "Punishment of criminal conspiracy"
+    },
+    "103(1)": {
+      "ipc_section": "302",
+      "title": "Punishment for murder"
+    },
+    "109": {
+      "ipc_section": "307",
+      "title": "Attempt to murder"
+    },
+    "115(2)": {
+      "ipc_section": "323",
+      "title": "Punishment for voluntarily causing hurt"
+    },
+    "238": {
+      "ipc_section": "201",
+      "title": "Causing disappearance of evidence of offence"
+    },
+    "303(2)": {
+      "ipc_section": "379",
+      "title": "Punishment for theft"
+    },
+    "308(2)": {
+      "ipc_section": "384",
+      "title": "Punishment for extortion"
+    },
+    "316(2)": {
+      "ipc_section": "406",
+      "title": "Punishment for criminal breach of trust"
+    },
+    "316(5)": {
+      "ipc_section": "409",
+      "title": "Criminal breach of trust by banker, merchant or agent"
+    },
+    "317(2)": {
+      "ipc_section": "411",
+      "title": "Dishonestly receiving stolen property"
+    },
+    "318(4)": {
+      "ipc_section": "420",
+      "title": "Cheating and dishonestly inducing delivery of property"
+    },
+    "319(2)": {
+      "ipc_section": "419",
+      "title": "Punishment for cheating by personation"
+    },
+    "336(2)": {
+      "ipc_section": "465",
+      "title": "Punishment for forgery"
+    },
+    "336(3)": {
+      "ipc_section": "468",
+      "title": "Forgery for purpose of cheating"
+    },
+    "338": {
+      "ipc_section": "467",
+      "title": "Forgery of valuable security, will, etc."
+    },
+    "340(2)": {
+      "ipc_section": "471",
+      "title": "Using as genuine a forged document or electronic record"
+    },
+    "351(2)": {
+      "ipc_section": "506",
+      "title": "Punishment for criminal intimidation"
+    }
+  },
+  "crpc_to_bnss": {
+    "41A": {
+      "bnss_section": "35(3)",
+      "title": "Notice of appearance before police officer"
+    },
+    "91": {
+      "bnss_section": "94",
+      "title": "Summons to produce document or other thing"
+    },
+    "102": {
+      "bnss_section": "106",
+      "title": "Power of police officer to seize certain property"
+    },
+    "154": {
+      "bnss_section": "173",
+      "title": "Information in cognizable cases (FIR)"
+    },
+    "161": {
+      "bnss_section": "180",
+      "title": "Examination of witnesses by police"
+    },
+    "164": {
+      "bnss_section": "183",
+      "title": "Recording of confessions and statements"
+    },
+    "173": {
+      "bnss_section": "193",
+      "title": "Report of police officer on completion of investigation"
+    }
+  },
+  "bnss_to_crpc": {
+    "35": {
+      "crpc_section": "41",
+      "title": "When police may arrest without warrant / Notice of appearance"
+    },
+    "35(3)": {
+      "crpc_section": "41A",
+      "title": "Notice of appearance before police officer"
+    },
+    "94": {
+      "crpc_section": "91",
+      "title": "Summons to produce document or other thing"
+    },
+    "106": {
+      "crpc_section": "102",
+      "title": "Power of police officer to seize certain property"
+    },
+    "173": {
+      "crpc_section": "154",
+      "title": "Information in cognizable cases (FIR)"
+    },
+    "180": {
+      "crpc_section": "161",
+      "title": "Examination of witnesses by police"
+    },
+    "183": {
+      "crpc_section": "164",
+      "title": "Recording of confessions and statements"
+    },
+    "193": {
+      "crpc_section": "173",
+      "title": "Report of police officer on completion of investigation"
+    }
+  },
+  "it_act": {
+    "43": {
+      "title": "Penalty and compensation for damage to computer, computer system, etc."
+    },
+    "66": {
+      "title": "Computer related offences"
+    },
+    "66B": {
+      "title": "Punishment for dishonestly receiving stolen computer resource or communication device"
+    },
+    "66C": {
+      "title": "Punishment for identity theft"
+    },
+    "66D": {
+      "title": "Punishment for cheating by personation by using computer resource"
+    },
+    "66E": {
+      "title": "Punishment for violation of privacy"
+    },
+    "67": {
+      "title": "Punishment for publishing or transmitting obscene material in electronic form"
+    }
+  }
+}
+

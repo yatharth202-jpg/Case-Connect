@@ -16,10 +16,14 @@ if not CONFIG_DIR.exists():
 DEFAULTS_YAML_PATH = CONFIG_DIR / "defaults.yaml"
 REFERENCE_DIR = CONFIG_DIR / "reference"
 IFSC_BANK_CODES_PATH = REFERENCE_DIR / "ifsc_bank_codes.json"
+FIR_PATTERNS_PATH = REFERENCE_DIR / "fir_patterns.yaml"
+IPC_BNS_MAP_PATH = REFERENCE_DIR / "ipc_bns_map.json"
 
 _DEFAULTS_CACHE: Optional[Dict[str, Any]] = None
 _IFSC_BANK_CODES_CACHE: Optional[Dict[str, str]] = None
 _IFSC_MISSING_WARNED: bool = False
+_FIR_PATTERNS_CACHE: Optional[Dict[str, Any]] = None
+_IPC_BNS_MAP_CACHE: Optional[Dict[str, Any]] = None
 
 
 class Settings(BaseSettings):
@@ -122,7 +126,52 @@ def get_ifsc_bank_codes(force_reload: bool = False, custom_path: Optional[Path] 
         return {}
 
 
-# Eagerly load defaults & reference IFSC bank codes at startup
+def get_fir_patterns(force_reload: bool = False, custom_path: Optional[Path] = None) -> Dict[str, Any]:
+    """Loads FIR role, kinship, relation, and stopword patterns from backend/config/reference/fir_patterns.yaml."""
+    global _FIR_PATTERNS_CACHE
+    target_path = custom_path or FIR_PATTERNS_PATH
+    if custom_path is None and _FIR_PATTERNS_CACHE is not None and not force_reload:
+        return _FIR_PATTERNS_CACHE
+    if target_path.exists():
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+                if custom_path is None:
+                    _FIR_PATTERNS_CACHE = data
+                return data
+        except Exception as exc:
+            logger.warning("Failed to load fir_patterns.yaml (%s): %s", target_path, exc)
+    if custom_path is None:
+        _FIR_PATTERNS_CACHE = {}
+    return {}
+
+
+def get_ipc_bns_map(force_reload: bool = False, custom_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Loads IPC <-> BNS / CrPC <-> BNSS / IT Act section mappings from
+    backend/config/reference/ipc_bns_map.json.
+    """
+    global _IPC_BNS_MAP_CACHE
+    target_path = custom_path or IPC_BNS_MAP_PATH
+    if custom_path is None and _IPC_BNS_MAP_CACHE is not None and not force_reload:
+        return _IPC_BNS_MAP_CACHE
+    if target_path.exists():
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+                if custom_path is None:
+                    _IPC_BNS_MAP_CACHE = data
+                return data
+        except Exception as exc:
+            logger.warning("Failed to load ipc_bns_map.json (%s): %s", target_path, exc)
+    if custom_path is None:
+        _IPC_BNS_MAP_CACHE = {}
+    return {}
+
+
+# Eagerly load defaults & reference files at startup
 get_defaults()
 get_ifsc_bank_codes()
+get_fir_patterns()
+get_ipc_bns_map()
 
