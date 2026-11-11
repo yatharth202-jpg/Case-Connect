@@ -37,16 +37,21 @@ server/node_modules/
 # Logs & temp
 *.log
 *.tmp
+*.db-shm
+*.db-wal
 .DS_Store
 Thumbs.db
 scratch/
 .system_generated/
+progress.txt
 
 # Agent & local assistant configurations
 .agent/
+.agents/
 .gemini/
 .gsd/
 .serena/
+.llm-proxies/
 GSD-STYLE.md
 PROJECT_RULES.md
 

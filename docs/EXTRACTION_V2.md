@@ -132,3 +132,4 @@ When an evidence file is retracted:
 1. **Carrier Metadata Disclaimer:** Telecommunication carrier CDR records indicate switch routing and cell tower connectivity. They do not constitute statutory proof of subscriber physical custody or individual device operation without corroborative surveillance or forensic seizure.
 2. **Handwriting Probabilistic Ceiling:** OCR results on handwritten documents are probabilistic approximations and must not be used as sole evidentiary facts without officer verification.
 3. **Statutory PII Protection (Section 63 BSA 2023):** Unmasking of Aadhaar, PAN, bank accounts, or telephone numbers requires sworn justification and creates an immutable cryptographic record in `audit_log`.
+
