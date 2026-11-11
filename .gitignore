@@ -46,5 +46,6 @@ scratch/
 .agent/
 .gemini/
 .gsd/
+.serena/
 GSD-STYLE.md
 PROJECT_RULES.md
