@@ -473,6 +473,22 @@ class EvidencePage(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+# 32. Audio / Video Transcript Segments (Timestamped Provenance Units)
+class MediaTranscriptSegment(Base):
+    __tablename__ = "media_transcript_segments"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    evidence_id = Column(String, ForeignKey("evidence_files.id"), index=True, nullable=False)
+    start_sec = Column(Float, nullable=False)
+    end_sec = Column(Float, nullable=False)
+    text = Column(Text, nullable=False)
+    confidence = Column(Float, default=1.0, nullable=False)
+    speaker = Column(String, nullable=True) # Interface for speaker separation
+    is_reviewed = Column(Boolean, default=False, nullable=False)
+    needs_review = Column(Boolean, default=False, nullable=False)
+    officer_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 def get_db():
     db = SessionLocal()
     try:

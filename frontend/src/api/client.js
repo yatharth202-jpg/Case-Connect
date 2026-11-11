@@ -466,6 +466,20 @@ export const extractionV2Api = {
     const res = await api.post(`/cases/${caseId}/jobs/${jobId}/retry`);
     return res.data;
   },
+  extractMedia: async (evidenceId) => {
+    const res = await api.post(`/evidence/${evidenceId}/media-extract`);
+    return res.data;
+  },
+  getMediaTranscript: async (evidenceId, needsReviewOnly = false) => {
+    const res = await api.get(`/evidence/${evidenceId}/transcript`, {
+      params: { needs_review_only: needsReviewOnly },
+    });
+    return res.data;
+  },
+  updateMediaSegment: async (segmentId, data) => {
+    const res = await api.patch(`/transcript/${segmentId}`, data);
+    return res.data;
+  },
 };
 
 // 7b. Entity Matching & Master Profiles (Phase 7 - Hero Feature #1) API

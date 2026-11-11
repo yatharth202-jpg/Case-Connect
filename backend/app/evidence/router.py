@@ -55,6 +55,13 @@ def get_allowed_extensions_map() -> Dict[str, int]:
             out[ext_norm] = max_doc_bytes
         else:
             out[ext_norm] = max_tab_bytes
+
+    media_cfg = get_extraction_config().get("media", {})
+    if media_cfg.get("enabled", False):
+        max_media_bytes = int(media_cfg.get("max_file_size_mb", 100)) * 1024 * 1024
+        for m_ext in media_cfg.get("allowed_types", []):
+            out[str(m_ext).lower().strip()] = max_media_bytes
+
     return out
 
 
@@ -126,6 +133,15 @@ def validate_magic_bytes(ext: str, header: bytes):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid TIFF image: Missing TIFF byte-order signature",
             )
+    elif ext == ".wav":
+        if not (header.startswith(b"RIFF") and b"WAVE" in header[:12]):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid WAV file: Missing RIFF/WAVE header")
+    elif ext == ".mp3":
+        if not (header.startswith(b"ID3") or header.startswith(b"\xff\xfb") or header.startswith(b"\xff\xf3") or header.startswith(b"\xff\xf2")):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid MP3 file: Missing MP3 sync/ID3 header")
+    elif ext in [".mp4", ".mov", ".m4a"]:
+        if b"ftyp" not in header[:24]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {ext.upper()} media file: Missing ftyp box header")
 
 
 def detect_initial_type(filename: str) -> str:

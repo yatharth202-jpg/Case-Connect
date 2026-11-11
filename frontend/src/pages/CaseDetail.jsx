@@ -19,6 +19,7 @@ import CompletenessPanel from '../components/extraction/CompletenessPanel';
 import OcrReviewScreen from '../components/extraction/OcrReviewScreen';
 import IngestRunHistory from '../components/extraction/IngestRunHistory';
 import MergePreviewModal from '../components/extraction/MergePreviewModal';
+import MediaReviewScreen from '../components/extraction/MediaReviewScreen';
 
 
 export default function CaseDetail({ caseId }) {
@@ -312,6 +313,7 @@ export default function CaseDetail({ caseId }) {
             { id: 'conflicts', label: 'Merge Conflicts' },
             { id: 'completeness', label: 'Data Completeness' },
             { id: 'ocr_review', label: 'OCR & Doc Review' },
+            { id: 'media', label: 'Audio / Video Forensics' },
             { id: 'timeline', label: 'Chronological Timeline' },
             { id: 'evidence', label: `Evidence Repository (${evidenceList.length})` },
             { id: 'runs', label: 'Ingest Runs' },
@@ -637,13 +639,21 @@ export default function CaseDetail({ caseId }) {
         <OcrReviewScreen caseId={caseId} evidenceList={evidenceList} isViewer={isViewer} />
       )}
 
+      {/* Tab: Audio/Video Forensics (Phase 10) */}
+      {activeTab === 'media' && (
+        <MediaReviewScreen
+          caseId={caseId}
+          evidenceId={evidenceList.find(e => e.original_name?.match(/\.(mp3|wav|m4a|ogg|mp4|mkv|avi|mov)$/i))?.id || evidenceList[0]?.id}
+        />
+      )}
+
       {/* Tab: Ingest Runs & Changelog (Phase 9) */}
       {activeTab === 'runs' && (
         <IngestRunHistory caseId={caseId} isViewer={isViewer} />
       )}
 
       {/* Fallback for unknown tabs */}
-      {activeTab !== 'overview' && activeTab !== 'timeline' && activeTab !== 'evidence' && activeTab !== 'graph' && activeTab !== 'money' && activeTab !== 'review' && activeTab !== 'profiles' && activeTab !== 'reports' && activeTab !== 'leads' && activeTab !== 'master_sheet' && activeTab !== 'conflicts' && activeTab !== 'completeness' && activeTab !== 'ocr_review' && activeTab !== 'runs' && (
+      {activeTab !== 'overview' && activeTab !== 'timeline' && activeTab !== 'evidence' && activeTab !== 'graph' && activeTab !== 'money' && activeTab !== 'review' && activeTab !== 'profiles' && activeTab !== 'reports' && activeTab !== 'leads' && activeTab !== 'master_sheet' && activeTab !== 'conflicts' && activeTab !== 'completeness' && activeTab !== 'ocr_review' && activeTab !== 'media' && activeTab !== 'runs' && (
         <div className="bg-[#0b1120] border border-[#1e293b] rounded-lg p-12 text-center">
           <div className="w-12 h-12 bg-[#030712] border border-[#1e293b] rounded-md flex items-center justify-center mx-auto mb-4 text-[#38bdf8]">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
