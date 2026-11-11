@@ -25,6 +25,10 @@ from backend.app.services.extraction.completeness import (
     evaluate_potential_anomalies,
     get_number_intelligence,
 )
+from backend.app.services.extraction.masking import (
+    can_user_reveal_pii,
+    mask_extracted_entity_dict,
+)
 from backend.app.services.extraction.ocr.preprocess import phash_distance
 from backend.app.services.extraction.pipeline import (
     apply_page_ocr_correction,
@@ -224,6 +228,7 @@ def _commit_approved_entity(db: Session, ee: ExtractedEntity, user_id: str):
 def extract_evidence_document(
     evidence_id: str,
     is_handwritten: Optional[bool] = Query(None, description="Optional flag marking document/image as handwritten"),
+    evidence_password: Optional[str] = Query(None, description="Optional password for encrypted PDF document"),
     current_user: User = Depends(require_role(["admin", "investigator"])),
     db: Session = Depends(get_db),
 ):
@@ -241,6 +246,7 @@ def extract_evidence_document(
         file_path=ev.stored_path,
         user_id=current_user.id,
         officer_marked_handwritten=is_handwritten,
+        password=evidence_password,
     )
     if res.get("status") == "failed":
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=res["error"])
@@ -499,6 +505,7 @@ def list_extracted_entities(
     entity_type: Optional[str] = Query(None, alias="type"),
     min_conf: Optional[float] = Query(None),
     evidence_id: Optional[str] = Query(None),
+    mask: Optional[bool] = Query(None, description="Explicitly force masking (viewers are always masked)"),
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     case: Case = Depends(get_case_for_user),
@@ -524,29 +531,42 @@ def list_extracted_entities(
         .all()
     )
 
+    # Viewer role is strictly masked; investigator/admin see unmasked unless mask=True is explicitly requested
+    if current_user.role == "viewer" or mask is True:
+        should_reveal = False
+    else:
+        should_reveal = can_user_reveal_pii(current_user.role)
+
+    raw_items = [
+        {
+            "id": e.id,
+            "evidence_id": e.evidence_id,
+            "case_id": e.case_id,
+            "entity_type": e.entity_type,
+            "raw_value": e.raw_value,
+            "normalized_value": e.normalized_value,
+            "page_or_paragraph": e.page_or_paragraph,
+            "page_no": e.page_no,
+            "bbox": json.loads(e.bbox_json) if e.bbox_json else None,
+            "source_kind": e.source_kind,
+            "char_span_start": e.char_span_start,
+            "char_span_end": e.char_span_end,
+            "confidence": e.confidence,
+            "method": e.method,
+            "status": e.status,
+            "reviewed_by": e.reviewed_by,
+        }
+        for e in items
+    ]
+
+    masked_items = [
+        mask_extracted_entity_dict(item_d, reveal=should_reveal)
+        for item_d in raw_items
+    ]
+
     return {
         "total": total,
-        "items": [
-            {
-                "id": e.id,
-                "evidence_id": e.evidence_id,
-                "case_id": e.case_id,
-                "entity_type": e.entity_type,
-                "raw_value": e.raw_value,
-                "normalized_value": e.normalized_value,
-                "page_or_paragraph": e.page_or_paragraph,
-                "page_no": e.page_no,
-                "bbox": json.loads(e.bbox_json) if e.bbox_json else None,
-                "source_kind": e.source_kind,
-                "char_span_start": e.char_span_start,
-                "char_span_end": e.char_span_end,
-                "confidence": e.confidence,
-                "method": e.method,
-                "status": e.status,
-                "reviewed_by": e.reviewed_by,
-            }
-            for e in items
-        ],
+        "items": masked_items,
     }
 
 

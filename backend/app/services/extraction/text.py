@@ -19,6 +19,7 @@ from backend.app.services.extraction.ocr.preprocess import (
     extract_exif_and_hashes,
     preprocess_for_ocr,
 )
+from backend.app.services.ingestion.safety import safe_inspect_docx, safe_inspect_pdf
 
 DEVANAGARI_REGEX = re.compile(r"[\u0900-\u097F]")
 
@@ -234,6 +235,7 @@ def read_document_text(
     file_path: str,
     officer_marked_handwritten: bool = False,
     use_cache: bool = False,
+    password: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Extracts structured text and per-word bounding-box provenance from:
@@ -266,6 +268,24 @@ def read_document_text(
             # First try opening via PyMuPDF (fitz) for mixed digital/scanned page routing
             try:
                 fitz_doc = fitz.open(file_path)
+                if fitz_doc.is_encrypted:
+                    if password:
+                        if not fitz_doc.authenticate(password):
+                            fitz_doc.close()
+                            return {
+                                "pages": [],
+                                "full_text": "",
+                                "warning": None,
+                                "error": "ENCRYPTED_FILE_INVALID_PASSWORD: Password authentication failed for encrypted PDF.",
+                            }
+                    else:
+                        fitz_doc.close()
+                        return {
+                            "pages": [],
+                            "full_text": "",
+                            "warning": None,
+                            "error": "ENCRYPTED_FILE_REQUIRES_PASSWORD: PDF is password-protected. Provide password to extract.",
+                        }
             except Exception:
                 fitz_doc = None
 
@@ -399,6 +419,7 @@ def read_document_text(
     # 2. DOCX Extraction
     elif ext == ".docx":
         try:
+            safe_inspect_docx(p)
             doc = docx.Document(file_path)
             char_cursor = 0
             para_num = 1

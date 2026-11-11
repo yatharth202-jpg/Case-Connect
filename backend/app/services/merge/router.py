@@ -28,6 +28,7 @@ from backend.app.db.sql import (
 )
 from backend.app.auth.deps import get_current_user, require_role
 from backend.app.cases.deps import get_case_for_user
+from backend.app.services.extraction.masking import can_user_reveal_pii, mask_record_dict
 from backend.app.services.merge.engine import (
     apply_evidence_merge,
     rollback_evidence_merge,
@@ -323,6 +324,7 @@ def list_case_extraction_records(
     type: Optional[str] = Query(None, description="Filter by record_type (transaction, call, ip_event, entity)"),
     status_filter: Optional[str] = Query("active", alias="status", description="active | retracted | merged | all"),
     q: Optional[str] = Query(None, description="Full-text search across data_json and extra_json"),
+    mask: Optional[bool] = Query(None, description="Force masking (viewers are always masked)"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     current_user: User = Depends(get_current_user),
@@ -354,6 +356,11 @@ def list_case_extraction_records(
         .all()
     )
 
+    if current_user.role == "viewer" or mask is True:
+        should_reveal = False
+    else:
+        should_reveal = can_user_reveal_pii(current_user.role)
+
     items = []
     for r in rows:
         sources = (
@@ -361,7 +368,7 @@ def list_case_extraction_records(
             .filter(RecordSource.record_id == r.id)
             .all()
         )
-        items.append({
+        rec_d = {
             "id": r.id,
             "case_id": r.case_id,
             "evidence_id": r.evidence_id,
@@ -380,7 +387,8 @@ def list_case_extraction_records(
             "status": r.status,
             "sources": [{"evidence_id": s.evidence_id, "source_ref": s.source_ref} for s in sources],
             "created_at": r.created_at.isoformat() if r.created_at else None,
-        })
+        }
+        items.append(mask_record_dict(rec_d, reveal=should_reveal))
 
     return {
         "case_id": case_id,

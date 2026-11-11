@@ -27,6 +27,13 @@ from backend.app.services.ingestion.mapping import (
 )
 from backend.app.services.ingestion.stage import stage_evidence_file, preview_normalized_rows
 from backend.app.audit.service import record_audit_log
+from backend.app.services.ingestion.jobs import (
+    acquire_case_job_lock,
+    release_case_job_lock,
+    is_job_cancelled,
+    cancel_job,
+    reset_job_for_retry,
+)
 
 router = APIRouter()
 
@@ -49,6 +56,8 @@ def run_ingestion_job(job_id: str, evidence_id: str, user_id: str, file_type: st
     steps_log = ["Parsing file structure and encodings", "Normalizing fields and detecting anomalies"]
 
     def _on_progress(pct: int, msg: str):
+        if is_job_cancelled(db, job_id):
+            raise RuntimeError("JOB_CANCELLED_BY_OFFICER")
         job.progress = pct
         job.steps_json = json.dumps(steps_log + [msg])
         db.commit()
@@ -84,10 +93,18 @@ def run_ingestion_job(job_id: str, evidence_id: str, user_id: str, file_type: st
         db.commit()
 
     except Exception as e:
-        job.status = "failed"
-        job.error_message = str(e)
+        err_msg = str(e)
+        if "JOB_CANCELLED_BY_OFFICER" in err_msg or job.status == "cancelled":
+            job.status = "cancelled"
+            job.reason_code = "CANCELLED_BY_OFFICER"
+            job.error_message = "Ingestion aborted per officer cancellation."
+        else:
+            job.status = "failed"
+            job.reason_code = "INGESTION_ERROR"
+            job.error_message = err_msg
         db.commit()
     finally:
+        release_case_job_lock(job.case_id, job.id)
         db.close()
 
 
@@ -336,6 +353,18 @@ def start_ingestion_job(
         mapping = {h: v["canonical"] for h, v in suggested.items()}
         stmt_acct = detailed["file_metadata"].get("statement_owner", {}).get("account_number")
 
+    # Per-case concurrency lock check
+    acquired, conflicting_id = acquire_case_job_lock(case.id, "pending_ingest", "ingest", db=db)
+    if not acquired:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": f"Another background job ({conflicting_id}) is actively processing for this case. Concurrency lock held.",
+                "reason_code": "CASE_JOB_CONCURRENCY_LOCKED",
+                "conflicting_job_id": conflicting_id,
+            },
+        )
+
     job = Job(
         case_id=case.id,
         job_type="ingest",
@@ -348,6 +377,9 @@ def start_ingestion_job(
     db.commit()
     db.refresh(job)
 
+    # Bind lock to actual job id
+    acquire_case_job_lock(case.id, job.id, "ingest", db=db)
+
     background_tasks.add_task(
         run_ingestion_job,
         job.id,
@@ -359,6 +391,88 @@ def start_ingestion_job(
     )
 
     return {"job_id": job.id, "status": "queued", "case_id": case.id}
+
+
+class CancelJobRequest(BaseModel):
+    reason: Optional[str] = "Cancelled by officer"
+
+
+@router.post("/jobs/{job_id}/cancel")
+def cancel_background_job(
+    job_id: str,
+    req: Optional[CancelJobRequest] = None,
+    current_user: User = Depends(require_role(["admin", "investigator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Cooperatively cancel an active or queued background job.
+    Complies with BSA 2023 officer governance and cleans up concurrency locks.
+    """
+    reason = req.reason if req and req.reason else "Cancelled by officer"
+    job = cancel_job(db=db, job_id=job_id, user_id=current_user.id, reason=reason)
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "reason_code": job.reason_code,
+        "message": "Job cancellation recorded.",
+    }
+
+
+@router.post("/jobs/{job_id}/retry")
+def retry_background_job(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(require_role(["admin", "investigator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Retries a failed or cancelled background job, re-dispatching its execution.
+    """
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    acquired, conflicting_id = acquire_case_job_lock(job.case_id, job.id, job.job_type, db=db)
+    if not acquired:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": f"Cannot retry: Another job ({conflicting_id}) is actively processing for this case.",
+                "reason_code": "CASE_JOB_CONCURRENCY_LOCKED",
+            },
+        )
+
+    job = reset_job_for_retry(db=db, job_id=job_id, user_id=current_user.id)
+
+    if job.job_type == "ingest":
+        ev = db.query(EvidenceFile).filter(EvidenceFile.case_id == job.case_id).first()
+        if ev:
+            mapping_rec = (
+                db.query(ColumnMapping)
+                .filter(ColumnMapping.evidence_id == ev.id)
+                .order_by(ColumnMapping.confirmed_at.desc())
+                .first()
+            )
+            m_data = json.loads(mapping_rec.mapping_json) if mapping_rec else {}
+            f_type = m_data.get("file_type", ev.detected_type or "cdr")
+            mapping = m_data.get("mapping", {})
+            stmt_acct = m_data.get("statement_account")
+
+            background_tasks.add_task(
+                run_ingestion_job,
+                job.id,
+                ev.id,
+                current_user.id,
+                f_type,
+                mapping,
+                stmt_acct,
+            )
+
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "message": "Job re-queued for processing.",
+    }
 
 
 @router.get("/jobs/{job_id}")
@@ -381,7 +495,8 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
         "status": job.status,
         "progress": job.progress,
         "steps": steps,
-        "error_message": job.error_message
+        "error_message": job.error_message,
+        "reason_code": job.reason_code,
     }
 
 

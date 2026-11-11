@@ -49,3 +49,6 @@ scratch/
 .serena/
 GSD-STYLE.md
 PROJECT_RULES.md
+
+# Local personal scripts
+scripts/openrouter_client.mjs

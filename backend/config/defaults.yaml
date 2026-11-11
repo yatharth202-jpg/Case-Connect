@@ -177,6 +177,10 @@ extraction:
     reveal_roles:
       - "admin"
       - "investigator"
+    mask_style: "last4"
+  malware_scanner:
+    enabled: false
+    provider: "noop"
   anomalies:
     pattern_min_run: 5
     night_ratio_threshold: 0.50

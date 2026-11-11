@@ -7,7 +7,7 @@ import stat
 from typing import Any, Dict, List, Optional
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
 from PIL import Image
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,6 +21,13 @@ from backend.app.services.extraction.ocr.preprocess import (
     assess_image_quality,
     extract_exif_and_hashes,
     phash_distance,
+)
+from backend.app.services.ingestion.malware import get_malware_scanner
+from backend.app.services.ingestion.safety import (
+    sanitize_filename,
+    safe_unpack_zip,
+    safe_inspect_docx,
+    safe_inspect_pdf,
 )
 
 router = APIRouter()
@@ -177,6 +184,8 @@ async def upload_evidence(
     case_id: str,
     files: List[UploadFile] = File(...),
     is_handwritten: bool = Query(False, description="Optional officer flag marking uploaded image/PDF as handwritten"),
+    evidence_password: Optional[str] = Query(None, description="Optional one-time password for encrypted PDF evidence (never stored)"),
+    x_evidence_password: Optional[str] = Header(None, alias="X-Evidence-Password"),
     case: Case = Depends(get_case_for_user),
     current_user: User = Depends(require_role(["admin", "investigator"])),
     db: Session = Depends(get_db),
@@ -185,6 +194,11 @@ async def upload_evidence(
     Upload multipart evidence files into case repository.
     Validates extension, size limit (from config), and magic bytes.
     Stream-computes SHA-256 while saving to read-only path.
+    Sanitizes filenames to prevent path traversal.
+    Safely unpacks ZIP archives (zip bomb defense) into discrete evidence records.
+    Runs defusedxml security inspection on DOCX files.
+    Enforces password authentication on encrypted PDFs without storing passwords.
+    Invokes pluggable malware scanner before storage.
     For images, extracts EXIF ('as reported by file'), perceptual hash, duplicate check, and OpenCV quality gate.
     """
     if not files:
@@ -193,6 +207,8 @@ async def upload_evidence(
     allowed_map = get_allowed_extensions_map()
     ocr_cfg = get_extraction_config().get("ocr", {})
     phash_max_dist = int(ocr_cfg.get("phash_duplicate_max_dist", 4))
+    scanner = get_malware_scanner()
+    effective_pdf_pwd = evidence_password or x_evidence_password
 
     upload_base = Path(settings.UPLOAD_DIR) / case.id
     upload_base.mkdir(parents=True, exist_ok=True)
@@ -200,7 +216,8 @@ async def upload_evidence(
     results = []
 
     for file in files:
-        original_name = Path(file.filename).name
+        raw_name = Path(file.filename).name if file.filename else "evidence_file.bin"
+        original_name = sanitize_filename(raw_name)
         ext = Path(original_name).suffix.lower()
 
         if ext not in allowed_map:
@@ -218,29 +235,172 @@ async def upload_evidence(
         first_chunk = True
 
         # Stream save and compute hash
-        with open(target_path, "wb") as out_f:
-            while True:
-                chunk = await file.read(64 * 1024)
-                if not chunk:
-                    break
+        try:
+            with open(target_path, "wb") as out_f:
+                while True:
+                    chunk = await file.read(64 * 1024)
+                    if not chunk:
+                        break
 
-                total_size += len(chunk)
-                if total_size > max_limit:
-                    out_f.close()
-                    target_path.unlink(missing_ok=True)
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"File '{original_name}' exceeds size limit of {max_limit // (1024 * 1024)} MB",
-                    )
+                    total_size += len(chunk)
+                    if total_size > max_limit:
+                        out_f.close()
+                        target_path.unlink(missing_ok=True)
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"File '{original_name}' exceeds size limit of {max_limit // (1024 * 1024)} MB",
+                        )
 
-                if first_chunk:
-                    validate_magic_bytes(ext, chunk)
-                    first_chunk = False
+                    if first_chunk:
+                        validate_magic_bytes(ext, chunk)
+                        first_chunk = False
 
-                hasher.update(chunk)
-                out_f.write(chunk)
+                    hasher.update(chunk)
+                    out_f.write(chunk)
+        except Exception:
+            if target_path.exists():
+                target_path.unlink(missing_ok=True)
+            raise
 
         computed_sha = hasher.hexdigest()
+
+        # 1. Safe ZIP Archive Handling (Bulk unpack with zip-bomb & traversal defense)
+        if ext == ".zip":
+            try:
+                unpacked = safe_unpack_zip(
+                    zip_path=target_path,
+                    target_dir=upload_base,
+                    allowed_extensions=allowed_map,
+                )
+            finally:
+                target_path.unlink(missing_ok=True)
+
+            for item in unpacked:
+                inner_path = Path(item["stored_path"])
+                inner_ext = item["extension"]
+
+                # Malware check on inner file
+                scan_res = scanner.scan(inner_path)
+                if not scan_res.clean:
+                    inner_path.unlink(missing_ok=True)
+                    record_audit_log(
+                        db=db,
+                        user_id=current_user.id,
+                        action="malware_quarantine",
+                        case_id=case.id,
+                        object_type="evidence_file",
+                        object_id=item["id"],
+                        details={"threat": scan_res.threat_name, "filename": item["original_name"]},
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"MALWARE_DETECTED: Threat '{scan_res.threat_name}' detected in archive entry '{item['original_name']}'",
+                    )
+
+                inner_status = "uploaded"
+                inner_phash: Optional[str] = None
+                inner_exif: Dict[str, Any] = {}
+                inner_quality: Dict[str, Any] = {}
+
+                if inner_ext in IMAGE_EXTENSIONS:
+                    try:
+                        with Image.open(inner_path) as pil_img:
+                            meta = extract_exif_and_hashes(pil_img)
+                            inner_phash = meta["perceptual_hash"]
+                            inner_exif = meta["exif"]
+                            q_res = assess_image_quality(pil_img)
+                            inner_quality = {
+                                "passed": q_res["passed"],
+                                "status": q_res["status"],
+                                "quality_reason": q_res["reason"],
+                                "metrics": q_res["metrics"],
+                            }
+                            if not q_res["passed"]:
+                                inner_status = "needs_better_image"
+                    except Exception as exc:
+                        inner_status = "needs_better_image"
+                        inner_quality = {
+                            "passed": False,
+                            "status": "needs_better_image",
+                            "quality_reason": f"Image decode failure: {str(exc)}",
+                        }
+
+                try:
+                    os.chmod(inner_path, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+                except Exception:
+                    pass
+
+                ev_entry = EvidenceFile(
+                    id=item["id"],
+                    case_id=case.id,
+                    original_name=item["original_name"],
+                    stored_path=item["stored_path"],
+                    sha256=item["sha256"],
+                    file_size=item["file_size"],
+                    detected_type=detect_initial_type(item["original_name"]),
+                    status=inner_status,
+                    uploader_id=current_user.id,
+                    perceptual_hash=inner_phash,
+                    exif_json=json.dumps(inner_exif, default=str),
+                    is_handwritten=bool(is_handwritten),
+                    quality_json=json.dumps(inner_quality, default=str),
+                    created_at=datetime.utcnow(),
+                )
+                db.add(ev_entry)
+                db.commit()
+                db.refresh(ev_entry)
+
+                record_audit_log(
+                    db=db,
+                    user_id=current_user.id,
+                    action="upload_evidence",
+                    case_id=case.id,
+                    object_type="evidence_file",
+                    object_id=ev_entry.id,
+                    details={
+                        "original_name": item["original_name"],
+                        "sha256": item["sha256"],
+                        "size_bytes": item["file_size"],
+                        "status": inner_status,
+                        "source_archive": original_name,
+                    },
+                )
+                results.append(_build_evidence_response(ev_entry))
+
+            continue
+
+        # 2. Malware Scanner Hook on raw file
+        scan_res = scanner.scan(target_path)
+        if not scan_res.clean:
+            target_path.unlink(missing_ok=True)
+            record_audit_log(
+                db=db,
+                user_id=current_user.id,
+                action="malware_quarantine",
+                case_id=case.id,
+                object_type="evidence_file",
+                object_id=file_uuid,
+                details={"threat": scan_res.threat_name, "filename": original_name},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"MALWARE_DETECTED: File rejected due to detected threat: {scan_res.threat_name}",
+            )
+
+        # 3. Format-specific security inspections
+        if ext == ".docx":
+            try:
+                safe_inspect_docx(target_path)
+            except Exception:
+                target_path.unlink(missing_ok=True)
+                raise
+        elif ext == ".pdf":
+            try:
+                doc_handle, pdf_meta = safe_inspect_pdf(target_path, password=effective_pdf_pwd)
+                doc_handle.close()
+            except Exception:
+                target_path.unlink(missing_ok=True)
+                raise
 
         ev_status = "uploaded"
         phash_val: Optional[str] = None
