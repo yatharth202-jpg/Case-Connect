@@ -366,6 +366,122 @@ export const extractionApi = {
   },
 };
 
+// 7a. Extraction Module V2 & Merge Engine API
+export const extractionV2Api = {
+  previewMerge: async (caseId, evidenceId) => {
+    const res = await api.post(`/cases/${caseId}/evidence/${evidenceId}/merge/preview`);
+    return res.data;
+  },
+  applyMerge: async (caseId, evidenceId) => {
+    const res = await api.post(`/cases/${caseId}/evidence/${evidenceId}/merge/apply`);
+    return res.data;
+  },
+  rollbackMerge: async (caseId, evidenceId) => {
+    const res = await api.post(`/cases/${caseId}/evidence/${evidenceId}/rollback`);
+    return res.data;
+  },
+  getRecords: async (caseId, { type, status, q, page = 1, limit = 50 } = {}) => {
+    const params = { page, limit };
+    if (type) params.type = type;
+    if (status) params.status = status;
+    if (q) params.q = q;
+    const res = await api.get(`/cases/${caseId}/records`, { params });
+    return res.data;
+  },
+  getConflicts: async (caseId, status = 'open') => {
+    const res = await api.get(`/cases/${caseId}/conflicts`, { params: { status } });
+    return res.data;
+  },
+  resolveConflict: async (conflictId, { claimId, note } = {}) => {
+    const res = await api.post(`/conflicts/${conflictId}/resolve`, {
+      claim_id: claimId,
+      note,
+    });
+    return res.data;
+  },
+  getEntityHistory: async (caseId, entityId) => {
+    const res = await api.get(`/cases/${caseId}/entities/${entityId}/history`);
+    return res.data;
+  },
+  getRecordHistory: async (caseId, recordId) => {
+    const res = await api.get(`/cases/${caseId}/records/${recordId}/history`);
+    return res.data;
+  },
+  getMasterSheet: async (caseId, { format = 'json', view = 'wide' } = {}) => {
+    const res = await api.get(`/cases/${caseId}/master-sheet`, {
+      params: { format, view },
+      responseType: format === 'json' ? 'json' : 'blob',
+    });
+    return {
+      data: res.data,
+      sha256: res.headers['x-export-sha256'] || '',
+    };
+  },
+  getIngestRuns: async (caseId) => {
+    const res = await api.get(`/cases/${caseId}/ingest-runs`);
+    return res.data;
+  },
+  addAnnotation: async (caseId, data) => {
+    const res = await api.post(`/cases/${caseId}/annotations`, data);
+    return res.data;
+  },
+  getAnnotations: async (caseId, params = {}) => {
+    const res = await api.get(`/cases/${caseId}/annotations`, { params });
+    return res.data;
+  },
+  getCompleteness: async (caseId) => {
+    const res = await api.get(`/cases/${caseId}/completeness`);
+    return res.data;
+  },
+  getPages: async (evidenceId) => {
+    const res = await api.get(`/evidence/${evidenceId}/pages`);
+    return res.data;
+  },
+  getPageOcr: async (evidenceId, pageNumber) => {
+    const res = await api.get(`/evidence/${evidenceId}/pages/${pageNumber}/ocr`);
+    return res.data;
+  },
+  submitCorrection: async (evidenceId, pageNumber, data) => {
+    const res = await api.post(`/evidence/${evidenceId}/pages/${pageNumber}/corrections`, data);
+    return res.data;
+  },
+  revealPii: async (caseId, { entityId, recordId, justification, fieldNames = [] } = {}) => {
+    const res = await api.post(`/cases/${caseId}/reveal`, {
+      entity_id: entityId,
+      record_id: recordId,
+      statutory_justification: justification,
+      field_names: fieldNames,
+    });
+    return res.data;
+  },
+  getJob: async (caseId, jobId) => {
+    const res = await api.get(`/cases/${caseId}/jobs/${jobId}`);
+    return res.data;
+  },
+  cancelJob: async (caseId, jobId) => {
+    const res = await api.post(`/cases/${caseId}/jobs/${jobId}/cancel`);
+    return res.data;
+  },
+  retryJob: async (caseId, jobId) => {
+    const res = await api.post(`/cases/${caseId}/jobs/${jobId}/retry`);
+    return res.data;
+  },
+  extractMedia: async (evidenceId) => {
+    const res = await api.post(`/evidence/${evidenceId}/media-extract`);
+    return res.data;
+  },
+  getMediaTranscript: async (evidenceId, needsReviewOnly = false) => {
+    const res = await api.get(`/evidence/${evidenceId}/transcript`, {
+      params: { needs_review_only: needsReviewOnly },
+    });
+    return res.data;
+  },
+  updateMediaSegment: async (segmentId, data) => {
+    const res = await api.patch(`/transcript/${segmentId}`, data);
+    return res.data;
+  },
+};
+
 // 7b. Entity Matching & Master Profiles (Phase 7 - Hero Feature #1) API
 export const matchesApi = {
   listMatches: async (caseId, { level, status, limit = 50, offset = 0 } = {}) => {

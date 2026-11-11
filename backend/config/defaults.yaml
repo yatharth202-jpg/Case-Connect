@@ -168,6 +168,18 @@ extraction:
     language: "auto"
     frame_interval_sec: 2.0
     max_duration_min: 60
+    ffmpeg_path: ""
+    allowed_types:
+      - ".mp3"
+      - ".wav"
+      - ".m4a"
+      - ".ogg"
+      - ".mp4"
+      - ".mkv"
+      - ".avi"
+      - ".mov"
+    max_file_size_mb: 100
+    low_confidence_cutoff: 0.70
   masking:
     fields:
       - "aadhaar"
@@ -177,6 +189,10 @@ extraction:
     reveal_roles:
       - "admin"
       - "investigator"
+    mask_style: "last4"
+  malware_scanner:
+    enabled: false
+    provider: "noop"
   anomalies:
     pattern_min_run: 5
     night_ratio_threshold: 0.50

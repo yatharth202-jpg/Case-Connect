@@ -19,6 +19,7 @@ All AI coding assistants (including Antigravity, Claude, Codex, or subagents) wo
 4. **SQLITE IS THE AUTHORITATIVE SOURCE OF TRUTH:** Neo4j is a rebuildable, disposable index. All merges, decisions, staged records, and audit events MUST be stored in SQLite first and synced to Neo4j via `rebuild_graph(case_id)`.
 5. **AI SUGGESTS, HUMAN DECIDES:** Never automatically merge records or declare guilt. All identity merges require explicit officer confirmation and MUST support instant reversibility (`Undo Merge`).
 6. **NO PREJUDICIAL TERMINOLOGY:** Never output words like `criminal`, `suspect`, `guilty`, or `mastermind` in UI copy, API messages, or reports. Use neutral, objective forensic terminology: `lead for review`, `high-priority entity`, or `potential anomaly`.
+7. **COMPETING CLAIMS LEDGER (NO BLIND OVERWRITES):** Ingestion never overwrites database records in place. Every parsed field is recorded as a `RecordFieldClaim` with source ID, method, confidence, and timestamp. Active field values are resolved dynamically via the configurable `source_trust_order` in `defaults.yaml`. Ingest runs must support instant, clean rollback.
 
 ---
 
@@ -46,7 +47,7 @@ backend/
 │   ├── audit/        # Cryptographic SHA-256 chain of custody
 │   ├── auth/         # Bcrypt (12 rounds) & JWT token handling
 │   ├── cases/        # Case dockets, permissions, & settings
-│   ├── db/           # 22 SQLAlchemy models (sql.py) & Neo4j driver (neo4j.py)
+│   ├── db/           # 32 SQLAlchemy models (sql.py) & Neo4j driver (neo4j.py)
 │   ├── evidence/     # Ingestion, magic byte checks, & column mapping
 │   ├── services/     # Pure forensic algorithms (analytics, matching, extraction, reports)
 │   ├── config.py     # Pydantic BaseSettings

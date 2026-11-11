@@ -25,6 +25,10 @@ from backend.app.services.extraction.completeness import (
     evaluate_potential_anomalies,
     get_number_intelligence,
 )
+from backend.app.services.extraction.masking import (
+    can_user_reveal_pii,
+    mask_extracted_entity_dict,
+)
 from backend.app.services.extraction.ocr.preprocess import phash_distance
 from backend.app.services.extraction.pipeline import (
     apply_page_ocr_correction,
@@ -224,6 +228,7 @@ def _commit_approved_entity(db: Session, ee: ExtractedEntity, user_id: str):
 def extract_evidence_document(
     evidence_id: str,
     is_handwritten: Optional[bool] = Query(None, description="Optional flag marking document/image as handwritten"),
+    evidence_password: Optional[str] = Query(None, description="Optional password for encrypted PDF document"),
     current_user: User = Depends(require_role(["admin", "investigator"])),
     db: Session = Depends(get_db),
 ):
@@ -241,6 +246,7 @@ def extract_evidence_document(
         file_path=ev.stored_path,
         user_id=current_user.id,
         officer_marked_handwritten=is_handwritten,
+        password=evidence_password,
     )
     if res.get("status") == "failed":
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=res["error"])
@@ -499,6 +505,7 @@ def list_extracted_entities(
     entity_type: Optional[str] = Query(None, alias="type"),
     min_conf: Optional[float] = Query(None),
     evidence_id: Optional[str] = Query(None),
+    mask: Optional[bool] = Query(None, description="Explicitly force masking (viewers are always masked)"),
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     case: Case = Depends(get_case_for_user),
@@ -524,29 +531,42 @@ def list_extracted_entities(
         .all()
     )
 
+    # Viewer role is strictly masked; investigator/admin see unmasked unless mask=True is explicitly requested
+    if current_user.role == "viewer" or mask is True:
+        should_reveal = False
+    else:
+        should_reveal = can_user_reveal_pii(current_user.role)
+
+    raw_items = [
+        {
+            "id": e.id,
+            "evidence_id": e.evidence_id,
+            "case_id": e.case_id,
+            "entity_type": e.entity_type,
+            "raw_value": e.raw_value,
+            "normalized_value": e.normalized_value,
+            "page_or_paragraph": e.page_or_paragraph,
+            "page_no": e.page_no,
+            "bbox": json.loads(e.bbox_json) if e.bbox_json else None,
+            "source_kind": e.source_kind,
+            "char_span_start": e.char_span_start,
+            "char_span_end": e.char_span_end,
+            "confidence": e.confidence,
+            "method": e.method,
+            "status": e.status,
+            "reviewed_by": e.reviewed_by,
+        }
+        for e in items
+    ]
+
+    masked_items = [
+        mask_extracted_entity_dict(item_d, reveal=should_reveal)
+        for item_d in raw_items
+    ]
+
     return {
         "total": total,
-        "items": [
-            {
-                "id": e.id,
-                "evidence_id": e.evidence_id,
-                "case_id": e.case_id,
-                "entity_type": e.entity_type,
-                "raw_value": e.raw_value,
-                "normalized_value": e.normalized_value,
-                "page_or_paragraph": e.page_or_paragraph,
-                "page_no": e.page_no,
-                "bbox": json.loads(e.bbox_json) if e.bbox_json else None,
-                "source_kind": e.source_kind,
-                "char_span_start": e.char_span_start,
-                "char_span_end": e.char_span_end,
-                "confidence": e.confidence,
-                "method": e.method,
-                "status": e.status,
-                "reviewed_by": e.reviewed_by,
-            }
-            for e in items
-        ],
+        "items": masked_items,
     }
 
 
@@ -929,4 +949,142 @@ def get_case_number_intelligence(
         case_id=case.id,
         current_user=current_user,
     )
+
+
+class PatchTranscriptSegmentRequest(BaseModel):
+    text: Optional[str] = None
+    officer_note: Optional[str] = None
+    is_reviewed: Optional[bool] = None
+
+
+@router.post("/evidence/{evidence_id}/media-extract")
+def extract_evidence_media(
+    evidence_id: str,
+    current_user: User = Depends(require_role(["admin", "investigator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Extracts speech-to-text transcripts from audio and OCR from keyframes of video.
+    Feature-flagged: returns HTTP 400 if extraction.media.enabled is false.
+    """
+    from backend.app.services.extraction.media import is_media_extraction_enabled, process_media_evidence
+
+    if not is_media_extraction_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MEDIA_EXTRACTION_DISABLED: Media extraction is disabled in configuration (extraction.media.enabled: false)."
+        )
+
+    ev = db.query(EvidenceFile).filter(EvidenceFile.id == evidence_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail=f"Evidence file '{evidence_id}' not found")
+
+    return process_media_evidence(
+        evidence_id=ev.id,
+        case_id=ev.case_id,
+        db=db,
+        user_id=current_user.id,
+    )
+
+
+@router.get("/evidence/{evidence_id}/transcript")
+def get_evidence_transcript(
+    evidence_id: str,
+    needs_review_only: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieves chronological timestamped transcript segments for audio or video evidence.
+    """
+    from backend.app.db.sql import MediaTranscriptSegment
+
+    ev = db.query(EvidenceFile).filter(EvidenceFile.id == evidence_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail=f"Evidence file '{evidence_id}' not found")
+
+    query = db.query(MediaTranscriptSegment).filter(MediaTranscriptSegment.evidence_id == evidence_id)
+    if needs_review_only:
+        query = query.filter(MediaTranscriptSegment.needs_review == True)
+
+    segments = query.order_by(MediaTranscriptSegment.start_sec.asc()).all()
+    total_count = len(segments)
+    review_count = sum(1 for s in segments if s.needs_review and not s.is_reviewed)
+
+    return {
+        "evidence_id": evidence_id,
+        "total_segments": total_count,
+        "pending_review_count": review_count,
+        "segments": [
+            {
+                "id": s.id,
+                "start_sec": s.start_sec,
+                "end_sec": s.end_sec,
+                "text": s.text,
+                "confidence": s.confidence,
+                "speaker": s.speaker,
+                "is_reviewed": s.is_reviewed,
+                "needs_review": s.needs_review,
+                "officer_note": s.officer_note,
+            }
+            for s in segments
+        ],
+    }
+
+
+@router.patch("/transcript/{segment_id}")
+def update_transcript_segment(
+    segment_id: str,
+    payload: PatchTranscriptSegmentRequest,
+    current_user: User = Depends(require_role(["admin", "investigator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Officer review and text correction for a media transcript segment.
+    Appends an audited record to the SHA-256 chain.
+    """
+    from backend.app.db.sql import MediaTranscriptSegment
+
+    segment = db.query(MediaTranscriptSegment).filter(MediaTranscriptSegment.id == segment_id).first()
+    if not segment:
+        raise HTTPException(status_code=404, detail=f"Transcript segment '{segment_id}' not found")
+
+    prev_text = segment.text
+    if payload.text is not None and payload.text.strip():
+        segment.text = payload.text.strip()
+        segment.is_reviewed = True
+        segment.needs_review = False
+    if payload.officer_note is not None:
+        segment.officer_note = payload.officer_note.strip()
+    if payload.is_reviewed is not None:
+        segment.is_reviewed = payload.is_reviewed
+        if payload.is_reviewed:
+            segment.needs_review = False
+
+    db.commit()
+    db.refresh(segment)
+
+    record_audit_log(
+        db=db,
+        user_id=current_user.id,
+        action="correct_media_segment",
+        case_id=segment.case_id,
+        object_type="media_transcript_segment",
+        object_id=segment.id,
+        details={
+            "previous_text": prev_text,
+            "corrected_text": segment.text,
+            "officer_note": segment.officer_note,
+            "is_reviewed": segment.is_reviewed,
+        },
+    )
+
+    return {
+        "id": segment.id,
+        "text": segment.text,
+        "is_reviewed": segment.is_reviewed,
+        "needs_review": segment.needs_review,
+        "officer_note": segment.officer_note,
+    }
+
 

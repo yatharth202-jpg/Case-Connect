@@ -183,9 +183,17 @@ Indian Law Enforcement Agencies (State Police Cyber Cells, Crime Branches, and C
 
 ## 10. Scope Boundaries & Success Criteria
 
-### 10.1 In-Scope (MVP & Core Platform)
+### 10.1 In-Scope (MVP & Production Capabilities)
 * Universal tabular parsing with header caching and fuzzy mapping suggestions.
-* Canonical data staging into 22 SQLite relational tables.
+* Canonical data staging into 32 SQLite relational tables with WAL mode.
+* Natural Key Unified Record Store (`ExtractionRecord`) and Competing Claims Ledger (`RecordFieldClaim`).
+* Hierarchical merge engine with dry-run delta preview (`MergePreviewModal`), conflict queue (`ConflictQueue`), and instant reversible rollback.
+* Master sheet virtualized tabular projection with dynamic extra columns (`extra_json`) and Section 63 BSA SHA-256 export.
+* Scanned PDF, image, and handwritten OCR with interactive bounding-box review workspace and OpenCV quality gate.
+* Structured FIR legal analysis with IPC ↔ BNS / CrPC ↔ BNSS reference cross-mappings.
+* Data completeness scoring and mathematical Potential Anomaly behavioral detection.
+* Local-first audio/video forensics with timestamped provenance units (`MediaTranscriptSegment`).
+* Section 63 BSA statutory PII unmasking with cryptographic audit logging.
 * Dual-engine graph projection with NetworkX centrality and Cytoscape.js rendering.
 * BFS money layering detection and pass-through account flagging.
 * Reversible entity merging with human signoff.

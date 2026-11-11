@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from backend.app.config import get_defaults, get_merge_config
+from backend.app.config import get_defaults, get_merge_config, get_extractor_version
 from backend.app.db.sql import (
     ExtractionRecord,
     RecordSource,
@@ -49,17 +49,7 @@ def _get_case_lock(case_id: str) -> threading.Lock:
         return _CASE_LOCKS[case_id]
 
 
-def get_extractor_version() -> str:
-    """Computes a deterministic extractor version string (app version + config hash)."""
-    defaults = get_defaults()
-    cfg_subset = {
-        "extraction": defaults.get("extraction", {}),
-        "merge": defaults.get("merge", {}),
-    }
-    cfg_hash = hashlib.sha256(
-        json.dumps(cfg_subset, sort_keys=True, default=str).encode("utf-8")
-    ).hexdigest()[:8]
-    return f"v2.0.0+{cfg_hash}"
+# get_extractor_version is imported from backend.app.config for centralized provenance
 
 
 def _subject_type_for_record_type(record_type: str) -> str:

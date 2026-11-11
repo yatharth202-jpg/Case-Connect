@@ -175,3 +175,107 @@ get_ifsc_bank_codes()
 get_fir_patterns()
 get_ipc_bns_map()
 
+_EXTRACTOR_VERSION_CACHE: Optional[str] = None
+
+
+def get_extractor_version(force_reload: bool = False) -> str:
+    """
+    Computes a deterministic, single EXTRACTOR_VERSION string combining:
+      - App version: v2.0.0
+      - Deterministic config hash (SHA-256 of extraction & merge defaults)
+      - Key library versions (fitz/PyMuPDF, phonenumbers, pydantic, sqlalchemy)
+    Stored on every record, field claim, and ingest run for forensic provenance.
+    """
+    global _EXTRACTOR_VERSION_CACHE
+    if _EXTRACTOR_VERSION_CACHE is not None and not force_reload:
+        return _EXTRACTOR_VERSION_CACHE
+
+    import hashlib
+    defaults = get_defaults(force_reload=force_reload)
+    cfg_subset = {
+        "extraction": defaults.get("extraction", {}),
+        "merge": defaults.get("merge", {}),
+    }
+    cfg_hash = hashlib.sha256(
+        json.dumps(cfg_subset, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()[:8]
+
+    # Inspect key forensic library versions
+    lib_parts = []
+    try:
+        import fitz
+        lib_parts.append(f"fitz.{fitz.__version__}")
+    except Exception:
+        pass
+
+    try:
+        import phonenumbers
+        lib_parts.append(f"pn.{phonenumbers.__version__}")
+    except Exception:
+        pass
+
+    try:
+        import pydantic
+        lib_parts.append(f"pyd.{pydantic.__version__}")
+    except Exception:
+        pass
+
+    try:
+        import sqlalchemy
+        lib_parts.append(f"sa.{sqlalchemy.__version__}")
+    except Exception:
+        pass
+
+    lib_str = ".".join(lib_parts) if lib_parts else "std"
+    version_str = f"v2.0.0+cfg.{cfg_hash}.{lib_str}"
+    _EXTRACTOR_VERSION_CACHE = version_str
+    return version_str
+
+
+def validate_system_config(defaults: Optional[Dict[str, Any]] = None) -> None:
+    """
+    Startup configuration validator.
+    Fails fast with a descriptive error message if required keys or sections
+    in backend/config/defaults.yaml are missing or malformed.
+    """
+    if defaults is None:
+        defaults = get_defaults()
+
+    if not isinstance(defaults, dict) or not defaults:
+        raise ValueError("CONFIGURATION ERROR: defaults.yaml could not be loaded or is empty.")
+
+    ext_cfg = defaults.get("extraction")
+    if not isinstance(ext_cfg, dict):
+        raise ValueError("CONFIGURATION ERROR: 'extraction' section missing or not a dictionary in defaults.yaml.")
+
+    required_extraction_keys = [
+        "default_region",
+        "timezone_display",
+        "date_parse",
+        "amount",
+        "validators",
+        "ocr",
+        "media",
+        "masking",
+    ]
+    for k in required_extraction_keys:
+        if k not in ext_cfg:
+            raise ValueError(f"CONFIGURATION ERROR: Missing required configuration key 'extraction.{k}' in defaults.yaml.")
+
+    merge_cfg = defaults.get("merge")
+    if not isinstance(merge_cfg, dict):
+        raise ValueError("CONFIGURATION ERROR: 'merge' section missing or not a dictionary in defaults.yaml.")
+
+    required_merge_keys = [
+        "natural_keys",
+        "source_trust_order",
+        "conflict_confidence_margin",
+        "min_confidence_auto_accept",
+        "needs_review_below",
+    ]
+    for k in required_merge_keys:
+        if k not in merge_cfg:
+            raise ValueError(f"CONFIGURATION ERROR: Missing required configuration key 'merge.{k}' in defaults.yaml.")
+
+
+

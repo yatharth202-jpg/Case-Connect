@@ -11,6 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from backend.app.config import settings
 from backend.app.db.sql import Base, engine, SessionLocal, User, get_db
 from backend.app.db.neo4j import check_neo4j_health
+from backend.app.audit.logging_sanitizer import setup_logging_sanitizer
+
+setup_logging_sanitizer()
 
 app = FastAPI(
     title="Case Connect AI | Backend API",
@@ -59,6 +62,8 @@ app.add_middleware(
 def on_startup_lifecycle():
     """Ensure database tables and initial officer credentials exist automatically."""
     try:
+        from backend.app.config import validate_system_config
+        validate_system_config()
         Base.metadata.create_all(bind=engine)
         db = SessionLocal()
         try:

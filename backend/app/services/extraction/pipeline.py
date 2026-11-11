@@ -202,6 +202,7 @@ def run_document_extraction(
     file_path: str,
     user_id: str = "system",
     officer_marked_handwritten: Optional[bool] = None,
+    password: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Executes the full document/image/PDF extraction pipeline:
@@ -221,7 +222,16 @@ def run_document_extraction(
         ev.is_handwritten = bool(officer_marked_handwritten)
         db.flush()
 
-    doc_res = read_document_text(file_path, officer_marked_handwritten=is_hw_flag)
+    doc_res = read_document_text(file_path, officer_marked_handwritten=is_hw_flag, password=password)
+    if doc_res.get("error"):
+        return {
+            "status": "failed",
+            "error": doc_res["error"],
+            "total_extracted": 0,
+            "pages": [],
+            "incident_facts": None,
+        }
+
     pages = doc_res.get("pages", [])
 
     # Persist EvidencePage rows even if status is needs_better_image or ocr_unavailable

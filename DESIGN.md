@@ -187,3 +187,46 @@ Case Connect AI is built for police investigators, cyber forensic specialists, a
 * **Contrast Ratios:** All body text (`#f1f5f9` on `#0c1322`) satisfies WCAG 2.1 AA standard (contrast ratio > 7:1).
 * **Color Blindness Accommodation:** Statuses and alerts pair colors with distinct icons (Triangle alert for Warning, Octagon for Danger, Checkmark for Verified).
 * **Keyboard Navigation:** Full tab-order navigation across all modals, form inputs, and graph controls.
+
+---
+
+## 11. Extraction V2 Forensic Interfaces & Review Workflows
+
+CaseConnect AI Extraction V2 introduces nine specialized forensic UI modules mounted directly inside the Case Workspace (`frontend/src/pages/CaseDetail.jsx` and `frontend/src/components/extraction/`).
+
+### 11.1 Master Sheet View (`MasterSheetTab.jsx`)
+* **Purpose:** Virtualized tabular projection of unified records (calls, transactions, SDR profiles, FIR extracts) merged across disparate evidence sources.
+* **Features:** Dynamic column visibility chooser, real-time filtering, per-cell claim provenance history popover, and Section 63 BSA compliant SHA-256 exports in CSV and JSON formats.
+
+### 11.2 Conflict Resolution Queue (`ConflictQueue.jsx`)
+* **Purpose:** Structured adjudicative workspace for conflicting claims on natural identity keys.
+* **Features:** Side-by-side claim comparison with confidence scores, source trust rankings, method tags, and explicit officer decision locking (`POST /cases/{id}/conflicts/{id}/resolve`).
+
+### 11.3 Data Completeness & Quality Meter (`CompletenessPanel.jsx`)
+* **Purpose:** Mathematical data sufficiency scoring for forensic dockets.
+* **Features:** Overall completeness percentage meter, required-field presence breakdown, chronological date-gap detection, and explicit indicators of analytics features disabled due to data sparsity.
+
+### 11.4 OCR & Document Review Workspace (`OcrReviewScreen.jsx`)
+* **Purpose:** Interactive side-by-side inspection for scanned PDFs, FIRs, and handwritten seizure memos.
+* **Features:** Synchronized dual-pane layout: high-resolution image canvas with confidence-tinted word bounding boxes on the left, and an editable structured transcript on the right. Persists corrections as high-trust officer claims.
+
+### 11.5 Ingestion Run History & Provenance Rollback (`IngestRunHistory.jsx`)
+* **Purpose:** Chronological audit log of all file ingestion batches.
+* **Features:** Displays file provenance, parsing metadata, entity yields, and an immutable rollback trigger with pre-flight impact warnings.
+
+### 11.6 Statutory PII Unmasking Modal (`RevealPiiModal.jsx`)
+* **Purpose:** Section 63 BSA 2023 compliant access gate for masked identifiers.
+* **Features:** Enforces role-based eligibility (Investigator/Admin) and mandates affirmative entry of legal justification prior to unmasking sensitive phone numbers, accounts, PAN, and Aadhaar identifiers.
+
+### 11.7 Pre-Ingestion Mapping Preview Modal (`MappingPreviewModal.jsx`)
+* **Purpose:** Automated schema alignment and template drift detection.
+* **Features:** Displays top-3 suggested column mappings with probabilistic scoring, previews normalized rows, and surfaces structural drift warnings before ingestion commits.
+
+### 11.8 Merge Pre-flight & Dry-run Delta Modal (`MergePreviewModal.jsx`)
+* **Purpose:** Forensic dry-run delta preview prior to record store commit.
+* **Features:** Summarizes new records, unchanged records, field updates, dynamic extensions (`extra_json`), and new conflicts.
+
+### 11.9 Objective Forensic Status Badges (`NumberBadge.jsx`)
+* **Purpose:** Statutory visual labeling of numbers and identifiers without prejudicial bias.
+* **Features:** Displays `"Format valid — ownership unverified"` and `"Potential Anomaly"` flags with mathematical criteria popovers, completely eliminating prejudicial terminology.
+
