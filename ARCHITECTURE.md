@@ -39,7 +39,7 @@ Case Connect AI implements a clean, modular, monolith-first architecture enginee
 | Component | Technology | Architectural Rationale |
 | :--- | :--- | :--- |
 | **Backend Framework** | **FastAPI (Python 3.11+)** | High-performance asynchronous REST endpoints, automatic OpenAPI documentation, native Pydantic schema validation. |
-| **Primary Database** | **SQLite 3 (WAL Mode)** | Zero-configuration, serverless, single-file portability, strictly ACID compliant, and easily verifiable in judicial proceedings. |
+| **Primary Database** | **SQLite 3 (WAL Mode)** | Zero-configuration, serverless, single-file portability, strictly ACID compliant, and easily verifiable in judicial proceedings (32 relational models). |
 | **ORM / Data Access** | **SQLAlchemy 2.0** | Robust relational mapping, query parameterisation preventing SQL injection, thread-safe connection pooling. |
 | **Graph Database** | **Neo4j 5.x / NetworkX** | Disposable index for multi-hop relationship discovery (`*1..4`), path finding, and centrality algorithms. Rebuildable from SQLite source. |
 | **NLP & Entity Extraction** | **spaCy (`en_core_web_sm`)** | Deterministic local tokenization, regex extraction, and named entity recognition for FIR texts without cloud dependencies. |
@@ -266,3 +266,18 @@ Configuration is managed via Pydantic `BaseSettings` reading exclusively from `.
 * **Docker Compose (Recommended):** Multi-container deployment running `backend`, `frontend`, and `neo4j` in an isolated bridge network with persistent local volumes.
 * **Air-Gapped Standalone:** Single-executable or virtualenv deployment on isolated forensic laptops without internet connectivity.
 * **Production Web Service:** Deployable on standard Linux servers or Render/AWS with preflight validation scripts (`scripts/preflight.py`).
+
+---
+
+## 11. Extraction Module V2: Unified Record Store & Natural Key Merge Engine
+
+Extraction V2 establishes an append-only forensic claims architecture designed to eliminate blind database overwrites and guarantee deterministic evidentiary provenance.
+
+### 11.1 Architectural Pillars
+1. **Natural Key Deduplication:** Records across disparate files (e.g. telecom CDRs, bank statements, subscriber forms) are resolved by intrinsic cryptographic tuples `(case_id, record_type, natural_key, occurrence_idx)`.
+2. **Competing Claims Ledger (`RecordFieldClaim`):** Ingestion never modifies existing records in place. Every parsed field is saved as an independent claim carrying its source file ID, extraction method, confidence score, and timestamp.
+3. **Hierarchical Source Trust Ordering:** Automated field resolution resolves active values through a configurable trust ladder (`officer_confirmed > court_order > sdr_official > bank_official > telecom_cdr > ocr_printed > ocr_handwritten > asr_audio`).
+4. **Adjudicative Conflict Queue:** Conflicting claims whose confidence differential $\Delta \le 0.15$ are suspended in `MergeConflict` records awaiting explicit officer confirmation.
+5. **Reversible Rollback:** Ingest runs can be retracted cleanly (`POST /cases/{id}/evidence/{evidence_id}/rollback`), removing only that file's claims and re-resolving the master projection.
+6. **Local-First Audio/Video Media Engine:** Offline speech-to-text via `faster-whisper` and video keyframe OCR via FFmpeg with timestamped provenance (`ts_{seconds}s`), inert by default (`extraction.media.enabled: false`).
+

@@ -62,6 +62,8 @@ app.add_middleware(
 def on_startup_lifecycle():
     """Ensure database tables and initial officer credentials exist automatically."""
     try:
+        from backend.app.config import validate_system_config
+        validate_system_config()
         Base.metadata.create_all(bind=engine)
         db = SessionLocal()
         try:

@@ -418,6 +418,24 @@ Server-side authorization verifies:
 * **`GET /cases/{id}/numbers/{number}/intelligence`**
   - **Description:** Returns honest phone number intelligence (`format_valid`, `number_type`, `region`, `carrier_hint` + `carrier_disclaimer: "original allocation — may be ported"`, `line_status: "unverified"`, `status_label: "Format valid — ownership unverified"`, digit-pattern anomaly check, and cross-case presence scoped by case membership).
 
+### 9.9 Statutory PII Unmasking (Phase 8 - BSA Section 63)
+* **`POST /cases/{id}/reveal`**
+  - **Request Body:** `{"object_type": "phone", "object_id": "ee-101", "justification": "Statutory verification against subscriber database under BSA Section 63"}`
+  - **Permissions:** Admin or Investigator only (`viewer` role receives HTTP 403 Forbidden). Non-empty `justification` mandatory (otherwise HTTP 400).
+  - **Returns:** `{"ok": true, "object_type": "phone", "object_id": "ee-101", "unmasked_value": "9876543210", "audited": true}`.
+  - **Side Effects:** Appends an immutable SHA-256 chained entry to `audit_log` with action `reveal_pii`.
+
+### 9.10 Forensic Audio & Video Extraction (Phase 10 - Media Intelligence)
+* **`POST /evidence/{id}/media-extract`**
+  - **Permissions:** Admin or Investigator.
+  - **Behavior:** Inert by default. If `extraction.media.enabled: false`, returns HTTP 400 Bad Request with `MEDIA_EXTRACTION_DISABLED`. When enabled, runs local `faster-whisper` and FFmpeg frame OCR, populating `media_transcript_segments` and `extraction_records` with timestamp provenance (`ts_{seconds}s`).
+* **`GET /evidence/{id}/transcript`**
+  - **Query Parameters:** `needs_review_only` (`true` / `false`).
+  - **Returns:** `{evidence_id, total_segments, pending_review_count, segments: [{id, start_sec, end_sec, text, confidence, speaker, is_reviewed, needs_review, officer_note}]}`.
+* **`PATCH /transcript/{segment_id}`**
+  - **Request Body:** `{"text": "corrected text", "officer_note": "Acoustic filter applied", "is_reviewed": true}`
+  - **Returns:** Updated segment payload; appends `correct_media_segment` to cryptographic `audit_log`.
+
 ---
 
 ## 10. Error Conventions & HTTP Status Codes

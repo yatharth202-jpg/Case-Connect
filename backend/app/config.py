@@ -232,3 +232,50 @@ def get_extractor_version(force_reload: bool = False) -> str:
     return version_str
 
 
+def validate_system_config(defaults: Optional[Dict[str, Any]] = None) -> None:
+    """
+    Startup configuration validator.
+    Fails fast with a descriptive error message if required keys or sections
+    in backend/config/defaults.yaml are missing or malformed.
+    """
+    if defaults is None:
+        defaults = get_defaults()
+
+    if not isinstance(defaults, dict) or not defaults:
+        raise ValueError("CONFIGURATION ERROR: defaults.yaml could not be loaded or is empty.")
+
+    ext_cfg = defaults.get("extraction")
+    if not isinstance(ext_cfg, dict):
+        raise ValueError("CONFIGURATION ERROR: 'extraction' section missing or not a dictionary in defaults.yaml.")
+
+    required_extraction_keys = [
+        "default_region",
+        "timezone_display",
+        "date_parse",
+        "amount",
+        "validators",
+        "ocr",
+        "media",
+        "masking",
+    ]
+    for k in required_extraction_keys:
+        if k not in ext_cfg:
+            raise ValueError(f"CONFIGURATION ERROR: Missing required configuration key 'extraction.{k}' in defaults.yaml.")
+
+    merge_cfg = defaults.get("merge")
+    if not isinstance(merge_cfg, dict):
+        raise ValueError("CONFIGURATION ERROR: 'merge' section missing or not a dictionary in defaults.yaml.")
+
+    required_merge_keys = [
+        "natural_keys",
+        "source_trust_order",
+        "conflict_confidence_margin",
+        "min_confidence_auto_accept",
+        "needs_review_below",
+    ]
+    for k in required_merge_keys:
+        if k not in merge_cfg:
+            raise ValueError(f"CONFIGURATION ERROR: Missing required configuration key 'merge.{k}' in defaults.yaml.")
+
+
+

@@ -507,6 +507,23 @@ Per-page OCR, digital PDF text layer, quality gate, EXIF, perceptual hash, and w
 | `created_at` | `DATETIME` | NOT NULL, Default UTC | Creation timestamp |
 | `updated_at` | `DATETIME` | NOT NULL, Default UTC | Last update timestamp |
 
+### 3.32 Table: `media_transcript_segments` (Audio/Video Provenance Store)
+Offline speech-to-text transcript segments and video keyframe OCR timestamps.
+| Column Name | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR` | PK, Default UUIDv4 | Unique segment identifier |
+| `case_id` | `VARCHAR` | FK `cases.id`, Index, NOT NULL | Scoped case docket |
+| `evidence_id` | `VARCHAR` | FK `evidence_files.id`, Index, NOT NULL | Originating audio/video evidence file ID |
+| `start_sec` | `FLOAT` | NOT NULL | Segment start timestamp in seconds |
+| `end_sec` | `FLOAT` | NOT NULL | Segment end timestamp in seconds |
+| `text` | `TEXT` | NOT NULL | Speech-to-text or frame OCR transcript |
+| `confidence` | `FLOAT` | NOT NULL, Default `1.0` | Acoustic / model confidence score (`0.0..1.0`) |
+| `speaker` | `VARCHAR` | NULL | Optional speaker diarization tag |
+| `is_reviewed` | `BOOLEAN` | NOT NULL, Default `False` | Officer verification status |
+| `needs_review` | `BOOLEAN` | NOT NULL, Default `False` | Flagged if confidence < threshold |
+| `officer_note` | `TEXT` | NULL | Officer acoustic enhancement / correction notes |
+| `created_at` | `DATETIME` | NOT NULL, Default UTC | Insertion timestamp |
+
 ---
 
 ## 4. Disposable Neo4j Graph Model
