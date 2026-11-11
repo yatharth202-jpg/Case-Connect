@@ -489,6 +489,84 @@ def delete_saved_view(
     db.commit()
     return {"status": "deleted", "id": view_id}
 
+
+class RevealPiiRequest(BaseModel):
+    object_type: str
+    object_id: str
+    justification: str
+
+
+@router.post("/{case_id}/reveal")
+def reveal_case_pii(
+    case_id: str,
+    payload: RevealPiiRequest,
+    case: Case = Depends(get_case_for_user),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Statutory unmasking of PII (BSA 2023 Section 63) with cryptographic audit logging.
+    Requires investigator or admin privileges and non-empty justification.
+    """
+    from backend.app.services.extraction.masking import can_user_reveal_pii
+    from backend.app.db.sql import ExtractionRecord
+
+    # Check statutory authority to unmask PII
+    if not can_user_reveal_pii(current_user.role):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ACCESS_DENIED: User role does not have statutory authority to reveal unmasked PII."
+        )
+
+    if not payload.justification or not payload.justification.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="JUSTIFICATION_REQUIRED: Legitimate statutory justification under BSA Section 63 is required to unmask PII."
+        )
+
+    # Determine unmasked value
+    unmasked_val = payload.object_id
+    ent = (
+        db.query(ExtractedEntity)
+        .filter(ExtractedEntity.case_id == case.id, ExtractedEntity.id == payload.object_id)
+        .first()
+    )
+    if ent:
+        unmasked_val = ent.normalized_value or ent.raw_value
+    else:
+        rec = (
+            db.query(ExtractionRecord)
+            .filter(ExtractionRecord.case_id == case.id, ExtractionRecord.id == payload.object_id)
+            .first()
+        )
+        if rec:
+            unmasked_val = rec.natural_key or payload.object_id
+
+    # Append to cryptographic audit chain
+    record_audit_log(
+        db=db,
+        user_id=current_user.id,
+        action="reveal_pii",
+        case_id=case.id,
+        object_type=payload.object_type,
+        object_id=payload.object_id,
+        details={
+            "object_type": payload.object_type,
+            "object_id": payload.object_id,
+            "justification": payload.justification.strip(),
+            "unmasked_value": unmasked_val,
+        }
+    )
+
+    return {
+        "ok": True,
+        "object_type": payload.object_type,
+        "object_id": payload.object_id,
+        "unmasked_value": unmasked_val,
+        "audited": True,
+    }
+
+
 @router.post("/seed/hawala")
 @router.post("/seed/hawala/")
 def seed_hawala_syndicate_endpoint(

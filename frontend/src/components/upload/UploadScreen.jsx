@@ -71,7 +71,7 @@ export const UploadScreen = () => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".csv,.xlsx,.xls,.pdf,.txt,.json,.pcap"
+          accept=".csv,.xlsx,.xls,.pdf,.txt,.json,.pcap,.zip,.jpg,.jpeg,.png,.tiff,.webp"
           onChange={(e) => {
             if (e.target.files) addFiles(e.target.files);
           }}
@@ -88,14 +88,15 @@ export const UploadScreen = () => {
               Click to select or drag files here
             </p>
             <p className="text-xs font-mono text-muted">
-              Auto-detects CDR dumps, Axis/HDFC/SBI statements, FIR PDFs, and SDR subscriber data
+              Auto-detects CDR dumps, Axis/HDFC/SBI statements, scanned FIR PDFs, phone photos, and ZIP dockets
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
             <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">CSV / EXCEL</span>
-            <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">FIR PDF</span>
-            <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">JSON / PCAP</span>
+            <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">SCANNED PDF</span>
+            <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">IMAGES (JPG/PNG)</span>
+            <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">ZIP ARCHIVES</span>
             <span className="glass-pill px-2.5 py-1 text-[10px] font-mono text-muted">MAX 200MB</span>
           </div>
         </div>
@@ -116,20 +117,36 @@ export const UploadScreen = () => {
                 className="glass-sm px-3.5 py-2 flex items-center gap-2.5 text-xs font-mono border border-white/10"
               >
                 <span className="w-2 h-2 rounded-full bg-accent" />
-                <span className="text-text font-medium truncate max-w-[220px]">
+                <span className="text-text font-medium truncate max-w-[200px]" title={item.name}>
                   {item.name}
                 </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-accent font-semibold">
                   [{item.type}]
                 </span>
                 <span className="text-muted text-[10px]">{item.size}</span>
+
+                {/* Per-file forensic status chips */}
+                {item.type === 'DOC' || item.name.toLowerCase().endsWith('.jpg') || item.name.toLowerCase().endsWith('.png') ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+                    OCR Scan Ready
+                  </span>
+                ) : item.type === 'BANK' ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60" title="Account owner verified during ingest">
+                    Owner Verification
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">
+                    Schema Ready
+                  </span>
+                )}
+
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeFile(idx);
                   }}
-                  className="text-muted hover:text-alert p-0.5 transition-colors"
+                  className="text-muted hover:text-alert p-0.5 transition-colors ml-1"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>

@@ -12,6 +12,14 @@ import TimelineView from '../components/TimelineView';
 import CaseSettings from '../components/CaseSettings';
 import HawalaSyndicateExplorer from '../components/HawalaSyndicateExplorer';
 
+// Extraction V2 & Merge Engine Components (Phase 9)
+import MasterSheetTab from '../components/extraction/MasterSheetTab';
+import ConflictQueue from '../components/extraction/ConflictQueue';
+import CompletenessPanel from '../components/extraction/CompletenessPanel';
+import OcrReviewScreen from '../components/extraction/OcrReviewScreen';
+import IngestRunHistory from '../components/extraction/IngestRunHistory';
+import MergePreviewModal from '../components/extraction/MergePreviewModal';
+
 
 export default function CaseDetail({ caseId }) {
   const { isViewer } = useAuth();
@@ -21,6 +29,10 @@ export default function CaseDetail({ caseId }) {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Merge Preview Modal State
+  const [mergePreviewOpen, setMergePreviewOpen] = useState(false);
+  const [mergePreviewEvidenceId, setMergePreviewEvidenceId] = useState(null);
 
   // Upload state
   const [uploading, setUploading] = useState(false);
@@ -296,8 +308,13 @@ export default function CaseDetail({ caseId }) {
           {[
             { id: 'hawala', label: 'Target Dossier & Attribution' },
             { id: 'overview', label: 'Executive Dashboard' },
+            { id: 'master_sheet', label: 'Master Sheet' },
+            { id: 'conflicts', label: 'Merge Conflicts' },
+            { id: 'completeness', label: 'Data Completeness' },
+            { id: 'ocr_review', label: 'OCR & Doc Review' },
             { id: 'timeline', label: 'Chronological Timeline' },
             { id: 'evidence', label: `Evidence Repository (${evidenceList.length})` },
+            { id: 'runs', label: 'Ingest Runs' },
             { id: 'graph', label: 'Investigation Graph' },
             { id: 'money', label: 'Money Trail' },
             { id: 'review', label: 'Entity Review' },
@@ -508,19 +525,43 @@ export default function CaseDetail({ caseId }) {
 
                           <td className="px-4 py-3">
                             {file.status === 'ingested' ? (
-                              <button
-                                onClick={() => handleViewQuality(file.id)}
-                                className="text-[11px] text-emerald-400 hover:underline font-mono"
-                              >
-                                Quality Metrics
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleViewQuality(file.id)}
+                                  className="text-[11px] text-emerald-400 hover:underline font-mono"
+                                >
+                                  Quality Metrics
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setMergePreviewEvidenceId(file.id);
+                                    setMergePreviewOpen(true);
+                                  }}
+                                  className="px-2 py-0.5 bg-[#1e293b] hover:bg-[#334155] text-amber-300 text-[10px] font-semibold rounded border border-amber-800/60"
+                                  title="Inspect merge delta & field claims"
+                                >
+                                  Merge Delta
+                                </button>
+                              </div>
                             ) : (
-                              <button
-                                onClick={() => handleOpenMapping(file.id)}
-                                className="px-2.5 py-1 bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-semibold rounded transition-colors"
-                              >
-                                Map & Ingest
-                              </button>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleOpenMapping(file.id)}
+                                  className="px-2.5 py-1 bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-semibold rounded transition-colors"
+                                >
+                                  Map & Ingest
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setMergePreviewEvidenceId(file.id);
+                                    setMergePreviewOpen(true);
+                                  }}
+                                  className="px-2 py-1 bg-[#1e293b] hover:bg-[#334155] text-amber-300 text-[10px] font-semibold rounded border border-amber-800/60"
+                                  title="Dry-run preview before committing merge"
+                                >
+                                  Preview
+                                </button>
+                              </div>
                             )}
                           </td>
 
@@ -576,8 +617,33 @@ export default function CaseDetail({ caseId }) {
         <LeadAdvisor caseId={caseId} isViewer={isViewer} />
       )}
 
+      {/* Tab: Master Sheet (Phase 9) */}
+      {activeTab === 'master_sheet' && (
+        <MasterSheetTab caseId={caseId} isViewer={isViewer} />
+      )}
+
+      {/* Tab: Merge Conflicts (Phase 9) */}
+      {activeTab === 'conflicts' && (
+        <ConflictQueue caseId={caseId} isViewer={isViewer} />
+      )}
+
+      {/* Tab: Forensic Completeness & Quality (Phase 9) */}
+      {activeTab === 'completeness' && (
+        <CompletenessPanel caseId={caseId} />
+      )}
+
+      {/* Tab: OCR & Document Review (Phase 9) */}
+      {activeTab === 'ocr_review' && (
+        <OcrReviewScreen caseId={caseId} evidenceList={evidenceList} isViewer={isViewer} />
+      )}
+
+      {/* Tab: Ingest Runs & Changelog (Phase 9) */}
+      {activeTab === 'runs' && (
+        <IngestRunHistory caseId={caseId} isViewer={isViewer} />
+      )}
+
       {/* Fallback for unknown tabs */}
-      {activeTab !== 'overview' && activeTab !== 'timeline' && activeTab !== 'evidence' && activeTab !== 'graph' && activeTab !== 'money' && activeTab !== 'review' && activeTab !== 'profiles' && activeTab !== 'reports' && activeTab !== 'leads' && (
+      {activeTab !== 'overview' && activeTab !== 'timeline' && activeTab !== 'evidence' && activeTab !== 'graph' && activeTab !== 'money' && activeTab !== 'review' && activeTab !== 'profiles' && activeTab !== 'reports' && activeTab !== 'leads' && activeTab !== 'master_sheet' && activeTab !== 'conflicts' && activeTab !== 'completeness' && activeTab !== 'ocr_review' && activeTab !== 'runs' && (
         <div className="bg-[#0b1120] border border-[#1e293b] rounded-lg p-12 text-center">
           <div className="w-12 h-12 bg-[#030712] border border-[#1e293b] rounded-md flex items-center justify-center mx-auto mb-4 text-[#38bdf8]">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -848,6 +914,20 @@ export default function CaseDetail({ caseId }) {
           </div>
         </div>
       )}
+
+      {/* Merge Preview Modal (Phase 9) */}
+      <MergePreviewModal
+        isOpen={mergePreviewOpen}
+        onClose={() => {
+          setMergePreviewOpen(false);
+          setMergePreviewEvidenceId(null);
+        }}
+        caseId={caseId}
+        evidenceId={mergePreviewEvidenceId}
+        onApplied={() => {
+          fetchCaseDetails();
+        }}
+      />
 
       {/* Case Settings & Dynamic Recompute Modal (Phase 9) */}
       <CaseSettings
