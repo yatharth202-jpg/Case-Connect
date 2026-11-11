@@ -658,10 +658,28 @@ def stage_evidence_file(
                 pct = min(95, int(20 + (global_row_idx / max(1, rows_read)) * 75))
                 progress_callback(pct, f"Processed {global_row_idx}/{rows_read} rows")
 
-    # Update evidence status
+    # Update evidence status and store statement metadata + completeness in quality_json
     ev.status = "ingested"
     ev.detected_type = file_type
+    try:
+        existing_qual = json.loads(ev.quality_json or "{}")
+    except Exception:
+        existing_qual = {}
+    if file_type == "bank_statement" or file_meta.get("opening_balance_paise") is not None or file_meta.get("closing_balance_paise") is not None:
+        existing_qual["statement_metadata"] = {
+            "owner_account": statement_account or (owner_meta.get("account_number") if owner_meta else None),
+            "owner_name": owner_meta.get("account_holder") if owner_meta else None,
+            "opening_balance_paise": file_meta.get("opening_balance_paise"),
+            "closing_balance_paise": file_meta.get("closing_balance_paise"),
+        }
+        ev.quality_json = json.dumps(existing_qual, default=str)
     db.commit()
+
+    try:
+        from backend.app.services.extraction.completeness import compute_evidence_completeness
+        compute_evidence_completeness(db, ev.id, persist_quality=True)
+    except Exception:
+        pass
 
     # Log action to immutable audit trail
     record_audit_log(

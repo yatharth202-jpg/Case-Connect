@@ -644,6 +644,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                     "location_hint": None,
                     "is_masked": True,
                     "line_status": "unverified",
+                    "status_label": "Format invalid — ownership unverified",
                     "source_raw": source_raw,
                     "carrier_disclaimer": CARRIER_DISCLAIMER,
                 },
@@ -670,6 +671,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                 "location_hint": None,
                 "is_masked": False,
                 "line_status": "unverified",
+                "status_label": "Format valid — ownership unverified",
                 "source_raw": source_raw,
                 "carrier_disclaimer": CARRIER_DISCLAIMER,
             },
@@ -704,6 +706,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                 "location_hint": None,
                 "is_masked": False,
                 "line_status": "unverified",
+                "status_label": "Format invalid — ownership unverified",
                 "source_raw": source_raw,
                 "carrier_disclaimer": CARRIER_DISCLAIMER,
             },
@@ -760,6 +763,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
 
         canonical_num = nat_str if is_in_mobile else (e164_str.lstrip("+") if (kind == "international" and e164_str) else digits)
 
+        fmt_valid = bool(is_valid or is_in_mobile)
         return {
             "ok": True,
             "normalized": canonical_num,
@@ -769,7 +773,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                 "e164": e164_str,
                 "national_number": nat_str,
                 "valid_mobile": bool(is_in_mobile),
-                "format_valid": bool(is_valid or is_in_mobile),
+                "format_valid": fmt_valid,
                 "kind": kind,
                 "number_type": num_type_str,
                 "region": region_code,
@@ -777,6 +781,7 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                 "location_hint": loc_str,
                 "is_masked": False,
                 "line_status": "unverified",
+                "status_label": "Format valid — ownership unverified" if fmt_valid else "Format invalid — ownership unverified",
                 "source_raw": source_raw,
                 "carrier_disclaimer": CARRIER_DISCLAIMER,
             },
@@ -806,10 +811,41 @@ def validate_phone(raw: Any, default_region: Optional[str] = None) -> Dict[str, 
                 "location_hint": None,
                 "is_masked": False,
                 "line_status": "unverified",
+                "status_label": "Format valid — ownership unverified" if is_in_mob else "Format invalid — ownership unverified",
                 "source_raw": source_raw,
                 "carrier_disclaimer": CARRIER_DISCLAIMER,
             },
         }
+
+
+def get_phone_status_model(raw: Any, default_region: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Returns the standardized Phase 7 Number Status Model (never using 'real' or 'fake'):
+      - format_valid (bool)
+      - number_type (str)
+      - region (str)
+      - carrier_hint (str | None, original allocation)
+      - carrier_disclaimer (str)
+      - line_status = 'unverified' (always — no live lookup exists)
+      - status_label = 'Format valid — ownership unverified' (or 'Format invalid — ownership unverified')
+    """
+    res = validate_phone(raw, default_region=default_region)
+    meta = res.get("meta") or {}
+    fmt_valid = bool(meta.get("format_valid", False))
+    return {
+        "number": res.get("normalized"),
+        "source_raw": meta.get("source_raw"),
+        "format_valid": fmt_valid,
+        "valid_mobile": bool(meta.get("valid_mobile", False)),
+        "number_type": str(meta.get("number_type") or "UNKNOWN"),
+        "kind": str(meta.get("kind") or "other"),
+        "region": str(meta.get("region") or default_region or "IN"),
+        "carrier_hint": meta.get("carrier_hint"),
+        "location_hint": meta.get("location_hint"),
+        "carrier_disclaimer": str(meta.get("carrier_disclaimer") or CARRIER_DISCLAIMER),
+        "line_status": "unverified",
+        "status_label": "Format valid — ownership unverified" if fmt_valid else "Format invalid — ownership unverified",
+    }
 
 
 # ---------------------------------------------------------------------------

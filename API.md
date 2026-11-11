@@ -408,6 +408,16 @@ Server-side authorization verifies:
 * **`GET /evidence/{id}/fir-analysis`**
   - **Description:** Returns structured FIR `facts` (`fir_no`, `police_station`, `incident_date`, `incident_time`, `incident_place`, `complainant`, `sections`) with character spans, `sections` with `IPC ↔ BNS` / `CrPC ↔ BNSS` / `IT Act` reference mappings (`"disclaimer": "reference — verify against the official gazette"` or `"mapping unavailable"`), chronological incident `timeline`, `relationship_proposals` (`status='pending_review'`), and per-FIR `completeness` report.
 
+### 9.8 Phone Intelligence, Potential Anomaly Flags & Completeness (Phase 7)
+* **`GET /cases/{id}/completeness`**
+  - **Description:** Returns case-level completeness (`case_completeness_score` in `0.0..1.0`, documented `score_formula`), per-file completeness reports (`files`), `missing_fields_summary`, `date_range_gaps`, `disabled_detectors`, `cross_file_consistency` (`balance_discrepancies`, `overlapping_period_conflicts`, `same_identifier_different_names`, `statement_owner_mismatches`), and `potential_anomalies`.
+* **`GET /evidence/{id}/completeness`**
+  - **Description:** Returns per-evidence completeness (`completeness_score`, `missing_fields`, `date_range_gaps`, `disabled_detectors`, `score_formula`) and persists it in `EvidenceFile.quality_json`.
+* **`GET /cases/{id}/anomalies`** & **`POST /cases/{id}/anomalies/evaluate`**
+  - **Description:** Evaluates and returns Potential Anomaly flags (`label: "Potential Anomaly"`, `rule_code`, `triggered_threshold`, `evidence_refs`, `explanation`) across pattern checks, international/VoIP numbers in domestic context, cross-case shared identifiers (strictly scoped by `CaseMember`), multi-name identifiers, and CDR behavioral rules (`NIGHT_CALL_RATIO_ANOMALY`, `HIGH_SHORT_DURATION_COUNTERPARTIES`, `IMEI_MULTIPLE_MSISDN`, `MSISDN_MULTIPLE_IMEI`, `SHORT_ACTIVITY_WINDOW`), persisting them to `alerts`.
+* **`GET /cases/{id}/numbers/{number}/intelligence`**
+  - **Description:** Returns honest phone number intelligence (`format_valid`, `number_type`, `region`, `carrier_hint` + `carrier_disclaimer: "original allocation — may be ported"`, `line_status: "unverified"`, `status_label: "Format valid — ownership unverified"`, digit-pattern anomaly check, and cross-case presence scoped by case membership).
+
 ---
 
 ## 10. Error Conventions & HTTP Status Codes

@@ -412,6 +412,12 @@ def run_document_extraction(
             source_file_name=ev.original_name if ev else evidence_id,
         )
 
+    try:
+        from backend.app.services.extraction.completeness import compute_evidence_completeness
+        compute_evidence_completeness(db, evidence_id, persist_quality=True)
+    except Exception:
+        pass
+
     return {
         "status": "completed",
         "evidence_id": evidence_id,

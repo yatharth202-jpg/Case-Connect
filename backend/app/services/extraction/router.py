@@ -19,6 +19,12 @@ from backend.app.db.sql import (
     User,
     get_db,
 )
+from backend.app.services.extraction.completeness import (
+    compute_case_completeness,
+    compute_evidence_completeness,
+    evaluate_potential_anomalies,
+    get_number_intelligence,
+)
 from backend.app.services.extraction.ocr.preprocess import phash_distance
 from backend.app.services.extraction.pipeline import (
     apply_page_ocr_correction,
@@ -811,3 +817,116 @@ def bulk_approve_extracted_entities(
     )
 
     return {"status": "success", "approved_count": approved_count, "threshold": threshold}
+
+
+@router.get("/cases/{case_id}/completeness")
+def get_case_completeness_report(
+    case_id: str,
+    case: Case = Depends(get_case_for_user),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns Phase 7 case-level completeness, missing field summary, date-range gaps,
+    disabled analytics detectors, cross-file consistency checks, Potential Anomaly flags,
+    and the documented completeness score formula.
+    """
+    return compute_case_completeness(
+        db=db,
+        case_id=case.id,
+        current_user=current_user,
+    )
+
+
+@router.get("/evidence/{evidence_id}/completeness")
+def get_evidence_completeness_report(
+    evidence_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns Phase 7 per-file completeness report (`completeness_score`, missing required fields,
+    date-range gaps, disabled detectors, and `quality_json` persistence).
+    """
+    ev = db.query(EvidenceFile).filter(EvidenceFile.id == evidence_id).first()
+    if not ev:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evidence file not found")
+
+    get_case_for_user(case_id=ev.case_id, current_user=current_user, db=db)
+
+    return compute_evidence_completeness(
+        db=db,
+        evidence_id=ev.id,
+        persist_quality=True,
+    )
+
+
+@router.get("/cases/{case_id}/anomalies")
+def list_case_potential_anomalies(
+    case_id: str,
+    case: Case = Depends(get_case_for_user),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Evaluates and returns Potential Anomaly flags for a case (pattern anomalies, international/VoIP
+    numbers in domestic context, cross-case shared identifiers with membership scoping, multi-name
+    identifiers, and behavioral CDR anomalies).
+    """
+    return evaluate_potential_anomalies(
+        db=db,
+        case_id=case.id,
+        current_user=current_user,
+        persist_alerts=True,
+    )
+
+
+@router.post("/cases/{case_id}/anomalies/evaluate")
+def evaluate_case_potential_anomalies(
+    case_id: str,
+    case: Case = Depends(get_case_for_user),
+    current_user: User = Depends(require_role(["admin", "investigator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Explicitly re-evaluates Potential Anomaly flags for a case, persists them to the `alerts`
+    table, and logs the evaluation in the audit trail.
+    """
+    res = evaluate_potential_anomalies(
+        db=db,
+        case_id=case.id,
+        current_user=current_user,
+        persist_alerts=True,
+    )
+    record_audit_log(
+        db=db,
+        user_id=current_user.id,
+        action="evaluate_potential_anomalies",
+        case_id=case.id,
+        object_type="case",
+        object_id=case.id,
+        details={"total_anomalies": res.get("total_anomalies", 0)},
+    )
+    return res
+
+
+@router.get("/cases/{case_id}/numbers/{number}/intelligence")
+def get_case_number_intelligence(
+    case_id: str,
+    number: str,
+    case: Case = Depends(get_case_for_user),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns honest phone number status and intelligence (`format_valid`, `number_type`, `region`,
+    `carrier_hint` with disclaimer, `line_status: "unverified"`, `status_label: "Format valid — ownership unverified"`,
+    digit-pattern anomaly check, and cross-case presence scoped by case membership).
+    """
+    return get_number_intelligence(
+        raw_phone=number,
+        db=db,
+        case_id=case.id,
+        current_user=current_user,
+    )
+

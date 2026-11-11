@@ -46,6 +46,19 @@ class SyntheticDataGenerator:
     def generate_name(self) -> str:
         return f"{self.fake.first_name()} {self.fake.last_name()}"
 
+    def generate_imei(self) -> str:
+        prefix = "".join(self.rng.choices("0123456789", k=14))
+        total = 0
+        for i, ch in enumerate(reversed(prefix)):
+            d = int(ch)
+            if i % 2 == 0:
+                d *= 2
+                if d > 9:
+                    d -= 9
+            total += d
+        check = str((10 - (total % 10)) % 10)
+        return f"{prefix}{check}"
+
     def build_scenario_data(self, scenario: str, size: str) -> dict:
         scale_multipliers = {"small": 1, "medium": 5, "large": 20}
         mult = scale_multipliers.get(size, 1)
@@ -1152,6 +1165,207 @@ class SyntheticDataGenerator:
             "account_1": acct_1,
             "vehicle_1": veh_1,
             "fir_no": fir_no,
+        }
+
+    def write_phase7_anomaly_and_completeness_suite(self, out_dir: Path) -> dict:
+        """
+        Generates synthetic evidence files for Phase 7 testing:
+        1. `cdr_anomalies_and_gaps.csv`: triggers digit-pattern, international/VoIP, night-call ratio,
+           high short-duration counterparties, IMEI with multiple MSISDNs, MSISDN with multiple IMEIs,
+           short activity window, and a >5 day date-range gap.
+        2. `cdr_missing_optional_cols.csv`: CDR without `imei` or `cell_id` columns (triggers disabled-detector warnings)
+           and only normal daytime calls across normal numbers (verifies zero false behavioral flags).
+        3. `stmt_month1.csv` & `stmt_month2.csv`: consecutive statements for the same account with
+           a closing-vs-opening balance mismatch and conflicting account-holder names.
+        4. `sdr_source_a.csv` & `sdr_source_b.csv`: two SDR tables assigning different subscriber names
+           to the same phone number (`shared_phone`).
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        pattern_rep_phone = "9" + ("8" * 8) + "1"       # 8 repeated '8's -> REPEATED_DIGITS
+        pattern_seq_phone = "9876543210"                 # 10 descending digits -> SEQUENTIAL_DIGITS
+        intl_phone = "+447911123456"                     # International number in domestic CDR
+        night_phone = self.generate_phone()
+        burst_phone = self.generate_phone()
+        multi_imei_phone = self.generate_phone()
+        short_window_phone = self.generate_phone()
+        shared_case_phone = self.generate_phone()
+        normal_peer_base = 9711203000
+
+        shared_imei = self.generate_imei()
+        imei_list_for_multi = [self.generate_imei(), self.generate_imei(), self.generate_imei()]
+        phones_for_shared_imei = ["9755123401", "9755234502", "9755345603"]
+
+        cdr_rows = []
+        # (a) Night-call heavy phone: 16 night calls on 2026-08-01..02 and 2 night calls on 2026-08-15 (creates 13-day gap)
+        for i in range(16):
+            peer = str(normal_peer_base + (i % 4) * 13 + 7)
+            cdr_rows.append({
+                "caller": night_phone,
+                "receiver": peer,
+                "datetime": f"2026-08-01 02:{10 + (i % 45):02d}:00",
+                "duration": 120,
+                "call_type": "voice",
+                "imei": self.generate_imei(),
+                "cell_id": "CELL-DEL-101",
+            })
+        for i in range(2):
+            peer = str(normal_peer_base + i * 17 + 3)
+            cdr_rows.append({
+                "caller": night_phone,
+                "receiver": peer,
+                "datetime": f"2026-08-15 01:{15 + i * 10:02d}:00",
+                "duration": 95,
+                "call_type": "voice",
+                "imei": self.generate_imei(),
+                "cell_id": "CELL-DEL-101",
+            })
+
+        # (b) High unique counterparties with short duration (22 distinct peers, duration=8s, spanning 5 days so not short-window)
+        for i in range(22):
+            peer = str(9611002000 + i * 37 + 3)
+            day_num = 1 + (i % 5)
+            cdr_rows.append({
+                "caller": burst_phone,
+                "receiver": peer,
+                "datetime": f"2026-08-{day_num:02d} 14:{10 + (i % 45):02d}:00",
+                "duration": 8,
+                "call_type": "voice",
+                "imei": self.generate_imei(),
+                "cell_id": "CELL-MUM-202",
+            })
+
+        # (c) Shared IMEI across 3 distinct MSISDNs
+        for idx_p, msisdn in enumerate(phones_for_shared_imei):
+            for c_i in range(4):
+                cdr_rows.append({
+                    "caller": msisdn,
+                    "receiver": str(normal_peer_base + 500 + idx_p * 19 + c_i),
+                    "datetime": f"2026-08-0{1 + c_i} 11:20:00",
+                    "duration": 65,
+                    "call_type": "voice",
+                    "imei": shared_imei,
+                    "cell_id": "CELL-BLR-303",
+                })
+
+        # (d) Single MSISDN using 3 distinct IMEIs
+        for idx_im, im_val in enumerate(imei_list_for_multi):
+            cdr_rows.append({
+                "caller": multi_imei_phone,
+                "receiver": str(normal_peer_base + 700 + idx_im * 23),
+                "datetime": f"2026-08-0{1 + idx_im} 15:40:00",
+                "duration": 80,
+                "call_type": "voice",
+                "imei": im_val,
+                "cell_id": "CELL-HYD-404",
+            })
+
+        # (e) Short activity window phone: 12 calls all on 2026-08-02 daytime
+        for i in range(12):
+            cdr_rows.append({
+                "caller": short_window_phone,
+                "receiver": str(normal_peer_base + 800 + (i % 3) * 19),
+                "datetime": f"2026-08-02 10:{10 + i * 3:02d}:00",
+                "duration": 75,
+                "call_type": "voice",
+                "imei": self.generate_imei(),
+                "cell_id": "CELL-KOL-505",
+            })
+
+        # (f) Pattern repeated digits, sequential digits, international phone, and shared_case_phone
+        cdr_rows.append({
+            "caller": pattern_rep_phone,
+            "receiver": pattern_seq_phone,
+            "datetime": "2026-08-03 12:00:00",
+            "duration": 60,
+            "call_type": "voice",
+            "imei": self.generate_imei(),
+            "cell_id": "CELL-DEL-101",
+        })
+        cdr_rows.append({
+            "caller": shared_case_phone,
+            "receiver": intl_phone,
+            "datetime": "2026-08-03 16:30:00",
+            "duration": 140,
+            "call_type": "voice",
+            "imei": self.generate_imei(),
+            "cell_id": "CELL-DEL-101",
+        })
+
+        cdr_anom_path = out_dir / "cdr_anomalies_and_gaps.csv"
+        pd.DataFrame(cdr_rows).to_csv(cdr_anom_path, index=False)
+
+        # 2. Normal benign CDR without imei or cell_id columns
+        benign_phone_a = self.generate_phone()
+        benign_phone_b = self.generate_phone()
+        benign_rows = []
+        for day_offset in range(6):
+            benign_rows.append({
+                "caller": benign_phone_a,
+                "receiver": benign_phone_b,
+                "datetime": f"2026-08-0{1 + day_offset} 11:30:00",
+                "duration": 180,
+                "call_type": "voice",
+            })
+        cdr_benign_path = out_dir / "cdr_missing_optional_cols.csv"
+        pd.DataFrame(benign_rows).to_csv(cdr_benign_path, index=False)
+
+        # 3. Two bank statements for the same account with closing != next opening balance & owner name mismatch
+        stmt_account = self.generate_account()
+        counterparty_acct = self.generate_account()
+        stmt1_path = out_dir / "stmt_month1.csv"
+        stmt1_lines = [
+            f"Account No: {stmt_account}",
+            "Account Holder: Rajesh Kumar Verma",
+            "Opening Balance: Rs. 1,00,000.00",
+            "Closing Balance: Rs. 1,50,000.00",
+            "date,narration,debit,credit,balance",
+            f"2026-08-01,NEFT/{counterparty_acct}/ Rajesh Credit,,50000.00,150000.00",
+        ]
+        stmt1_path.write_text("\n".join(stmt1_lines) + "\n", encoding="utf-8")
+
+        stmt2_path = out_dir / "stmt_month2.csv"
+        stmt2_lines = [
+            f"Account No: {stmt_account}",
+            "Account Holder: Rakesh Singh Chauhan",
+            "Opening Balance: Rs. 1,20,000.00",
+            "Closing Balance: Rs. 90,000.00",
+            "date,narration,debit,credit,balance",
+            f"2026-08-10,IMPS/{counterparty_acct}/ Payout,30000.00,,90000.00",
+        ]
+        stmt2_path.write_text("\n".join(stmt2_lines) + "\n", encoding="utf-8")
+
+        # 4. Two SDR identity tables assigning different names to shared_case_phone
+        sdr_a_path = out_dir / "sdr_source_a.csv"
+        pd.DataFrame([
+            {"name": "Anil Kumar Gupta", "phone": shared_case_phone, "account": stmt_account}
+        ]).to_csv(sdr_a_path, index=False)
+
+        sdr_b_path = out_dir / "sdr_source_b.csv"
+        pd.DataFrame([
+            {"name": "Prashant Deshmukh", "phone": shared_case_phone, "account": stmt_account}
+        ]).to_csv(sdr_b_path, index=False)
+
+        return {
+            "cdr_anomalies_path": str(cdr_anom_path),
+            "cdr_benign_path": str(cdr_benign_path),
+            "stmt1_path": str(stmt1_path),
+            "stmt2_path": str(stmt2_path),
+            "sdr_a_path": str(sdr_a_path),
+            "sdr_b_path": str(sdr_b_path),
+            "pattern_rep_phone": pattern_rep_phone,
+            "pattern_seq_phone": pattern_seq_phone,
+            "intl_phone": intl_phone,
+            "night_phone": night_phone,
+            "burst_phone": burst_phone,
+            "multi_imei_phone": multi_imei_phone,
+            "short_window_phone": short_window_phone,
+            "shared_case_phone": shared_case_phone,
+            "shared_imei": shared_imei,
+            "phones_for_shared_imei": phones_for_shared_imei,
+            "benign_phone_a": benign_phone_a,
+            "benign_phone_b": benign_phone_b,
+            "stmt_account": stmt_account,
         }
 
     def generate(self, scenario: str, format_type: str, size: str, out_dir: str):

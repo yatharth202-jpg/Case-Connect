@@ -180,10 +180,31 @@ extraction:
   anomalies:
     pattern_min_run: 5
     night_ratio_threshold: 0.50
-    unique_counterparty_threshold: 15
+    unique_counterparty_threshold: 10
     short_call_seconds: 15
+    short_call_ratio_threshold: 0.60
     min_calls_for_ratio: 5
     short_window_hours: 24
+    short_window_min_calls: 5
+    imei_min_msisdns: 2
+    msisdn_min_imeis: 2
+    cross_case_min_cases: 2
+    multi_name_min_distinct: 2
+    pattern_types:
+      - "sudden_spike"
+      - "very_frequent_pair"
+      - "sudden_new_connection"
+      - "shared_device"
+      - "bridge"
+      - "pattern_anomaly_number"
+      - "international_or_voip_in_domestic"
+      - "cross_case_identifier"
+      - "multi_name_identifier"
+      - "high_night_call_ratio"
+      - "high_unique_short_calls"
+      - "imei_multiple_msisdns"
+      - "msisdn_multiple_imeis"
+      - "short_activity_window"
   completeness:
     required_fields:
       call:
@@ -200,6 +221,10 @@ extraction:
         - "phone"
         - "name"
         - "address"
+      ip_event:
+        - "identifier"
+        - "ip_address"
+        - "datetime_iso"
       fir:
         - "fir_no"
         - "police_station"
@@ -208,7 +233,20 @@ extraction:
         - "complainant"
         - "sections"
         - "identifier"
+    optional_detector_columns:
+      call:
+        imei: "No IMEI column: shared-device and handset rotation detection unavailable"
+        cell_id: "No cell_id / tower column: colocation and tower movement analysis unavailable"
+        imsi: "No IMSI column: subscriber equipment correlation unavailable"
+      transaction:
+        balance_paise: "No balance column: opening/closing balance reconciliation unavailable"
+        reference: "No reference/UTR column: cross-bank reference correlation unavailable"
     gap_days_threshold: 3
+    score_weights:
+      required_fields_weight: 0.50
+      valid_rows_weight: 0.25
+      date_continuity_weight: 0.15
+      detector_columns_weight: 0.10
   banned_terms:
     - "criminal"
     - "suspect"

@@ -41,3 +41,10 @@ server/node_modules/
 Thumbs.db
 scratch/
 .system_generated/
+
+# Agent & local assistant configurations
+.agent/
+.gemini/
+.gsd/
+GSD-STYLE.md
+PROJECT_RULES.md
