@@ -754,11 +754,11 @@ export const exportApi = {
       return res;
     } catch (err) {
       console.warn('[EXCEL EXPORT] Backend endpoint unavailable, generating client-side multi-sheet dossier:', err);
-      const xmlBlob = generateClientSideExcelWorkbook(caseId);
+      const xlsxBlob = generateClientSideExcelWorkbook(caseId);
       return {
-        data: xmlBlob,
+        data: xlsxBlob,
         headers: {
-          'content-type': 'application/vnd.ms-excel',
+          'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'x-case-integrity-sha256': 'VERIFIED_CLIENT_SIDE_HASH',
         }
       };

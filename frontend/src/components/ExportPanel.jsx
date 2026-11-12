@@ -83,7 +83,7 @@ export default function ExportPanel({ caseId, caseNumber }) {
         });
       } else {
         // Blob download
-        const blob = new Blob([response.data], {
+        const blob = response.data instanceof Blob ? response.data : new Blob([response.data], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         });
         const url = window.URL.createObjectURL(blob);

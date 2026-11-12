@@ -25,7 +25,7 @@ export const SuspectHero = ({ activeEntity, onSelectFactorEvidence }) => {
       const filename = `${cleanTitle}_Forensic_Dossier.xlsx`;
 
       const res = await exportApi.downloadExcel(activeCaseId);
-      const blob = new Blob([res.data], {
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       const url = window.URL.createObjectURL(blob);

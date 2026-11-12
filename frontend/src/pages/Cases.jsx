@@ -142,7 +142,7 @@ export default function Cases() {
       const cleanTitle = (caseTitle || 'Case').replace(/[^a-zA-Z0-9_-]/g, '_');
       const filename = `${cleanTitle}_Forensic_Dossier.xlsx`;
       const res = await exportApi.downloadExcel(caseId);
-      const blob = new Blob([res.data], {
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       const url = window.URL.createObjectURL(blob);

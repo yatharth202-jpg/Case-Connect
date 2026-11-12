@@ -168,6 +168,225 @@ def process_dynamic_file_analysis(
 
             collected_items.extend(p_entities + rel_items)
 
+        # 3.1 Document-level multi-entity extraction for forensic dossiers (Persons, CDRs, Bank statements, Vehicles)
+        full_doc = "\n".join(pg.get("text", "") for pg in pages) if pages else ""
+        if full_doc:
+            # (A) Person Dossier Profiles: Name, alias, Role, Phones, Bank, Aadhaar, PAN
+            dossier_matches = re.finditer(
+                r'([A-Z][a-zA-Z.\'-]+\s+[A-Z][a-zA-Z.\'-]+(?:\s+[A-Z][a-zA-Z.\'-]+)?)(?:\s+alias\s+[\'"]?([^\'"\n\r]+)[\'"]?)?\s*[\r\n]+\s*Role:\s*([^\r\n|]+)',
+                full_doc,
+                re.IGNORECASE
+            )
+            for dm in dossier_matches:
+                raw_name = clean_person_name(dm.group(1))
+                if not raw_name:
+                    continue
+                alias = (dm.group(2) or "").strip()
+                role_raw = dm.group(3).strip()
+                rl = role_raw.lower()
+                canonical_role = "suspect"
+                if any(k in rl for k in ["mastermind", "boss", "architect", "kingpin", "head", "prime"]):
+                    canonical_role = "suspect"
+                elif any(k in rl for k in ["victim", "owner", "manager", "guard"]):
+                    canonical_role = "victim"
+                elif any(k in rl for k in ["witness", "resident", "tea"]):
+                    canonical_role = "witness"
+                elif any(k in rl for k in ["police", "officer", "inspector", "constable"]):
+                    canonical_role = "police_officer"
+                elif any(k in rl for k in ["mule", "courier", "rider", "driver", "transit"]):
+                    canonical_role = "mule"
+                elif any(k in rl for k in ["hacker", "cyber", "operator", "hawala"]):
+                    canonical_role = "operator"
+
+                collected_items.append({
+                    "entity_type": "PERSON",
+                    "raw_value": raw_name,
+                    "normalized_value": raw_name,
+                    "page_or_paragraph": "Dossier",
+                    "char_span_start": dm.start(),
+                    "char_span_end": dm.end(),
+                    "confidence": 0.95,
+                    "method": "dossier_regex",
+                    "role": canonical_role
+                })
+
+                w_start = dm.start()
+                w_end = min(len(full_doc), w_start + 600)
+                window_txt = full_doc[w_start:w_end]
+
+                for ph_match in re.finditer(r'(?:\+?91[\s-]?)?([6-9]\d{4}[\s-]?\d{5})', window_txt):
+                    clean_ph = re.sub(r'[^\d]', '', ph_match.group(1))
+                    if len(clean_ph) == 10:
+                        collected_items.append({
+                            "entity_type": "PHONE",
+                            "raw_value": ph_match.group(0).strip(),
+                            "normalized_value": clean_ph,
+                            "page_or_paragraph": "Dossier",
+                            "char_span_start": w_start + ph_match.start(),
+                            "char_span_end": w_start + ph_match.end(),
+                            "confidence": 0.95,
+                            "method": "dossier_regex"
+                        })
+                        collected_items.append({
+                            "entity_type": "RELATIONSHIP",
+                            "raw_value": f"{raw_name} -> {clean_ph}",
+                            "normalized_value": json.dumps({
+                                "source": raw_name,
+                                "target": clean_ph,
+                                "relationship_type": "USES",
+                                "method": "regex"
+                            }),
+                            "page_or_paragraph": "Dossier",
+                            "char_span_start": w_start + ph_match.start(),
+                            "char_span_end": w_start + ph_match.end(),
+                            "confidence": 0.95,
+                            "method": "regex"
+                        })
+
+                bank_m = re.search(r'(?:Bank\s*(?:A\/c|Account)?|A\/c\s*No\.?)\s*[:\-]?\s*([A-Za-z0-9\s]{6,30}?)(?=[(\n\r|]|$)', window_txt, re.IGNORECASE)
+                if bank_m:
+                    ac_digits = re.sub(r'\D', '', bank_m.group(1))
+                    if len(ac_digits) >= 9:
+                        collected_items.append({
+                            "entity_type": "BANK_ACCOUNT",
+                            "raw_value": ac_digits,
+                            "normalized_value": ac_digits,
+                            "page_or_paragraph": "Dossier",
+                            "char_span_start": w_start + bank_m.start(),
+                            "char_span_end": w_start + bank_m.end(),
+                            "confidence": 0.95,
+                            "method": "dossier_regex"
+                        })
+                        collected_items.append({
+                            "entity_type": "RELATIONSHIP",
+                            "raw_value": f"{raw_name} -> {ac_digits}",
+                            "normalized_value": json.dumps({
+                                "source": raw_name,
+                                "target": ac_digits,
+                                "relationship_type": "OWNS",
+                                "method": "regex"
+                            }),
+                            "page_or_paragraph": "Dossier",
+                            "char_span_start": w_start + bank_m.start(),
+                            "char_span_end": w_start + bank_m.end(),
+                            "confidence": 0.95,
+                            "method": "regex"
+                        })
+
+            # (B) Vehicles with driver / user mapping
+            veh_matches = re.finditer(r'\b(UP[0-9]{2}\s+[A-Z]{1,2}\s+[0-9]{4})\b(?:\s+([^\n\r]+?)(?:Users\s+per\s+IO\s+([^\n\r]+))?)?', full_doc, re.IGNORECASE)
+            for vm in veh_matches:
+                plate = re.sub(r'\s+', '', vm.group(1).upper())
+                collected_items.append({
+                    "entity_type": "VEHICLE",
+                    "raw_value": vm.group(1).strip(),
+                    "normalized_value": plate,
+                    "page_or_paragraph": "ANPR",
+                    "char_span_start": vm.start(),
+                    "char_span_end": vm.end(),
+                    "confidence": 0.95,
+                    "method": "vehicle_regex"
+                })
+                users = vm.group(3) or ""
+                if users:
+                    for u in re.split(r'[,&]', users):
+                        u_clean = clean_person_name(u.strip())
+                        if u_clean:
+                            collected_items.append({
+                                "entity_type": "RELATIONSHIP",
+                                "raw_value": f"{u_clean} -> {plate}",
+                                "normalized_value": json.dumps({
+                                    "source": u_clean,
+                                    "target": plate,
+                                    "relationship_type": "DRIVES",
+                                    "method": "regex"
+                                }),
+                                "page_or_paragraph": "ANPR",
+                                "char_span_start": vm.start(),
+                                "char_span_end": vm.end(),
+                                "confidence": 0.95,
+                                "method": "regex"
+                            })
+
+            # (C) CDR Call Detail Records in document narrative
+            cdr_matches = re.finditer(r'(?:\b\d{1,3}\s+)?(\d{2}[-/]\d{2}[-/]\d{4}\s+\d{2}:\d{2}(?::\d{2})?)\s+(\+?91[\s-]?\d{5}[\s-]?\d{5})\s+(\+?91[\s-]?\d{5}[\s-]?\d{5})\s+(MOC|MTC|SMS)\s+(\d+)\s+([A-Z0-9_-]+)', full_doc, re.IGNORECASE)
+            for cm in cdr_matches:
+                c1 = re.sub(r'[^\d]', '', cm.group(2))
+                c2 = re.sub(r'[^\d]', '', cm.group(3))
+                if len(c1) > 10:
+                    c1 = c1[-10:]
+                if len(c2) > 10:
+                    c2 = c2[-10:]
+                dur = int(cm.group(5)) if cm.group(5).isdigit() else 60
+                date_str = cm.group(1)
+
+                cr = CallRecord(
+                    id=str(uuid.uuid4()),
+                    case_id=case_id,
+                    source_file=filename,
+                    source_ref="Doc CDR Table",
+                    caller=c1,
+                    receiver=c2,
+                    duration_seconds=dur,
+                    datetime_iso=date_str,
+                    fingerprint=str(uuid.uuid4())
+                )
+                db.add(cr)
+
+                collected_items.append({
+                    "entity_type": "RELATIONSHIP",
+                    "raw_value": f"{c1} -> {c2}",
+                    "normalized_value": json.dumps({
+                        "source": c1,
+                        "target": c2,
+                        "relationship_type": "CALLED",
+                        "method": "cdr_regex"
+                    }),
+                    "page_or_paragraph": "CDR",
+                    "char_span_start": cm.start(),
+                    "char_span_end": cm.end(),
+                    "confidence": 0.95,
+                    "method": "regex"
+                })
+
+            # (D) Bank transactions in document narrative
+            txn_matches = re.finditer(r'(\d{4}-\d{2}-\d{2})\s+((?:NEFT|RTGS|IMPS|UPI)\/(?:CR|DR)\/\d+\/([^\/\n\r]+)\/([^\n\r]+?))\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)', full_doc, re.IGNORECASE)
+            for tm in txn_matches:
+                counterparty = clean_person_name(tm.group(3)) or tm.group(3).strip()
+                amt_str = tm.group(5).replace(',', '')
+                raw_amt = float(amt_str) if amt_str else 0.0
+                if counterparty and raw_amt > 0:
+                    total_money_volume += raw_amt
+                    txn = Transaction(
+                        id=str(uuid.uuid4()),
+                        case_id=case_id,
+                        source_file=filename,
+                        source_ref="Doc Bank Table",
+                        txn_id=str(uuid.uuid4())[:8],
+                        from_account="Malhotra Security Consultants LLP",
+                        to_account=counterparty,
+                        amount_paise=int(raw_amt * 100),
+                        date_iso=tm.group(1),
+                        direction="debit"
+                    )
+                    db.add(txn)
+                    collected_items.append({
+                        "entity_type": "RELATIONSHIP",
+                        "raw_value": f"Malhotra Security Consultants LLP -> {counterparty}",
+                        "normalized_value": json.dumps({
+                            "source": "Malhotra Security Consultants LLP",
+                            "target": counterparty,
+                            "relationship_type": "TRANSFERRED_TO",
+                            "amount": raw_amt,
+                            "method": "txn_regex"
+                        }),
+                        "page_or_paragraph": "Bank Statement",
+                        "char_span_start": tm.start(),
+                        "char_span_end": tm.end(),
+                        "confidence": 0.95,
+                        "method": "regex"
+                    })
+
         # 4. Optional single-pass Gemini AI extraction (only when local extraction found < 2 entities)
         if is_gemini_configured() and pages and len(collected_items) < 2:
             try:
