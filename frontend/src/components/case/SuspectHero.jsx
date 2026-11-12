@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { 
   Shield, Phone, CreditCard, Network, AlertTriangle, 
   ChevronDown, ChevronUp, Camera, CheckCircle2, ArrowUpRight, 
-  Download, FileText 
+  Download, FileText, FileSpreadsheet 
 } from 'lucide-react';
-import { reportsApi } from '../../api/client';
+import { reportsApi, exportApi } from '../../api/client';
 import { useCaseFlow } from '../../context/CaseFlowContext';
 
 export const SuspectHero = ({ activeEntity, onSelectFactorEvidence }) => {
@@ -13,6 +13,38 @@ export const SuspectHero = ({ activeEntity, onSelectFactorEvidence }) => {
   const [customPhotoUrl, setCustomPhotoUrl] = useState(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
+  const [generatingExcel, setGeneratingExcel] = useState(false);
+  const [excelSuccess, setExcelSuccess] = useState(false);
+
+  const handleDownloadExcel = async () => {
+    if (!activeCaseId) return;
+    setGeneratingExcel(true);
+    try {
+      const caseTitle = activeCaseData?.case?.title || activeCaseData?.title || 'Case';
+      const cleanTitle = caseTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `${cleanTitle}_Forensic_Dossier.xlsx`;
+
+      const res = await exportApi.downloadExcel(activeCaseId);
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setExcelSuccess(true);
+      setTimeout(() => setExcelSuccess(false), 5000);
+    } catch (err) {
+      console.error('[EXCEL EXPORT ERROR]', err);
+      alert('Could not generate Excel dossier. Please verify backend service.');
+    } finally {
+      setGeneratingExcel(false);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!activeCaseId) return;
@@ -104,29 +136,55 @@ export const SuspectHero = ({ activeEntity, onSelectFactorEvidence }) => {
 
         <div className="flex items-center gap-2.5">
           {activeCaseId && (
-            <button
-              onClick={handleDownloadPdf}
-              disabled={generatingPdf}
-              className="glass-pill px-3 py-1 text-xs font-mono text-text hover:text-accent border-accent/30 hover:border-accent/60 transition-all flex items-center gap-1.5 disabled:opacity-50"
-              title="Generate Court-Admissible Section 63 BSA Certified PDF"
-            >
-              {generatingPdf ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-                  <span className="text-accent">Generating PDF...</span>
-                </>
-              ) : pdfSuccess ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-data" />
-                  <span className="text-data">Sealed PDF Ready</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5 text-accent" />
-                  <span>Download Court PDF (Sec 63 BSA)</span>
-                </>
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={generatingPdf}
+                className="glass-pill px-3 py-1 text-xs font-mono text-text hover:text-accent border-accent/30 hover:border-accent/60 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Generate Court-Admissible Section 63 BSA Certified PDF"
+              >
+                {generatingPdf ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+                    <span className="text-accent">Generating PDF...</span>
+                  </>
+                ) : pdfSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-data" />
+                    <span className="text-data">Sealed PDF Ready</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5 text-accent" />
+                    <span>Download Court PDF (Sec 63 BSA)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleDownloadExcel}
+                disabled={generatingExcel}
+                className="glass-pill px-3 py-1 text-xs font-mono text-emerald-300 hover:text-white border-emerald-800/60 hover:bg-emerald-950/60 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Export Complete Multi-Sheet Case Dossier to Excel (.xlsx)"
+              >
+                {generatingExcel ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                    <span className="text-emerald-400">Exporting Excel...</span>
+                  </>
+                ) : excelSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Excel Ready</span>
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Export Excel (.xlsx)</span>
+                  </>
+                )}
+              </button>
+            </>
           )}
 
           <span className="font-mono text-xs text-muted">

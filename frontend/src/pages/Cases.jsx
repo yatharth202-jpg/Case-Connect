@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { casesApi, reportsApi } from '../api/client';
+import { casesApi, reportsApi, exportApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useCaseFlow } from '../context/CaseFlowContext';
 import { 
   FolderOpen, Plus, Search, ChevronRight, Download, 
   FileText, ExternalLink, Shield, Clock, AlertCircle, 
-  CheckCircle2, Copy, Check, Trash2, X 
+  CheckCircle2, Copy, Check, Trash2, X, FileSpreadsheet 
 } from 'lucide-react';
 
 export default function Cases() {
@@ -134,6 +134,29 @@ export default function Cases() {
       setTimeout(() => setExportSuccess(null), 4000);
     } catch (err) {
       alert(err.response?.data?.detail || 'Failed to export forensic JSON.');
+    }
+  };
+
+  const handleExportExcel = async (caseId, caseTitle) => {
+    try {
+      const cleanTitle = (caseTitle || 'Case').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `${cleanTitle}_Forensic_Dossier.xlsx`;
+      const res = await exportApi.downloadExcel(caseId);
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setExportSuccess('Multi-sheet Forensic Excel workbook downloaded.');
+      setTimeout(() => setExportSuccess(null), 4000);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to export Excel workbook.');
     }
   };
 
@@ -340,6 +363,15 @@ export default function Cases() {
                       ) : (
                         <Download className="w-3.5 h-3.5" />
                       )}
+                    </button>
+
+                    {/* Excel Export */}
+                    <button
+                      onClick={() => handleExportExcel(c.id, c.title)}
+                      className="p-1 rounded-md glass-sm border border-emerald-800/40 text-emerald-400 hover:text-white hover:bg-emerald-950/60 transition-all"
+                      title="Export Case Evidence to Forensic Excel (.xlsx)"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
                     </button>
 
                     {/* JSON Export */}
