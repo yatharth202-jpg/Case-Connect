@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { reportsApi } from '../api/client';
+import ExportPanel from './ExportPanel';
 import { useAuth } from '../context/AuthContext';
 
 export default function ReportGenerator({ caseId, isViewer }) {
@@ -323,6 +324,9 @@ export default function ReportGenerator({ caseId, isViewer }) {
           </div>
         </form>
       </div>
+
+      {/* 2.5 Excel Export Dossier Section (Phase 2 Upgrade) */}
+      <ExportPanel caseId={caseId} />
 
       {/* 3. Generated Report History Table */}
       <div className="bg-[#0b1120] border border-[#1e293b] rounded-lg overflow-hidden">

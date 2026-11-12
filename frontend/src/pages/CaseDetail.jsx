@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FileSpreadsheet } from 'lucide-react';
 import { casesApi, evidenceApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import GraphCanvas from '../components/GraphCanvas';
@@ -290,6 +291,14 @@ export default function CaseDetail({ caseId }) {
             <span className="text-xs text-slate-400 bg-[#030712] border border-[#1e293b] px-3 py-1.5 rounded font-mono">
               Status: <span className="text-emerald-400 font-semibold">{caseData.status.toUpperCase()}</span>
             </span>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/60 hover:text-white rounded border border-emerald-800 transition-colors"
+              title="Export Case Evidence to Forensic Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              Export Excel
+            </button>
             <button
               onClick={() => setSettingsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#1e293b] hover:bg-[#334155] hover:text-white rounded border border-[#334155] transition-colors"

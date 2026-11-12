@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsApi } from '../api/client';
+import TopLeadsCard from './TopLeadsCard';
 
 export default function LeadAdvisor({ caseId, isViewer = false }) {
   const [leads, setLeads] = useState([]);
@@ -155,6 +156,9 @@ export default function LeadAdvisor({ caseId, isViewer = false }) {
           Recompute Leads
         </button>
       </div>
+
+      {/* Top-5 Primary Attributed Leads Card (Phase 3 Upgrade) */}
+      <TopLeadsCard caseId={caseId} />
 
       {/* 2. Priority Summary Metric Chips */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

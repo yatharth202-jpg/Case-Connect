@@ -6,7 +6,11 @@ from typing import Dict, Any, List, Optional, Callable
 from sqlalchemy.orm import Session
 from backend.app.db.sql import (
     CallRecord, Transaction, IPEvent, Entity, RejectedRow,
-    EvidenceFile, ColumnMapping
+    EvidenceFile, ColumnMapping, RawRow, RawSheet
+)
+from backend.app.services.ingestion.raw_store import (
+    capture_raw_file_lossless,
+    reconcile_evidence_file,
 )
 from backend.app.config import get_extraction_config
 from backend.app.services.ingestion.readers import (
@@ -148,6 +152,15 @@ def stage_evidence_file(
     db.query(RejectedRow).filter(RejectedRow.evidence_id == ev.id).delete()
     db.flush()
 
+    # Phase 1: Lossless Raw Store Capture before any parsing or validation
+    raw_capture_res = capture_raw_file_lossless(
+        db=db,
+        evidence_file_id=ev.id,
+        file_path=file_path,
+        chunk_size=effective_chunk_size,
+    )
+    raw_row_lookup = raw_capture_res.get("raw_row_lookup", {})
+
     detailed = read_tabular_file_detailed(file_path)
     records = detailed["records"]
     headers = detailed["headers"]
@@ -239,7 +252,7 @@ def stage_evidence_file(
             else:
                 sh_det = detect_file_type(sh["headers"], sh["records"], banners=sh.get("banner_rows"))
                 sh_type = sh_det["detected_type"]
-                if sh_type != "unknown" and sh_det["confidence"] >= 0.55:
+                if sh_type != "unknown" and sh_det["confidence"] >= 0.40:
                     sh_sug = suggest_column_mappings(sh_type, sh["headers"], sh["records"])
                     sh_map = {h: v["canonical"] for h, v in sh_sug.items()}
                     sections_to_stage.append({
@@ -296,6 +309,8 @@ def stage_evidence_file(
                 idx = global_row_idx
                 page_no = raw_row.get("_page_no")
                 source_ref_str = f"p{page_no}:{idx}" if page_no else str(idx)
+                phys_row_no = file_meta.get("header_row_no", 1) + idx
+                cur_raw_row_id = raw_row_lookup.get(("default", phys_row_no)) or raw_row_lookup.get(("document", phys_row_no))
 
                 def get_val(canon_name: str):
                     headers_list = canon_to_raw.get(canon_name, [])
@@ -317,7 +332,7 @@ def stage_evidence_file(
 
                     if not p_caller or not p_receiver:
                         reason = "MISSING_OR_INVALID_PHONE_NUMBER"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -365,6 +380,7 @@ def stage_evidence_file(
                         imsi=str(get_val("imsi") or "") or None,
                         cell_id=str(get_val("cell_id") or "") or None,
                         raw_json=json.dumps(raw_row, default=str),
+                        raw_row_id=cur_raw_row_id,
                         fingerprint=fp
                     )
                     db.add(record)
@@ -381,7 +397,7 @@ def stage_evidence_file(
 
                     if not from_acc or not to_acc:
                         reason = "MISSING_REMITTER_OR_BENEFICIARY_ACCOUNT"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -389,7 +405,7 @@ def stage_evidence_file(
                     amt_paise = normalize_amount(amt_val)
                     if amt_paise is None or amt_paise == 0:
                         reason = "INVALID_OR_MISSING_TRANSACTION_AMOUNT"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -436,6 +452,7 @@ def stage_evidence_file(
                         reference=ref or None,
                         direction="transfer",
                         raw_json=json.dumps(raw_row, default=str),
+                        raw_row_id=cur_raw_row_id,
                         fingerprint=fp
                     )
                     db.add(txn)
@@ -451,7 +468,7 @@ def stage_evidence_file(
                     stmt_acct = normalize_account(statement_account or get_val("statement_account"))
                     if not stmt_acct:
                         reason = "MISSING_STATEMENT_OWNER_ACCOUNT"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -473,7 +490,7 @@ def stage_evidence_file(
                         amt_paise = abs(generic_amt)
                     else:
                         reason = "UNPARSABLE_TRANSACTION_AMOUNT"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -525,6 +542,7 @@ def stage_evidence_file(
                         reference=ref,
                         direction=direction,
                         raw_json=json.dumps(raw_row, default=str),
+                        raw_row_id=cur_raw_row_id,
                         fingerprint=fp
                     )
                     db.add(txn)
@@ -541,7 +559,7 @@ def stage_evidence_file(
                     orig_name, canon_name = normalize_name(get_val("name"))
                     if not orig_name:
                         reason = "MISSING_NAME_IDENTIFIER"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -623,7 +641,7 @@ def stage_evidence_file(
 
                     if not identifier or not ip_val or not is_valid_ip:
                         reason = "INVALID_IP_ADDRESS_OR_IDENTIFIER"
-                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                        _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                         rows_rejected += 1
                         continue
 
@@ -644,13 +662,14 @@ def stage_evidence_file(
                         ip_address=ip_val,
                         datetime_iso=iso_str,
                         tz_source=tz_src,
-                        raw_json=json.dumps(raw_row, default=str)
+                        raw_json=json.dumps(raw_row, default=str),
+                        raw_row_id=cur_raw_row_id
                     )
                     db.add(ip_ev)
                     rows_ingested += 1
                 else:
                     reason = f"UNSUPPORTED_RECORD_TYPE_{cur_type.upper()}"
-                    _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason)
+                    _record_rejection(db, ev.id, ev.case_id, idx, raw_row, reason, rejections_by_reason, raw_row_id=cur_raw_row_id)
                     rows_rejected += 1
 
             db.flush()
@@ -703,11 +722,21 @@ def stage_evidence_file(
     min_date = min(dates_seen) if dates_seen else None
     max_date = max(dates_seen) if dates_seen else None
 
+    # Phase 1: Enforce independent reconciliation invariant
+    recon_res = reconcile_evidence_file(db=db, evidence_file_id=ev.id, file_path=file_path)
+    if not recon_res.get("is_reconciled", True):
+        ev.status = "failed"
+        db.commit()
+        raise ValueError(
+            f"RECONCILIATION_FAILED: Ingestion row count mismatch: {recon_res.get('sheets')}"
+        )
+
     return {
         "evidence_id": ev.id,
         "status": "ingested",
         "needs_owner_confirmation": False,
         "file_type": file_type,
+        "reconciliation": recon_res,
         "rows_read": rows_read,
         "rows_ingested": rows_ingested,
         "rows_rejected": rows_rejected,
@@ -728,15 +757,19 @@ def _record_rejection(
     row_num: int,
     raw_row: dict,
     reason: str,
-    counter: dict
+    counter: dict,
+    raw_row_id: Optional[str] = None,
 ):
-    """Records a rejected row with its failure reason in SQLite."""
+    """Records a rejected row with its failure reason in SQLite and updates raw_row status."""
     counter[reason] = counter.get(reason, 0) + 1
     rej = RejectedRow(
         evidence_id=ev_id,
         case_id=case_id,
         row_number=row_num,
         raw_data_json=json.dumps(raw_row, default=str),
+        raw_row_id=raw_row_id,
         reason=reason
     )
     db.add(rej)
+    if raw_row_id:
+        db.query(RawRow).filter(RawRow.id == raw_row_id).update({"status": "rejected"})

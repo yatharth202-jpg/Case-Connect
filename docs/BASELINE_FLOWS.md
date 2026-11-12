@@ -80,3 +80,4 @@ This document specifies the ten (10) operational flows that constitute the basel
 - **Verification Method:**
   - Automated tests: `backend/tests/test_audit.py`, `backend/tests/test_reports.py`
   - Validated cryptographic chain linkage: `Hash_n = SHA256(Hash_{n-1} + Timestamp + UserID + Action + ObjectID + Details)`.
+

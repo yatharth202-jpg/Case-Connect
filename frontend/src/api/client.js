@@ -715,6 +715,43 @@ export const aiApi = {
   },
 };
 
+// 12. Excel Export API (Phase 2 Upgrade)
+export const exportApi = {
+  downloadExcel: async (caseId, filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.tables && filters.tables.length > 0) {
+      params.append('tables', filters.tables.join(','));
+    }
+    if (filters.file_id) params.append('file_id', filters.file_id);
+    if (filters.date_from) params.append('date_from', filters.date_from);
+    if (filters.date_to) params.append('date_to', filters.date_to);
+    if (filters.background) params.append('background', 'true');
+
+    const res = await api.get(`/cases/${caseId}/export.xlsx`, {
+      params,
+      responseType: filters.background ? 'json' : 'blob',
+    });
+    return res;
+  },
+  getExportJob: async (caseId, jobId) => {
+    const res = await api.get(`/cases/${caseId}/export.xlsx`, {
+      params: { job_id: jobId },
+      responseType: 'blob',
+    });
+    return res;
+  },
+};
+
+// 13. Top Leads API (Phase 3 Upgrade)
+export const leadsApi = {
+  getTopLeads: async (caseId, n = 5, recompute = false) => {
+    const res = await api.get(`/cases/${caseId}/top-leads`, {
+      params: { n, recompute },
+    });
+    return res.data;
+  },
+};
+
 export const getHealth = async () => {
   try {
     const res = await api.get('/health');

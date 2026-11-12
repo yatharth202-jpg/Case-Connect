@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, String, Integer, Float, Boolean,
-    DateTime, Text, ForeignKey, Index, UniqueConstraint
+    DateTime, Text, ForeignKey, Index, UniqueConstraint, BigInteger
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from backend.app.config import settings
@@ -124,6 +124,7 @@ class CallRecord(Base):
     imsi = Column(String, nullable=True)
     cell_id = Column(String, nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    raw_row_id = Column(String, nullable=True, index=True)
     is_active = Column(Boolean, default=True, index=True, nullable=False)
     fingerprint = Column(String, index=True, nullable=False)
 
@@ -145,6 +146,7 @@ class Transaction(Base):
     reference = Column(String, nullable=True)
     direction = Column(String, nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    raw_row_id = Column(String, nullable=True, index=True)
     is_active = Column(Boolean, default=True, index=True, nullable=False)
     fingerprint = Column(String, index=True, nullable=False)
 
@@ -160,6 +162,7 @@ class IPEvent(Base):
     datetime_iso = Column(String, index=True, nullable=False)
     tz_source = Column(String, default="assumed_local", nullable=True)
     raw_json = Column(Text, default="{}", nullable=True)
+    raw_row_id = Column(String, nullable=True, index=True)
     is_active = Column(Boolean, default=True, index=True, nullable=False)
 
 # 12. Rejected Rows (Data Quality Audit)
@@ -170,6 +173,7 @@ class RejectedRow(Base):
     case_id = Column(String, index=True, nullable=False)
     row_number = Column(Integer, nullable=False)
     raw_data_json = Column(Text, nullable=False)
+    raw_row_id = Column(String, nullable=True, index=True)
     reason = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -371,6 +375,8 @@ class FieldClaim(Base):
     observed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     run_id = Column(String, index=True, nullable=True)
 
+RecordFieldClaim = FieldClaim
+
 # 26. Golden Fields (Resolved Winner Per Subject & Field)
 class GoldenField(Base):
     __tablename__ = "golden_fields"
@@ -488,6 +494,132 @@ class MediaTranscriptSegment(Base):
     needs_review = Column(Boolean, default=False, nullable=False)
     officer_note = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 33. Raw Sheets (Lossless Multi-Sheet Metadata)
+class RawSheet(Base):
+    __tablename__ = "raw_sheets"
+    __table_args__ = (
+        UniqueConstraint("evidence_file_id", "sheet_name", name="uq_raw_sheet_file"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    evidence_file_id = Column(String, ForeignKey("evidence_files.id"), index=True, nullable=False)
+    sheet_name = Column(String, index=True, nullable=False)
+    header_row_no = Column(Integer, default=0, nullable=False)
+    row_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 34. Raw Rows (Lossless Evidence Row Store)
+class RawRow(Base):
+    __tablename__ = "raw_rows"
+    __table_args__ = (
+        Index("idx_raw_row_file_sheet_no", "evidence_file_id", "sheet_name", "row_no"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    evidence_file_id = Column(String, ForeignKey("evidence_files.id"), index=True, nullable=False)
+    sheet_name = Column(String, default="default", index=True, nullable=False)
+    row_no = Column(Integer, nullable=False)
+    raw_json = Column(Text, nullable=False) # Exact string dictionary of every column
+    row_hash = Column(String, index=True, nullable=False) # SHA-256 of raw string contents
+    status = Column(String, default="staged", index=True, nullable=False) # staged | rejected | preamble | blank
+    linked_record_type = Column(String, nullable=True) # call_records | transactions | ip_events | sdr_records
+    linked_record_id = Column(String, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 35. Node Type Configuration (Data-Agnostic Graph Customization)
+class NodeTypeConfig(Base):
+    __tablename__ = "node_type_configs"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    type_name = Column(String, unique=True, index=True, nullable=False)
+    label = Column(String, nullable=False)
+    color = Column(String, default="#2563EB", nullable=False)
+    icon = Column(String, default="circle", nullable=False)
+    shape = Column(String, default="ellipse", nullable=False)
+    score_weight = Column(Float, default=1.0, nullable=False)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 36. Edge Type Configuration (Data-Agnostic Graph Customization)
+class EdgeTypeConfig(Base):
+    __tablename__ = "edge_type_configs"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    type_name = Column(String, unique=True, index=True, nullable=False)
+    label = Column(String, nullable=False)
+    color = Column(String, default="#64748B", nullable=False)
+    line_style = Column(String, default="solid", nullable=False)
+    directional = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 37. Graph Nodes (Authoritative Relational Graph Node Projection)
+class GraphNode(Base):
+    __tablename__ = "graph_nodes"
+    __table_args__ = (
+        Index("idx_graph_node_case_type", "case_id", "node_type"),
+    )
+    id = Column(String, primary_key=True) # Deterministic hash of case_id + node_type + normalized label
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    node_type = Column(String, index=True, nullable=False)
+    label = Column(String, nullable=False)
+    props_json = Column(Text, default="{}", nullable=False)
+    source_evidence_ids = Column(Text, default="[]", nullable=False) # JSON array of evidence IDs
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 38. Graph Edges (Authoritative Relational Graph Edge Projection)
+class GraphEdge(Base):
+    __tablename__ = "graph_edges"
+    __table_args__ = (
+        Index("idx_graph_edge_case_src_dst", "case_id", "src", "dst"),
+        Index("idx_graph_edge_case_type", "case_id", "edge_type"),
+    )
+    id = Column(String, primary_key=True) # Deterministic hash of case_id + src + dst + edge_type
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    src = Column(String, ForeignKey("graph_nodes.id"), index=True, nullable=False)
+    dst = Column(String, ForeignKey("graph_nodes.id"), index=True, nullable=False)
+    edge_type = Column(String, index=True, nullable=False)
+    count = Column(Integer, default=1, nullable=False)
+    total_paise = Column(BigInteger, default=0, nullable=False) # 64-bit integer paise
+    first_seen = Column(DateTime, nullable=True)
+    last_seen = Column(DateTime, nullable=True)
+    props_json = Column(Text, default="{}", nullable=False)
+    source_evidence_ids = Column(Text, default="[]", nullable=False) # JSON array of evidence IDs
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 39. Analysis Results (Persisted Top-5 Leads & Forensic Finding Nodes)
+class AnalysisResult(Base):
+    __tablename__ = "analysis_results"
+    __table_args__ = (
+        Index("idx_analysis_case_rank", "case_id", "rank"),
+    )
+    id = Column(String, primary_key=True, default=generate_uuid)
+    run_id = Column(String, index=True, nullable=False)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    entity_id = Column(String, index=True, nullable=False)
+    rank = Column(Integer, nullable=False)
+    score = Column(Float, nullable=False)
+    breakdown_json = Column(Text, default="{}", nullable=False)
+    evidence_ids = Column(Text, default="[]", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 40. Saved Graph Views (Reopenable UI State without Recompute)
+class SavedGraphView(Base):
+    __tablename__ = "saved_graph_views"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    case_id = Column(String, ForeignKey("cases.id"), index=True, nullable=False)
+    name = Column(String, nullable=False)
+    view_data_json = Column(Text, nullable=False)
+    created_by = Column(String, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+# 41. System Configuration (Dynamic Tunables & Scoring Weights)
+class SystemConfig(Base):
+    __tablename__ = "system_configs"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    key = Column(String, unique=True, index=True, nullable=False)
+    value = Column(Text, nullable=False)
+    description = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 def get_db():
     db = SessionLocal()

@@ -142,6 +142,8 @@ from backend.app.services.analytics.router import router as analytics_router
 from backend.app.services.matching.router import router as matching_router
 from backend.app.services.ai.router import router as ai_router
 from backend.app.services.merge.router import router as merge_router
+from backend.app.api.export import router as export_router
+from backend.app.api.leads import router as leads_router
 
 feature_routers = [
     (auth_router, "/auth", ["Auth"]),
@@ -157,6 +159,8 @@ feature_routers = [
     (matching_router, "", ["Entity Matching & Master Profiles"]),
     (ai_router, "", ["AI & Gemini Copilot"]),
     (merge_router, "", ["Unified Record Store & Merge Engine"]),
+    (export_router, "", ["Excel Export"]),
+    (leads_router, "", ["Top Leads"]),
 ]
 
 for rtr, pfx, tags in feature_routers:

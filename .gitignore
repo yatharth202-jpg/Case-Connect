@@ -17,6 +17,7 @@ data/private/
 data/user_samples/
 data/synthetic/*
 !data/synthetic/.gitkeep
+data/exports/
 
 # Python
 __pycache__/
