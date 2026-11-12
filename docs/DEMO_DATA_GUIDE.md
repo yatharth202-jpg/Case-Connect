@@ -123,3 +123,4 @@ After ingestion:
 * **Reconciliation Check:** CaseConnect AI asserts `rows_in_file == staged + rejected + preamble + blank`. If any row is missing, the ingestion job marks the file with a clear diagnostic warning.
 * **Lossless Store:** Click **Raw Store Inspection** to view the verbatim raw row JSON tokens for any staged record.
 * **Reversibility:** Every ingested file can be surgical rolled back with a single click without affecting other evidence in the case docket.
+

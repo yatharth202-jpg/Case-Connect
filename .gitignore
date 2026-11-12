@@ -58,3 +58,57 @@ PROJECT_RULES.md
 
 # Local personal scripts
 scripts/openrouter_client.mjs
+
+# Security & Credentials
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials*
+
+# Databases & local volume data
+*.sqlite
+*.sqlite3
+*-wal
+*-shm
+evidence/
+exports/
+logs/
+neo4j/
+
+# Test artifacts & coverage
+.coverage
+htmlcov/
+tests/fixtures/generated/
+
+# Build caches & IDEs
+.vite/
+.idea/
+.vscode/
+tmp/
+
+# Model / OCR / Audio weights
+models/
+whisper/
+tesseract/
+
+# Review & analysis reports
+coderabbit_all_findings.json
+
+# Internal documentation, prompts, baseline logs & audit reports (DOCS-INTERNAL)
+CaseConnect_AI_Complete_System_Architecture_and_Tech_Stack.pdf
+docs/CaseConnect_AI_Complete_System_Architecture_and_Tech_Stack.pdf
+docs/BASELINE_FLOWS.md
+docs/BASELINE_TESTS.txt
+docs/UPGRADE_DECISIONS.md
+docs/PROBE_REPORT.md
+docs/EXTRACTION_AUDIT.md
+docs/EXTRACTION_EVAL.md
+docs/reference/*.pdf
+docs/sample_cases/
+docs/superpowers/
+docs/ui/pack/stitch_screens/
+inbox/
+stitch_caseconnect_cyber_investigation_platform/
+
