@@ -104,6 +104,7 @@ def read_root(request: Request):
     }
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check(db: Session = Depends(get_db)):
     # 1. SQLite Health Check
     sqlite_status = "error"

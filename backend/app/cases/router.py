@@ -577,11 +577,36 @@ def seed_hawala_syndicate_endpoint(
     from scripts.generate_hawala_case import seed_and_analyze_hawala_case
     case_id = seed_and_analyze_hawala_case()
     case = db.query(Case).filter(Case.id == case_id).first()
+
+    # Query all evidence records for this case
+    evidence_files = db.query(EvidenceFile).filter(EvidenceFile.case_id == case_id).all()
+    evidence_records = [
+        {
+            "id": f"EV-{ev.id[:6].upper()}",
+            "time": ev.created_at.strftime("%d-%b-%Y %H:%M IST") if ev.created_at else "14-Oct-2026 14:40 IST",
+            "type": (ev.detected_type or "DOCUMENT").upper(),
+            "typeBadge": (
+                "BANK" if "bank" in (ev.detected_type or "").lower() else
+                "CDR" if "cdr" in (ev.detected_type or "").lower() else
+                "FIR" if "fir" in (ev.detected_type or "").lower() else
+                "VEHICLES" if "vehic" in (ev.detected_type or "").lower() else
+                "AUDIO" if "transcript" in (ev.detected_type or "").lower() or "audio" in (ev.detected_type or "").lower() else
+                "IP" if "ip" in (ev.detected_type or "").lower() else "DOC"
+            ),
+            "observation": f"Forensic artifact {ev.original_name} ingested with SHA-256 seal",
+            "source": ev.original_name,
+            "hash": ev.sha256,
+            "entities": f"File size: {ev.file_size} bytes, status: {ev.status}"
+        }
+        for ev in evidence_files
+    ]
+
     return {
         "status": "success",
         "case_id": case_id,
         "title": case.title if case else "Operation RedSand (FIR 409/2026)",
-        "message": "Hawala syndicate case fully ingested, indexed, and analyzed."
+        "message": "Hawala syndicate case fully ingested, indexed, and analyzed.",
+        "evidence_records": evidence_records
     }
 
 

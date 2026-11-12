@@ -9,53 +9,73 @@ export const EvidenceTable = ({ evidenceRecords = [] }) => {
   const defaultRecords = [
     {
       id: 'EV-101',
-      time: '14-Oct-2026 02:18 IST',
-      type: 'CDR_CALL',
-      typeBadge: 'CDR',
-      observation: '41-call burst via Noida SIM-Box tower bypass to Surat handler',
-      source: 'CDR_Dump_Delhi_Noida.xlsx',
-      hash: '9f83a45c6b72d14e38910452cf8a1e2b4895018a93cb4781920194857682910a',
-      entities: '2 MSISDNs (+91 98210 XXXXX, +91 94140 XXXXX), Tower DEL-NOI-04'
+      time: '12-Oct-2026 18:30 IST',
+      type: 'FIR_COMPLAINT',
+      typeBadge: 'FIR',
+      observation: 'Statutory cyber fraud & syndicate Hawala complaint registered under IPC 420/120B & Section 63 BSA',
+      source: 'FIR-409-2026-HAWALA-SYNDICATE.txt',
+      hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
+      entities: 'Complainant statement, IPC 420/120B, BNS Sec 318(4), ₹4.85 Cr target loss'
     },
     {
       id: 'EV-102',
       time: '14-Oct-2026 14:40 IST',
       type: 'BANK_TXN',
       typeBadge: 'BANK',
-      observation: 'IMPS tranche transfer ₹42,00,000 to Surat Axis Bank mule account',
+      observation: '142 layered IMPS/RTGS tranches totalling ₹1,84,00,000 routed through Lotus Overseas Impex Axis mule account',
       source: 'Hawala_AxisBank_Stat.csv',
       hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      entities: 'Axis A/C **9014, IFSC UTIB000014, ₹42,00,000'
+      entities: 'Axis A/C 918020049219014, HDFC A/C 50200084911928, ₹1.84 Cr'
     },
     {
       id: 'EV-103',
-      time: '15-Oct-2026 09:12 IST',
+      time: '15-Oct-2026 11:20 IST',
       type: 'BANK_TXN',
       typeBadge: 'BANK',
-      observation: 'Layering return loop ₹42,00,000 back to Delhi origin via fake garment invoices',
-      source: 'Hawala_AxisBank_Stat.csv',
-      hash: 'd56b400794baa269865a7d656910609b55227aa71c4c95f190ffc17d7e828452',
-      entities: 'Origin A/C **1108, Shell Exporter GSTN 07AAACH1412'
+      observation: 'Multi-sheet Bullion bullion acquisition ledger converting ₹1.84 Cr digital fund into physical gold bullion',
+      source: 'HDFC_Bullion_Merchant_Stat.xlsx',
+      hash: 'c8f7e6d5b4a39281706f5e4d3c2b1a0987654321fedcba0987654321abcdef12',
+      entities: 'Bullion Merchant A/C 50200084911928, 2.85 Kg 24K Gold Bullion Bars'
     },
     {
       id: 'EV-104',
-      time: '12-Oct-2026 18:30 IST',
-      type: 'FIR_COMPLAINT',
-      typeBadge: 'FIR',
-      observation: 'Initial cyber fraud complaint lodged under IPC 420/66D at Cyber Police Station',
-      source: 'FIR_408_CyberCrime.pdf',
-      hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
-      entities: 'Complainant statement, IPC 420, IT Act Sec 66D'
+      time: '14-Oct-2026 02:18 IST',
+      type: 'CDR_CALL',
+      typeBadge: 'CDR',
+      observation: '1,842 call events identified; 41-call coordinated midnight burst via Noida SIM-Box tower bypass to Surat courier handler',
+      source: 'CDR_Dump_Delhi_Noida.xlsx',
+      hash: '9f83a45c6b72d14e38910452cf8a1e2b4895018a93cb4781920194857682910a',
+      entities: '+91 98112 04812 (KC Seth), +91 98711 92834 (Farhan Khan), Tower DEL-NOI-04'
     },
     {
       id: 'EV-105',
+      time: '14-Oct-2026 04:52 IST',
+      type: 'VEHICLE_LOG',
+      typeBadge: 'VEHICLES',
+      observation: '38 ANPR toll camera captures confirming Fortuner DL01CZ8821 & Creta HR26DK4902 cash transport across Delhi-Surat corridor',
+      source: 'vehicles_anpr_log.csv',
+      hash: '4b7a2d9c1e3f5a8b6c0d2e4f7a9b1c3d5e8f0a2b4c6d8e1f3a5b7c9d2e4f6a8b',
+      entities: 'DL01CZ8821 (Armoured Fortuner), HR26DK4902 (Creta Escort), Baroda Toll 04:52'
+    },
+    {
+      id: 'EV-106',
+      time: '14-Oct-2026 02:22 IST',
+      type: 'AUDIO_WIRETAP',
+      typeBadge: 'AUDIO',
+      observation: 'Forensic wiretap audio intercepts confirming physical token (₹10 note Parchi #7729) delivery instruction',
+      source: 'phone_transcripts.json',
+      hash: 'f6e5d4c3b2a10987654321fedcba0987654321abcdef0123456789abcdef0123',
+      entities: 'Speaker KC Seth: "Courier Farhan se ₹42.5 Lakh lo token note 7729 verify karke"'
+    },
+    {
+      id: 'EV-107',
       time: '14-Oct-2026 03:05 IST',
       type: 'IP_SESSION',
       typeBadge: 'IP',
-      observation: 'Static proxy IP session initiated from gateway 103.24.18.9',
+      observation: 'Static proxy IP session initiated from gateway 103.24.18.9 accessing mule netbanking portals',
       source: 'Firewall_Access_Log.txt',
       hash: '7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d',
-      entities: 'IP: 103.24.18.9, Port 8443, IMEI 864201041920391'
+      entities: 'IP: 103.24.18.9, Port 8443, IMEI 864201041920391, Protocol TLS 1.3'
     }
   ];
 
@@ -112,31 +132,28 @@ export const EvidenceTable = ({ evidenceRecords = [] }) => {
             {tamperedId ? '↺ Restore Cryptographic Hash' : '⚡ Simulate Tamper Demo'}
           </button>
 
-          <div className="glass-pill p-1 flex items-center gap-1 text-xs font-mono">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-3 py-1.5 rounded-full transition-all ${
-                activeTab === 'all' ? 'bg-white/10 text-text font-semibold' : 'text-muted hover:text-text'
-              }`}
-            >
-              All ({records.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('cdr')}
-              className={`px-3 py-1.5 rounded-full transition-all ${
-                activeTab === 'cdr' ? 'bg-data/20 text-data font-semibold' : 'text-muted hover:text-text'
-              }`}
-            >
-              CDR
-            </button>
-            <button
-              onClick={() => setActiveTab('bank')}
-              className={`px-3 py-1.5 rounded-full transition-all ${
-                activeTab === 'bank' ? 'bg-accent/20 text-accent font-semibold' : 'text-muted hover:text-text'
-              }`}
-            >
-              Bank
-            </button>
+          <div className="glass-pill p-1 flex flex-wrap items-center gap-1 text-xs font-mono">
+            {[
+              { id: 'all', label: `All (${records.length})` },
+              { id: 'bank', label: 'Bank' },
+              { id: 'cdr', label: 'CDR' },
+              { id: 'fir', label: 'FIR' },
+              { id: 'vehicles', label: 'Vehicles' },
+              { id: 'audio', label: 'Audio' },
+              { id: 'ip', label: 'IP Logs' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-1.5 rounded-full transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-accent/20 text-accent font-semibold border border-accent/40 shadow-sm'
+                    : 'text-muted hover:text-text hover:bg-white/[0.04]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

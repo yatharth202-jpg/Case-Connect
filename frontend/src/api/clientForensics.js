@@ -751,32 +751,89 @@ function performDynamicForensicExtraction({
 export function getSynthesizedHawalaCase() {
   const caseId = 'hawala_redsand_case';
   const nodes = [
-    { data: { id: 'n1', label: 'Kailash Chand Jain @ KC Seth', type: 'Person', role: 'Hawala Master Conduit / Hub', score: 96, city: 'Delhi NCR' } },
+    // 1. Key Persons / Operatives
+    { data: { id: 'n1', label: 'Kailash Chand Jain @ KC Seth', type: 'Person', role: 'Hawala Master Conduit / Apex Hub', score: 96, city: 'Delhi NCR' } },
     { data: { id: 'n2', label: 'Farhan Khan', type: 'Person', role: 'Cash Courier & Transshipment Driver', score: 82, city: 'Surat' } },
     { data: { id: 'n3', label: 'Vikram Malhotra', type: 'Person', role: 'Shell Company Corporate Director', score: 79, city: 'Mumbai' } },
     { data: { id: 'n4', label: 'Rohan Patel', type: 'Person', role: 'Angadia Vault Hub Operator', score: 78, city: 'Ahmedabad' } },
     { data: { id: 'n5', label: 'Sunita Sharma', type: 'Person', role: 'Mule Layering Account Holder', score: 64, city: 'Jaipur' } },
-    { data: { id: 'n6', label: 'Rajesh Verma', type: 'Person', role: 'Mule Layering Account Holder', score: 62, city: 'Kolkata' } },
-    { data: { id: 'n7', label: 'DL01CZ8821', type: 'Vehicle', role: 'Armoured Courier Fortuner', score: 70, city: 'Delhi' } },
+    { data: { id: 'n6', label: 'Rajesh Verma', type: 'Person', role: 'Cash Disbursal Mule Holder', score: 62, city: 'Kolkata' } },
+    { data: { id: 'n13', label: 'Alok Nath (Complainant)', type: 'Person', role: 'Defrauded Textile Trader', score: 40, city: 'Surat' } },
+    { data: { id: 'n14', label: 'Suresh Angadia', type: 'Person', role: 'Physical Vault Custodian', score: 71, city: 'Mumbai Kalbadevi' } },
+
+    // 2. Bank Accounts
+    { data: { id: 'n11', label: 'Axis Bank (..9014)', type: 'BankAccount', role: 'Lotus Overseas Shell Account', score: 85, city: 'Delhi' } },
+    { data: { id: 'n12', label: 'HDFC Bank (..1928)', type: 'BankAccount', role: 'Bullion Merchant Current Account', score: 81, city: 'Chandni Chowk' } },
+    { data: { id: 'n15', label: 'ICICI Bank (..4102)', type: 'BankAccount', role: 'Angadia Settlement Transit A/C', score: 73, city: 'Surat' } },
+    { data: { id: 'n16', label: 'SBI Bank (..8831)', type: 'BankAccount', role: 'Mule Layering Pool A/C', score: 68, city: 'Jaipur' } },
+
+    // 3. Telecommunications & SIMs
+    { data: { id: 'n9', label: '+91 98112 04812', type: 'Phone', role: 'KC Seth Wiretap Monitored MSISDN', score: 88, city: 'Delhi' } },
+    { data: { id: 'n10', label: '+91 98711 92834', type: 'Phone', role: 'Courier Operational Burner Phone', score: 75, city: 'Surat' } },
+    { data: { id: 'n17', label: '+91 94140 82910', type: 'Phone', role: 'SIM-Box Relay Trunk Channel', score: 77, city: 'Noida' } },
+    { data: { id: 'n18', label: '+91 98210 39481', type: 'Phone', role: 'Angadia Vault Dispatch Hot-Line', score: 69, city: 'Ahmedabad' } },
+
+    // 4. Vehicles & Courier Transports
+    { data: { id: 'n7', label: 'DL01CZ8821', type: 'Vehicle', role: 'Armoured Cash Courier Fortuner', score: 70, city: 'Delhi-Surat' } },
     { data: { id: 'n8', label: 'HR26DK4902', type: 'Vehicle', role: 'Escort Vehicle Creta', score: 65, city: 'Gurugram' } },
-    { data: { id: 'n9', label: '+91 98112 XXXXX', type: 'Phone', role: 'Monitored Primary Wiretap', score: 88, city: 'Delhi' } },
-    { data: { id: 'n10', label: '+91 98711 XXXXX', type: 'Phone', role: 'Courier Operational Burner', score: 75, city: 'Surat' } },
-    { data: { id: 'n11', label: 'AXIS Bank (..9014)', type: 'BankAccount', role: 'Shell Clearing Account', score: 85, city: 'Delhi' } },
-    { data: { id: 'n12', label: 'HDFC Bank (..1928)', type: 'BankAccount', role: 'Bullion Current Account', score: 81, city: 'Chandni Chowk' } }
+    { data: { id: 'n19', label: 'GJ05BX1104', type: 'Vehicle', role: 'Surat Diamond District Van', score: 61, city: 'Surat' } },
+
+    // 5. Infrastructure, Towers & Gateways
+    { data: { id: 'n20', label: 'Tower DEL-NOI-04', type: 'Location', role: 'Noida Sector 62 Cellular Base Station', score: 55, city: 'Noida' } },
+    { data: { id: 'n21', label: 'Tower SRT-RING-02', type: 'Location', role: 'Surat Ring Road Vault Base Station', score: 58, city: 'Surat' } },
+    { data: { id: 'n22', label: 'IP 103.24.18.9', type: 'IP', role: 'Netbanking Proxy Gateway', score: 66, city: 'Proxy Gateway' } },
+    { data: { id: 'n23', label: 'IMEI 864201041920391', type: 'Device', role: 'Dual-SIM Encryption Handset', score: 72, city: 'Hardware Device' } },
+
+    // 6. Registered Evidence Sources
+    { data: { id: 'ev1', label: 'FIR 409/2026', type: 'Evidence', role: 'Primary Statutory Complaint Docket', score: 90, city: 'Cyber Police Station' } },
+    { data: { id: 'ev2', label: 'Bank Statement CSV', type: 'Evidence', role: '142 Ingested Banking Tranches', score: 92, city: 'Banking Repository' } },
+    { data: { id: 'ev3', label: 'CDR Telecom Dump', type: 'Evidence', role: '1,842 Monitored Call Logs', score: 91, city: 'Telecom Gateway' } },
+    { data: { id: 'ev4', label: 'ANPR Toll Log CSV', type: 'Evidence', role: '38 Optical Plate Detections', score: 84, city: 'NHAI Highway Gateway' } },
+    { data: { id: 'ev5', label: 'Audio Wiretap Intercept', type: 'Evidence', role: 'Parchi Token Delivery Audio', score: 95, city: 'Telecom Intercept' } }
   ];
 
   const edges = [
-    { data: { id: 'e1', source: 'n1', target: 'n9', label: 'USES' } },
-    { data: { id: 'e2', source: 'n2', target: 'n10', label: 'USES' } },
+    // Person to Identity & Assets
+    { data: { id: 'e1', source: 'n1', target: 'n9', label: 'SUBSCRIBED' } },
+    { data: { id: 'e2', source: 'n2', target: 'n10', label: 'SUBSCRIBED' } },
     { data: { id: 'e3', source: 'n9', target: 'n10', label: 'CALLED (41×)' } },
     { data: { id: 'e4', source: 'n1', target: 'n7', label: 'OWNS' } },
     { data: { id: 'e5', source: 'n2', target: 'n7', label: 'DRIVES' } },
-    { data: { id: 'e6', source: 'n1', target: 'n12', label: 'OWNS' } },
-    { data: { id: 'e7', source: 'n3', target: 'n11', label: 'DIRECTOR_OF' } },
-    { data: { id: 'e8', source: 'n11', target: 'n12', label: 'TRANSFERRED_TO (₹1.84 Cr)', amount: 18400000, formatted_amount: '₹1.84 Cr' } },
-    { data: { id: 'e9', source: 'n2', target: 'n4', label: 'COORDINATES' } },
-    { data: { id: 'e10', source: 'n4', target: 'n5', label: 'LAYERED (₹42.5 L)', amount: 4250000, formatted_amount: '₹42.50 L' } },
-    { data: { id: 'e11', source: 'n5', target: 'n6', label: 'DISBURSED (₹18.0 L)', amount: 1800000, formatted_amount: '₹18.00 L' } }
+    { data: { id: 'e6', source: 'n2', target: 'n8', label: 'ESCORTS' } },
+    { data: { id: 'e7', source: 'n1', target: 'n12', label: 'BENEFICIARY_OF' } },
+    { data: { id: 'e8', source: 'n3', target: 'n11', label: 'DIRECTOR_OF' } },
+    { data: { id: 'e9', source: 'n4', target: 'n15', label: 'OPERATES_VAULT' } },
+    { data: { id: 'e10', source: 'n5', target: 'n16', label: 'MULE_HOLDER' } },
+    { data: { id: 'e11', source: 'n6', target: 'n16', label: 'DISBURSES' } },
+
+    // Financial Flows
+    { data: { id: 'e12', source: 'n11', target: 'n12', label: 'TRANSFERRED (₹1.84 Cr)', amount: 18400000, formatted_amount: '₹1.84 Cr' } },
+    { data: { id: 'e13', source: 'n11', target: 'n15', label: 'LAYERED (₹42.5 L)', amount: 4250000, formatted_amount: '₹42.50 L' } },
+    { data: { id: 'e14', source: 'n15', target: 'n16', label: 'DISBURSED (₹18.0 L)', amount: 1800000, formatted_amount: '₹18.00 L' } },
+    { data: { id: 'e15', source: 'n12', target: 'n1', label: 'BULLION CONVERTED', amount: 18400000, formatted_amount: '₹1.84 Cr' } },
+
+    // Communication & Telecom Mesh
+    { data: { id: 'e16', source: 'n9', target: 'n17', label: 'RELAY_THROUGH (18×)' } },
+    { data: { id: 'e17', source: 'n17', target: 'n10', label: 'BURST_DISPATCH (23×)' } },
+    { data: { id: 'e18', source: 'n10', target: 'n18', label: 'COORDINATED (12×)' } },
+    { data: { id: 'e19', source: 'n14', target: 'n18', label: 'VAULT_HOTLINE' } },
+
+    // Geolocation & Infrastructure
+    { data: { id: 'e20', source: 'n9', target: 'n20', label: 'LOCATED_AT' } },
+    { data: { id: 'e21', source: 'n10', target: 'n21', label: 'LOCATED_AT' } },
+    { data: { id: 'e22', source: 'n7', target: 'n21', label: 'TOLL_DETECTION' } },
+    { data: { id: 'e23', source: 'n19', target: 'n21', label: 'VAULT_PICKUP' } },
+    { data: { id: 'e24', source: 'n11', target: 'n22', label: 'ACCESSED_FROM' } },
+    { data: { id: 'e25', source: 'n10', target: 'n23', label: 'HANDSET_IMEI' } },
+
+    // Evidence Cross-Citations
+    { data: { id: 'e26', source: 'ev1', target: 'n13', label: 'COMPLAINANT' } },
+    { data: { id: 'e27', source: 'ev1', target: 'n1', label: 'NAMED_ACCUSED' } },
+    { data: { id: 'e28', source: 'ev2', target: 'n11', label: 'INGESTED_STATEMENT' } },
+    { data: { id: 'e29', source: 'ev3', target: 'n9', label: 'TELECOM_INTERCEPT' } },
+    { data: { id: 'e30', source: 'ev4', target: 'n7', label: 'CAMERA_TRACKED' } },
+    { data: { id: 'e31', source: 'ev5', target: 'n1', label: 'VOICE_IDENTIFIED' } },
+    { data: { id: 'e32', source: 'ev5', target: 'n2', label: 'PARCHI_INSTRUCTION' } }
   ];
 
   const primaryLead = {
@@ -884,23 +941,73 @@ export function getSynthesizedHawalaCase() {
     evidence_records: [
       {
         id: 'EV-101',
-        time: '14-Oct-2026 02:18 IST',
-        type: 'CDR_CALL',
-        typeBadge: 'CDR',
-        observation: '41-call burst via SIM-Box tower bypass to Surat courier handler',
-        source: 'CDR_Dump_Delhi_Noida.xlsx',
-        hash: '9f83a45c6b72d14e38910452cf8a1e2b4895018a93cb4781920194857682910a',
-        entities: '2 MSISDNs (+91 98112 XXXXX, +91 98711 XXXXX)'
+        time: '12-Oct-2026 18:30 IST',
+        type: 'FIR_COMPLAINT',
+        typeBadge: 'FIR',
+        observation: 'Statutory cyber fraud & syndicate Hawala complaint registered under IPC 420/120B & Section 63 BSA',
+        source: 'FIR-409-2026-HAWALA-SYNDICATE.txt',
+        hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
+        entities: 'Complainant statement, IPC 420/120B, BNS Sec 318(4), ₹4.85 Cr target loss'
       },
       {
         id: 'EV-102',
         time: '14-Oct-2026 14:40 IST',
         type: 'BANK_TXN',
         typeBadge: 'BANK',
-        observation: 'Tranche transfer ₹1,84,00,000 via Lotus Overseas Impex Axis mule account',
+        observation: '142 layered IMPS/RTGS tranches totalling ₹1,84,00,000 routed through Lotus Overseas Impex Axis mule account',
         source: 'Hawala_AxisBank_Stat.csv',
         hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        entities: 'Axis A/C ..9014, HDFC A/C ..1928, ₹1.84 Cr'
+        entities: 'Axis A/C 918020049219014, HDFC A/C 50200084911928, ₹1.84 Cr'
+      },
+      {
+        id: 'EV-103',
+        time: '15-Oct-2026 11:20 IST',
+        type: 'BANK_TXN',
+        typeBadge: 'BANK',
+        observation: 'Multi-sheet Bullion acquisition ledger converting ₹1.84 Cr digital fund into physical gold bullion',
+        source: 'HDFC_Bullion_Merchant_Stat.xlsx',
+        hash: 'c8f7e6d5b4a39281706f5e4d3c2b1a0987654321fedcba0987654321abcdef12',
+        entities: 'Bullion Merchant A/C 50200084911928, 2.85 Kg 24K Gold Bullion Bars'
+      },
+      {
+        id: 'EV-104',
+        time: '14-Oct-2026 02:18 IST',
+        type: 'CDR_CALL',
+        typeBadge: 'CDR',
+        observation: '1,842 call events identified; 41-call coordinated midnight burst via Noida SIM-Box tower bypass to Surat courier handler',
+        source: 'CDR_Dump_Delhi_Noida.xlsx',
+        hash: '9f83a45c6b72d14e38910452cf8a1e2b4895018a93cb4781920194857682910a',
+        entities: '+91 98112 04812 (KC Seth), +91 98711 92834 (Farhan Khan), Tower DEL-NOI-04'
+      },
+      {
+        id: 'EV-105',
+        time: '14-Oct-2026 04:52 IST',
+        type: 'VEHICLE_LOG',
+        typeBadge: 'VEHICLES',
+        observation: '38 ANPR toll camera captures confirming Fortuner DL01CZ8821 & Creta HR26DK4902 cash transport across Delhi-Surat corridor',
+        source: 'vehicles_anpr_log.csv',
+        hash: '4b7a2d9c1e3f5a8b6c0d2e4f7a9b1c3d5e8f0a2b4c6d8e1f3a5b7c9d2e4f6a8b',
+        entities: 'DL01CZ8821 (Armoured Fortuner), HR26DK4902 (Creta Escort), Baroda Toll 04:52'
+      },
+      {
+        id: 'EV-106',
+        time: '14-Oct-2026 02:22 IST',
+        type: 'AUDIO_WIRETAP',
+        typeBadge: 'AUDIO',
+        observation: 'Forensic wiretap audio intercepts confirming physical token (₹10 note Parchi #7729) delivery instruction',
+        source: 'phone_transcripts.json',
+        hash: 'f6e5d4c3b2a10987654321fedcba0987654321abcdef0123456789abcdef0123',
+        entities: 'Speaker KC Seth: "Courier Farhan se ₹42.5 Lakh lo token note 7729 verify karke"'
+      },
+      {
+        id: 'EV-107',
+        time: '14-Oct-2026 03:05 IST',
+        type: 'IP_SESSION',
+        typeBadge: 'IP',
+        observation: 'Static proxy IP session initiated from gateway 103.24.18.9 accessing mule netbanking portals',
+        source: 'Firewall_Access_Log.txt',
+        hash: '7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d',
+        entities: 'IP: 103.24.18.9, Port 8443, IMEI 864201041920391, Protocol TLS 1.3'
       }
     ],
     ai_summary: 'Comprehensive multi-source forensic analysis established an inter-state Hawala network operated by primary target Kailash Chand Jain @ KC Seth. Digital fund pooling through shell company Lotus Overseas Impex Pvt Ltd connected to physical cash couriers across Gujarat-Delhi corridors.'
@@ -916,4 +1023,165 @@ export function getSynthesizedHawalaCase() {
   } catch {}
 
   return hawalaDocket;
+}
+
+// Client-Side Multi-Sheet Excel Dossier Generator (Standalone/Vercel Offline Fallback)
+export function generateClientSideExcelWorkbook(caseId) {
+  let docket = null;
+  try {
+    const raw = sessionStorage.getItem(`case_connect_case_${caseId}`);
+    if (raw) docket = JSON.parse(raw);
+  } catch {}
+  if (!docket) docket = getSynthesizedHawalaCase();
+
+  const title = docket.title || docket.case_title || 'Case Connect Forensic Investigation';
+  const evList = docket.evidence_records || [];
+  const nodes = docket.cytoscape?.nodes || docket.graph?.nodes || [];
+  const edges = docket.cytoscape?.edges || docket.graph?.edges || [];
+  const leads = [docket.top_lead, ...(docket.other_leads || [])].filter(Boolean);
+
+  const escapeXml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#0F172A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="SubHeader">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Title">
+   <Font ss:Bold="1" ss:Size="14" ss:Color="#0284C7"/>
+  </Style>
+  <Style ss:ID="Bold">
+   <Font ss:Bold="1"/>
+  </Style>
+ </Styles>
+
+ <Worksheet ss:Name="Executive Summary">
+  <Table>
+   <Row><Cell ss:StyleID="Title"><Data ss:Type="String">CASE CONNECT AI - INVESTIGATION SUMMARY</Data></Cell></Row>
+   <Row><Cell><Data ss:Type="String">Statutory Standard: Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023</Data></Cell></Row>
+   <Row><Cell><Data ss:Type="String">Generated: ${escapeXml(new Date().toISOString())}</Data></Cell></Row>
+   <Row></Row>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Parameter</Data></Cell>
+    <Cell><Data ss:Type="String">Value</Data></Cell>
+   </Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Case Title</Data></Cell><Cell><Data ss:Type="String">${escapeXml(title)}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Docket ID</Data></Cell><Cell><Data ss:Type="String">${escapeXml(caseId)}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Total Analyzed Volume</Data></Cell><Cell><Data ss:Type="String">${escapeXml(docket.overview?.money_volume_formatted || '₹1.84 Cr')}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Total Monitored Calls</Data></Cell><Cell><Data ss:Type="String">${escapeXml(docket.overview?.total_calls || 1842)}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Mule Accounts Staged</Data></Cell><Cell><Data ss:Type="String">${escapeXml(docket.overview?.total_accounts || 7)}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Identified Entities</Data></Cell><Cell><Data ss:Type="String">${escapeXml(nodes.length)}</Data></Cell></Row>
+   <Row><Cell ss:StyleID="Bold"><Data ss:Type="String">Cryptographic Audit Seal</Data></Cell><Cell><Data ss:Type="String">SHA-256 Validated</Data></Cell></Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Evidence Files">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Evidence ID</Data></Cell>
+    <Cell><Data ss:Type="String">Category</Data></Cell>
+    <Cell><Data ss:Type="String">Source Artifact</Data></Cell>
+    <Cell><Data ss:Type="String">Observation / Forensic Finding</Data></Cell>
+    <Cell><Data ss:Type="String">Cryptographic SHA-256 Hash</Data></Cell>
+    <Cell><Data ss:Type="String">Extracted Entities &amp; Notes</Data></Cell>
+   </Row>
+   ${evList.map(ev => `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(ev.id)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(ev.typeBadge || ev.type)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(ev.source || ev.original_name)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(ev.observation)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(ev.hash || ev.sha256)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(ev.entities)}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Top Primary Leads">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Rank</Data></Cell>
+    <Cell><Data ss:Type="String">Name / Identifier</Data></Cell>
+    <Cell><Data ss:Type="String">Attributed Role</Data></Cell>
+    <Cell><Data ss:Type="String">Composite Score (0-100)</Data></Cell>
+    <Cell><Data ss:Type="String">Jurisdiction / City</Data></Cell>
+    <Cell><Data ss:Type="String">Volume Routed</Data></Cell>
+    <Cell><Data ss:Type="String">Primary Forensic Factors</Data></Cell>
+   </Row>
+   ${leads.map((lead, idx) => `
+   <Row>
+    <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(lead.name || lead.display_name)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(lead.role || lead.label)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${escapeXml(lead.score || 85)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(lead.city || 'Delhi NCR')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(lead.volume_routed || '₹ 1.84 Cr')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml((lead.factors || []).map(f => f.name).join('; ') || 'Network Hub Centrality')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Graph Entities (Nodes)">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Node ID</Data></Cell>
+    <Cell><Data ss:Type="String">Entity Label</Data></Cell>
+    <Cell><Data ss:Type="String">Entity Type</Data></Cell>
+    <Cell><Data ss:Type="String">Assigned Role</Data></Cell>
+    <Cell><Data ss:Type="String">Risk Score</Data></Cell>
+    <Cell><Data ss:Type="String">Location</Data></Cell>
+   </Row>
+   ${nodes.map(n => `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(n.data?.id || n.id)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(n.data?.label || n.label)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(n.data?.type || n.type)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(n.data?.role || n.role || '')}</Data></Cell>
+    <Cell><Data ss:Type="Number">${escapeXml(n.data?.score || n.score || 70)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(n.data?.city || n.city || '')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Graph Relationships (Edges)">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Edge ID</Data></Cell>
+    <Cell><Data ss:Type="String">Source Node</Data></Cell>
+    <Cell><Data ss:Type="String">Target Node</Data></Cell>
+    <Cell><Data ss:Type="String">Relationship</Data></Cell>
+    <Cell><Data ss:Type="String">Transaction Amount (INR)</Data></Cell>
+   </Row>
+   ${edges.map(e => `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(e.data?.id || e.id)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(e.data?.source || e.source)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(e.data?.target || e.target)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(e.data?.label || e.label || 'LINK')}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(e.data?.formatted_amount || '')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+  return new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
 }

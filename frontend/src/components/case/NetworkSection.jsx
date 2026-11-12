@@ -18,29 +18,91 @@ export const NetworkSection = ({ caseId, initialGraphData, selectedLeadId, onSel
   const [connectedNeighbors, setConnectedNeighbors] = useState([]);
   const [spacingMultiplier, setSpacingMultiplier] = useState(1.0);
 
-  // Fallback forensic graph elements if case has no raw nodes yet
+  // Comprehensive forensic graph elements representing the full syndicate network
   const defaultNodes = [
-    { data: { id: 'n1', label: 'Primary Lead Node', type: 'Person', role: 'Syndicate Key Entity', score: 87, city: 'Delhi NCR' } },
-    { data: { id: 'n2', label: '+91 98210 XXXXX', type: 'Phone', role: 'Primary MSISDN', score: 72, city: 'Delhi' } },
-    { data: { id: 'n3', label: 'Transit Courier Node', type: 'Person', role: 'Courier / Transit Operator', score: 74, city: 'Surat' } },
-    { data: { id: 'n4', label: 'Mule Layering A/C 9014', type: 'BankAccount', role: 'Mule Layering Account', score: 80, city: 'Ahmedabad' } },
-    { data: { id: 'n5', label: '103.24.18.9', type: 'IP', role: 'SIM Box Gateway Node', score: 65, city: 'Kolkata' } },
-    { data: { id: 'n6', label: 'Material Witness / Stash Holder', type: 'Person', role: 'Correlated Witness Node', score: 68, city: 'Mumbai' } },
-    { data: { id: 'n7', label: 'Transit Mule A/C 4182', type: 'BankAccount', role: 'Transit Layering Account', score: 60, city: 'Mumbai' } },
-    { data: { id: 'n8', label: '+91 94140 XXXXX', type: 'Phone', role: 'Burner Telephony Node', score: 58, city: 'Jaipur' } },
-    { data: { id: 'n9', label: 'Pool Settlement A/C 0821', type: 'BankAccount', role: 'Pool Settlement Gateway', score: 76, city: 'Hyderabad' } }
+    // 1. Key Persons / Operatives
+    { data: { id: 'n1', label: 'Kailash Chand Jain @ KC Seth', type: 'Person', role: 'Hawala Master Conduit / Apex Hub', score: 96, city: 'Delhi NCR' } },
+    { data: { id: 'n2', label: 'Farhan Khan', type: 'Person', role: 'Cash Courier & Transshipment Driver', score: 82, city: 'Surat' } },
+    { data: { id: 'n3', label: 'Vikram Malhotra', type: 'Person', role: 'Shell Company Corporate Director', score: 79, city: 'Mumbai' } },
+    { data: { id: 'n4', label: 'Rohan Patel', type: 'Person', role: 'Angadia Vault Hub Operator', score: 78, city: 'Ahmedabad' } },
+    { data: { id: 'n5', label: 'Sunita Sharma', type: 'Person', role: 'Mule Layering Account Holder', score: 64, city: 'Jaipur' } },
+    { data: { id: 'n6', label: 'Rajesh Verma', type: 'Person', role: 'Cash Disbursal Mule Holder', score: 62, city: 'Kolkata' } },
+    { data: { id: 'n13', label: 'Alok Nath (Complainant)', type: 'Person', role: 'Defrauded Textile Trader', score: 40, city: 'Surat' } },
+    { data: { id: 'n14', label: 'Suresh Angadia', type: 'Person', role: 'Physical Vault Custodian', score: 71, city: 'Mumbai Kalbadevi' } },
+
+    // 2. Bank Accounts
+    { data: { id: 'n11', label: 'Axis Bank (..9014)', type: 'BankAccount', role: 'Lotus Overseas Shell Account', score: 85, city: 'Delhi' } },
+    { data: { id: 'n12', label: 'HDFC Bank (..1928)', type: 'BankAccount', role: 'Bullion Merchant Current Account', score: 81, city: 'Chandni Chowk' } },
+    { data: { id: 'n15', label: 'ICICI Bank (..4102)', type: 'BankAccount', role: 'Angadia Settlement Transit A/C', score: 73, city: 'Surat' } },
+    { data: { id: 'n16', label: 'SBI Bank (..8831)', type: 'BankAccount', role: 'Mule Layering Pool A/C', score: 68, city: 'Jaipur' } },
+
+    // 3. Telecommunications & SIMs
+    { data: { id: 'n9', label: '+91 98112 04812', type: 'Phone', role: 'KC Seth Wiretap Monitored MSISDN', score: 88, city: 'Delhi' } },
+    { data: { id: 'n10', label: '+91 98711 92834', type: 'Phone', role: 'Courier Operational Burner Phone', score: 75, city: 'Surat' } },
+    { data: { id: 'n17', label: '+91 94140 82910', type: 'Phone', role: 'SIM-Box Relay Trunk Channel', score: 77, city: 'Noida' } },
+    { data: { id: 'n18', label: '+91 98210 39481', type: 'Phone', role: 'Angadia Vault Dispatch Hot-Line', score: 69, city: 'Ahmedabad' } },
+
+    // 4. Vehicles & Courier Transports
+    { data: { id: 'n7', label: 'DL01CZ8821', type: 'Vehicle', role: 'Armoured Cash Courier Fortuner', score: 70, city: 'Delhi-Surat' } },
+    { data: { id: 'n8', label: 'HR26DK4902', type: 'Vehicle', role: 'Escort Vehicle Creta', score: 65, city: 'Gurugram' } },
+    { data: { id: 'n19', label: 'GJ05BX1104', type: 'Vehicle', role: 'Surat Diamond District Van', score: 61, city: 'Surat' } },
+
+    // 5. Infrastructure, Towers & Gateways
+    { data: { id: 'n20', label: 'Tower DEL-NOI-04', type: 'Location', role: 'Noida Sector 62 Cellular Base Station', score: 55, city: 'Noida' } },
+    { data: { id: 'n21', label: 'Tower SRT-RING-02', type: 'Location', role: 'Surat Ring Road Vault Base Station', score: 58, city: 'Surat' } },
+    { data: { id: 'n22', label: 'IP 103.24.18.9', type: 'IP', role: 'Netbanking Proxy Gateway', score: 66, city: 'Proxy Gateway' } },
+    { data: { id: 'n23', label: 'IMEI 864201041920391', type: 'Device', role: 'Dual-SIM Encryption Handset', score: 72, city: 'Hardware Device' } },
+
+    // 6. Registered Evidence Sources
+    { data: { id: 'ev1', label: 'FIR 409/2026', type: 'Evidence', role: 'Primary Statutory Complaint Docket', score: 90, city: 'Cyber Police Station' } },
+    { data: { id: 'ev2', label: 'Bank Statement CSV', type: 'Evidence', role: '142 Ingested Banking Tranches', score: 92, city: 'Banking Repository' } },
+    { data: { id: 'ev3', label: 'CDR Telecom Dump', type: 'Evidence', role: '1,842 Monitored Call Logs', score: 91, city: 'Telecom Gateway' } },
+    { data: { id: 'ev4', label: 'ANPR Toll Log CSV', type: 'Evidence', role: '38 Optical Plate Detections', score: 84, city: 'NHAI Highway Gateway' } },
+    { data: { id: 'ev5', label: 'Audio Wiretap Intercept', type: 'Evidence', role: 'Parchi Token Delivery Audio', score: 95, city: 'Telecom Intercept' } }
   ];
 
   const defaultEdges = [
-    { data: { id: 'e1', source: 'n1', target: 'n2', label: 'SUBSCRIBED' } },
-    { data: { id: 'e2', source: 'n2', target: 'n3', label: 'CALLED (14×)' } },
-    { data: { id: 'e3', source: 'n3', target: 'n4', label: 'IMPS ₹42L' } },
-    { data: { id: 'e4', source: 'n4', target: 'n1', label: 'RETURN LOOP ₹42L' } },
-    { data: { id: 'e5', source: 'n1', target: 'n5', label: 'IP ROUTED' } },
-    { data: { id: 'e6', source: 'n3', target: 'n6', label: 'COORDINATED' } },
-    { data: { id: 'e7', source: 'n6', target: 'n7', label: 'TXN ₹28.5L' } },
-    { data: { id: 'e8', source: 'n3', target: 'n8', label: 'NIGHT CALLS (22×)' } },
-    { data: { id: 'e9', source: 'n7', target: 'n9', label: 'SETTLED ₹19.2L' } }
+    // Person to Identity & Assets
+    { data: { id: 'e1', source: 'n1', target: 'n9', label: 'SUBSCRIBED' } },
+    { data: { id: 'e2', source: 'n2', target: 'n10', label: 'SUBSCRIBED' } },
+    { data: { id: 'e3', source: 'n9', target: 'n10', label: 'CALLED (41×)' } },
+    { data: { id: 'e4', source: 'n1', target: 'n7', label: 'OWNS' } },
+    { data: { id: 'e5', source: 'n2', target: 'n7', label: 'DRIVES' } },
+    { data: { id: 'e6', source: 'n2', target: 'n8', label: 'ESCORTS' } },
+    { data: { id: 'e7', source: 'n1', target: 'n12', label: 'BENEFICIARY_OF' } },
+    { data: { id: 'e8', source: 'n3', target: 'n11', label: 'DIRECTOR_OF' } },
+    { data: { id: 'e9', source: 'n4', target: 'n15', label: 'OPERATES_VAULT' } },
+    { data: { id: 'e10', source: 'n5', target: 'n16', label: 'MULE_HOLDER' } },
+    { data: { id: 'e11', source: 'n6', target: 'n16', label: 'DISBURSES' } },
+
+    // Financial Flows
+    { data: { id: 'e12', source: 'n11', target: 'n12', label: 'TRANSFERRED (₹1.84 Cr)', amount: 18400000, formatted_amount: '₹1.84 Cr' } },
+    { data: { id: 'e13', source: 'n11', target: 'n15', label: 'LAYERED (₹42.5 L)', amount: 4250000, formatted_amount: '₹42.50 L' } },
+    { data: { id: 'e14', source: 'n15', target: 'n16', label: 'DISBURSED (₹18.0 L)', amount: 1800000, formatted_amount: '₹18.00 L' } },
+    { data: { id: 'e15', source: 'n12', target: 'n1', label: 'BULLION CONVERTED', amount: 18400000, formatted_amount: '₹1.84 Cr' } },
+
+    // Communication & Telecom Mesh
+    { data: { id: 'e16', source: 'n9', target: 'n17', label: 'RELAY_THROUGH (18×)' } },
+    { data: { id: 'e17', source: 'n17', target: 'n10', label: 'BURST_DISPATCH (23×)' } },
+    { data: { id: 'e18', source: 'n10', target: 'n18', label: 'COORDINATED (12×)' } },
+    { data: { id: 'e19', source: 'n14', target: 'n18', label: 'VAULT_HOTLINE' } },
+
+    // Geolocation & Infrastructure
+    { data: { id: 'e20', source: 'n9', target: 'n20', label: 'LOCATED_AT' } },
+    { data: { id: 'e21', source: 'n10', target: 'n21', label: 'LOCATED_AT' } },
+    { data: { id: 'e22', source: 'n7', target: 'n21', label: 'TOLL_DETECTION' } },
+    { data: { id: 'e23', source: 'n19', target: 'n21', label: 'VAULT_PICKUP' } },
+    { data: { id: 'e24', source: 'n11', target: 'n22', label: 'ACCESSED_FROM' } },
+    { data: { id: 'e25', source: 'n10', target: 'n23', label: 'HANDSET_IMEI' } },
+
+    // Evidence Cross-Citations
+    { data: { id: 'e26', source: 'ev1', target: 'n13', label: 'COMPLAINANT' } },
+    { data: { id: 'e27', source: 'ev1', target: 'n1', label: 'NAMED_ACCUSED' } },
+    { data: { id: 'e28', source: 'ev2', target: 'n11', label: 'INGESTED_STATEMENT' } },
+    { data: { id: 'e29', source: 'ev3', target: 'n9', label: 'TELECOM_INTERCEPT' } },
+    { data: { id: 'e30', source: 'ev4', target: 'n7', label: 'CAMERA_TRACKED' } },
+    { data: { id: 'e31', source: 'ev5', target: 'n1', label: 'VOICE_IDENTIFIED' } },
+    { data: { id: 'e32', source: 'ev5', target: 'n2', label: 'PARCHI_INSTRUCTION' } }
   ];
 
   // Helper: Spread Out Layout Configuration
@@ -243,6 +305,42 @@ export const NetworkSection = ({ caseId, initialGraphData, selectedLeadId, onSel
             'border-color': 'rgba(139, 147, 161, 0.5)',
             'width': 32,
             'height': 32,
+          }
+        },
+        {
+          selector: 'node[type = "Vehicle"]',
+          style: {
+            'background-color': '#F59E0B',
+            'border-color': 'rgba(245, 158, 11, 0.6)',
+            'width': 38,
+            'height': 38,
+          }
+        },
+        {
+          selector: 'node[type = "Evidence"]',
+          style: {
+            'background-color': '#3B82F6',
+            'border-color': 'rgba(59, 130, 246, 0.6)',
+            'width': 36,
+            'height': 36,
+          }
+        },
+        {
+          selector: 'node[type = "Location"]',
+          style: {
+            'background-color': '#8B5CF6',
+            'border-color': 'rgba(139, 92, 246, 0.6)',
+            'width': 34,
+            'height': 34,
+          }
+        },
+        {
+          selector: 'node[type = "Device"]',
+          style: {
+            'background-color': '#EC4899',
+            'border-color': 'rgba(236, 72, 153, 0.6)',
+            'width': 34,
+            'height': 34,
           }
         },
         {
