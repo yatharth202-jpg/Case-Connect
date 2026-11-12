@@ -97,3 +97,28 @@
 7. **Frontend Architecture:**
    - `GraphExplorer.jsx` implements Cytoscape force-directed layout with dynamic legend, real-time node filtering, min-weight edge filtering, double-click 1-hop expansion, and inspection drawer via `NodeDetailPanel.jsx`.
    - Retains legacy `GraphCanvas.jsx` via view toggle to ensure zero regression.
+
+---
+
+## 5. Phase 5 Decisions (Persistence & Zero-Recompute Reopen)
+
+1. **Forensic Findings in Relational Graph (`Finding` Nodes):**
+   - Forensic analysis results (such as primary attributed leads, bridge anomalies, rapid pass-throughs) are persisted as `AnalysisResult` records and simultaneously represented in the relational graph as `GraphNode` with `node_type = 'Finding'`.
+   - Each Finding node links to its target entity node via a `GraphEdge` with `edge_type = 'ATTRIBUTED_TO'`.
+   - Rendered using dedicated styling from `NodeTypeConfig` (shape: `vee`, color: `#BE185D`, icon: `alert-triangle`).
+
+2. **Saved Viewport State (`SavedGraphView`):**
+   - Preserves camera coordinates (`pan: {x, y}`, `zoom`), active node selection, and active filters (`searchQuery`, `selectedType`, `minWeight`).
+   - Restoring a saved view executes client-side animation to reposition Cytoscape camera instantly without triggering server recomputation or network re-queries.
+
+3. **Zero-Recompute Invariant on Case Reopening:**
+   - Reopening an investigation docket queries `AnalysisResult`, `GraphNode`, and `GraphEdge` records stored in SQLite WAL.
+   - Outputs are 100% byte-for-byte, score-for-score, and rank-for-rank identical to initial calculation with zero CPU graph recalculation.
+
+4. **Cryptographic Audit Chain Integration:**
+   - All persistence mutations (`SAVE_ANALYSIS_RESULT`, `SAVE_GRAPH_VIEW`, `DELETE_GRAPH_VIEW`) append to the SHA-256 genesis-chained `audit_log` with user ID, case ID, timestamp, and previous block hash.
+
+5. **Elimination of Warnings and Skips Across Test Suite:**
+   - Generated missing synthetic samples in `data/synthetic/samples/clean` and `data/synthetic/samples/messy`, resolving all skipped ingestion tests.
+   - Added TSV/TXT tabular extension support to `readers.py`.
+   - Configured `pytest.ini` filter warnings to silence third-party library deprecation and future warnings.

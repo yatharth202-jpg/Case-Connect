@@ -28,31 +28,16 @@ class TabularReadError(ValueError):
 
 
 def load_column_synonyms() -> Dict[str, Dict[str, List[str]]]:
-    """Load column synonyms dictionary from yaml and extend with seed_graph_config (cached in-memory)."""
+    """Load column synonyms dictionary from yaml (cached in-memory)."""
     global _SYNONYMS_CACHE
     if _SYNONYMS_CACHE is not None:
         return _SYNONYMS_CACHE
     syn_file = CONFIG_DIR / "column_synonyms.yaml"
-    base_synonyms: Dict[str, Any] = {}
     if syn_file.exists():
         with open(syn_file, "r", encoding="utf-8") as f:
-            base_synonyms = yaml.safe_load(f) or {}
-
-    # Merge extended synonyms from seed_graph_config.yaml if present
-    seed_file = CONFIG_DIR / "seed_graph_config.yaml"
-    if seed_file.exists():
-        with open(seed_file, "r", encoding="utf-8") as f:
-            seed_cfg = yaml.safe_load(f) or {}
-            exts = seed_cfg.get("synonym_extensions", {})
-            for canon_field, syn_list in exts.items():
-                for cat in ["cdr", "bank_transactions", "bank_statement", "identity_table", "ip_log"]:
-                    cat_dict = base_synonyms.setdefault(cat, {})
-                    cur_list = cat_dict.setdefault(canon_field, [])
-                    for s in syn_list:
-                        if s not in cur_list:
-                            cur_list.append(s)
-
-    _SYNONYMS_CACHE = base_synonyms
+            _SYNONYMS_CACHE = yaml.safe_load(f) or {}
+            return _SYNONYMS_CACHE
+    _SYNONYMS_CACHE = {}
     return _SYNONYMS_CACHE
 
 

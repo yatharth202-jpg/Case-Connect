@@ -394,3 +394,9 @@ def get_stored_or_computed_top_leads(
             return results
 
     return compute_case_top_leads(db=db, case_id=case_id, n=n, persist=True)
+
+
+# Backwards compatibility and test convenience aliases
+compute_top_leads = compute_case_top_leads
+get_persisted_top_leads = get_stored_or_computed_top_leads
+

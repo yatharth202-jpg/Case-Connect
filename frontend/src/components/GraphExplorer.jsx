@@ -11,8 +11,10 @@ import {
   ArrowRightLeft,
   Loader2,
   ShieldAlert,
+  Bookmark,
+  Check,
 } from 'lucide-react';
-import { graphApi } from '../api/client';
+import { graphApi, persistenceApi } from '../api/client';
 import NodeDetailPanel from './NodeDetailPanel';
 
 export default function GraphExplorer({ caseId, onSwitchToLegacy }) {
@@ -28,10 +30,88 @@ export default function GraphExplorer({ caseId, onSwitchToLegacy }) {
   const [selectedType, setSelectedType] = useState('ALL');
   const [minWeight, setMinWeight] = useState(0);
 
+  // Persistence: Saved Views (Phase 5)
+  const [savedViews, setSavedViews] = useState([]);
+  const [selectedViewId, setSelectedViewId] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const [savingView, setSavingView] = useState(false);
+
   // Data & Styles
   const [config, setConfig] = useState({ node_types: [], edge_types: [] });
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [stats, setStats] = useState({ nodes: 0, edges: 0, total_case_nodes: 0 });
+
+  // Load Saved Views on Mount (Phase 5)
+  const loadSavedViews = useCallback(async () => {
+    if (!caseId) return;
+    try {
+      const res = await persistenceApi.getViews(caseId);
+      setSavedViews(res.views || []);
+    } catch (err) {
+      console.warn('Failed to load saved views:', err);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    loadSavedViews();
+  }, [loadSavedViews]);
+
+  // Handle Save Current Viewport
+  const handleSaveView = async () => {
+    if (!caseId || !newViewName.trim() || !cyRef.current) return;
+    setSavingView(true);
+    try {
+      const cy = cyRef.current;
+      const viewData = {
+        pan: cy.pan(),
+        zoom: cy.zoom(),
+        selected_node_id: selectedNodeId,
+        active_filters: {
+          searchQuery,
+          selectedType,
+          minWeight,
+        },
+      };
+      await persistenceApi.saveView(caseId, {
+        name: newViewName.trim(),
+        view_data: viewData,
+      });
+      setNewViewName('');
+      setShowSaveModal(false);
+      await loadSavedViews();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save view');
+    } finally {
+      setSavingView(false);
+    }
+  };
+
+  // Handle Apply Saved View
+  const handleSelectView = (viewId) => {
+    setSelectedViewId(viewId);
+    if (!viewId || !cyRef.current) return;
+    const view = savedViews.find((v) => v.id === viewId);
+    if (!view || !view.view_data) return;
+
+    const vd = view.view_data;
+    const cy = cyRef.current;
+    if (vd.pan && vd.zoom) {
+      cy.animate({
+        pan: vd.pan,
+        zoom: vd.zoom,
+        duration: 350,
+      });
+    }
+    if (vd.selected_node_id) {
+      setSelectedNodeId(vd.selected_node_id);
+    }
+    if (vd.active_filters) {
+      if (vd.active_filters.searchQuery !== undefined) setSearchQuery(vd.active_filters.searchQuery);
+      if (vd.active_filters.selectedType !== undefined) setSelectedType(vd.active_filters.selectedType);
+      if (vd.active_filters.minWeight !== undefined) setMinWeight(vd.active_filters.minWeight);
+    }
+  };
 
   // 1. Fetch Dynamic Type Configuration (Color, Shape, Legend)
   const loadConfig = useCallback(async () => {
@@ -348,6 +428,36 @@ export default function GraphExplorer({ caseId, onSwitchToLegacy }) {
             </button>
           </div>
 
+          {/* Saved Views Dropdown (Phase 5) */}
+          {savedViews.length > 0 && (
+            <div className="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded px-2 py-1">
+              <Bookmark className="w-3 h-3 text-cyan-400" />
+              <select
+                value={selectedViewId}
+                onChange={(e) => handleSelectView(e.target.value)}
+                className="bg-transparent text-xs text-cyan-200 focus:outline-none font-mono cursor-pointer"
+                title="Select a saved camera and filter viewport"
+              >
+                <option value="">Saved Views ({savedViews.length})</option>
+                {savedViews.map((sv) => (
+                  <option key={sv.id} value={sv.id}>
+                    {sv.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Save Current View Button (Phase 5) */}
+          <button
+            onClick={() => setShowSaveModal(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded border border-slate-700 text-xs transition"
+            title="Save current camera viewport, zoom, and active filters"
+          >
+            <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Save View</span>
+          </button>
+
           {/* Rebuild Graph Button */}
           <button
             onClick={handleRebuild}
@@ -402,15 +512,59 @@ export default function GraphExplorer({ caseId, onSwitchToLegacy }) {
             onExpandNode={handleExpandNode}
           />
         )}
+
+        {/* Save View Modal Dialog (Phase 5) */}
+        {showSaveModal && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-20">
+            <div className="bg-slate-900 border border-slate-700 rounded-lg max-w-sm w-full p-4 shadow-xl">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                <Bookmark className="w-4 h-4 text-cyan-400" />
+                <span>Save Current Viewport</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-3">
+                Saves the current camera coordinates, zoom level, selected node, and active filters into SQLite for zero-recompute reopening.
+              </p>
+              <input
+                type="text"
+                placeholder="View Name (e.g. Primary Cluster Overview)"
+                value={newViewName}
+                onChange={(e) => setNewViewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveView()}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded text-xs text-white placeholder-slate-500 mb-4 focus:outline-none focus:border-cyan-500"
+                autoFocus
+              />
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setShowSaveModal(false)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveView}
+                  disabled={savingView || !newViewName.trim()}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-xs font-medium text-white rounded transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingView ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  <span>Save View</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Status & Dynamic Legend Bar */}
       <div className="p-2.5 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 z-10">
-        {/* Left: Render stats */}
+        {/* Left: Render stats & Zero-Recompute Invariant Badge */}
         <div className="flex items-center gap-3 font-mono text-[11px]">
           <span>
             Rendered: <strong className="text-white">{stats.nodes}</strong> nodes /{' '}
             <strong className="text-white">{stats.edges}</strong> edges
+          </span>
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 text-[10px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Zero-Recompute (SQLite WAL)
           </span>
           {stats.total_case_nodes > stats.nodes && (
             <span className="text-amber-400">
@@ -435,3 +589,4 @@ export default function GraphExplorer({ caseId, onSwitchToLegacy }) {
     </div>
   );
 }
+

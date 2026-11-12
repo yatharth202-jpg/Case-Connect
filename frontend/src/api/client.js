@@ -770,6 +770,34 @@ export const leadsApi = {
   },
 };
 
+// 14. Persistence & Views API (Phase 5 Upgrade)
+export const persistenceApi = {
+  getAnalysisResults: async (caseId) => {
+    const res = await api.get(`/cases/${caseId}/analysis-results`);
+    return res.data;
+  },
+  saveAnalysisResult: async (caseId, payload) => {
+    const res = await api.post(`/cases/${caseId}/analysis-results`, payload);
+    return res.data;
+  },
+  getViews: async (caseId) => {
+    const res = await api.get(`/cases/${caseId}/views`);
+    return res.data;
+  },
+  saveView: async (caseId, payload) => {
+    const res = await api.post(`/cases/${caseId}/views`, payload);
+    return res.data;
+  },
+  getView: async (caseId, viewId) => {
+    const res = await api.get(`/cases/${caseId}/views/${viewId}`);
+    return res.data;
+  },
+  deleteView: async (caseId, viewId) => {
+    const res = await api.delete(`/cases/${caseId}/views/${viewId}`);
+    return res.data;
+  },
+};
+
 export const getHealth = async () => {
   try {
     const res = await api.get('/health');
