@@ -265,3 +265,4 @@ def delete_graph_view(db: Session, case_id: str, user_id: str, view_id: str) -> 
         details={"deleted_view_name": view_name}
     )
     return True
+
