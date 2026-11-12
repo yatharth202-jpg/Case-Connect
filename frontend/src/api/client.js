@@ -305,6 +305,24 @@ export const graphApi = {
     const res = await api.post(`/cases/${caseId}/graph/rebuild`);
     return res.data;
   },
+  getConfig: async (caseId) => {
+    const res = await api.get(`/cases/${caseId}/graph/config`);
+    return res.data;
+  },
+  getNodes: async (caseId, { limit = 300, q, node_type, min_weight } = {}) => {
+    const params = { limit };
+    if (q) params.q = q;
+    if (node_type) params.node_type = node_type;
+    if (min_weight) params.min_weight = min_weight;
+    const res = await api.get(`/cases/${caseId}/graph/nodes`, { params });
+    return res.data;
+  },
+  getNodeNeighbours: async (caseId, nodeId, { page = 1, page_size = 100, type_filter } = {}) => {
+    const params = { page, page_size };
+    if (type_filter) params.type_filter = type_filter;
+    const res = await api.get(`/cases/${caseId}/graph/node/${nodeId}`, { params });
+    return res.data;
+  },
 };
 
 // 6. Money Trail API

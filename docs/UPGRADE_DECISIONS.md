@@ -67,3 +67,33 @@
 
 5. **Persistence for Zero-Recompute Case Reopening:**
    - Persisted in `analysis_results` table so reopening a case docket immediately loads top leads without re-running graph algorithms.
+
+---
+
+## 4. Phase 4 Decisions (Graph Rebuild & Topological Inspection)
+
+1. **Authoritative SQLite Graph Engine:**
+   - `graph_nodes` and `graph_edges` tables in SQLite are the single authoritative source of truth.
+   - Neo4j 5.x Community is an optional rebuildable projection; NetworkX operates as an in-memory graph projection.
+   - Graph rebuild is 100% idempotent: purges existing case graph records and rebuilds from confirmed identities, entities, transactions, call records, and IP events.
+
+2. **Deterministic ID Generation:**
+   - Stable Node IDs generated via `generate_node_id(case_id, node_type, canonical_key)`.
+   - Stable Edge IDs generated via `generate_edge_id(case_id, source_node_id, target_node_id, edge_type)`.
+
+3. **Edge Aggregation & Integer Currency:**
+   - Multiple financial interactions between identical node pairs are aggregated into single graph edges with summed `amount_paise` (strictly 64-bit integer), transaction count, call count, and min/max timestamps.
+   - Source evidence file references are deduplicated and tracked in `source_evidence_ids`.
+
+4. **DateTime Normalization:**
+   - Converted ISO string timestamps to native Python `datetime` objects before persisting into `GraphEdge.first_seen` and `GraphEdge.last_seen` to comply with SQLAlchemy `DateTime` column typing in SQLite.
+
+5. **Paginated Topological Neighbor Inspection:**
+   - Endpoint `GET /cases/{case_id}/graph/node/{node_id}` groups connected neighbors by entity type (`Phone`, `Account`, `Person`, etc.), provides edge details, and enforces pagination with statutory UI notice: `"showing {len(paged_neighbours)} of {total_neighbours}"`.
+
+6. **Data-Agnostic Dynamic Styling & Config:**
+   - Node and edge styles (shapes, colors, border styles, line patterns, weights) are loaded dynamically from `NodeTypeConfig` and `EdgeTypeConfig` tables via `GET /cases/{case_id}/graph/config`. Any new entity or relation type works with zero code changes.
+
+7. **Frontend Architecture:**
+   - `GraphExplorer.jsx` implements Cytoscape force-directed layout with dynamic legend, real-time node filtering, min-weight edge filtering, double-click 1-hop expansion, and inspection drawer via `NodeDetailPanel.jsx`.
+   - Retains legacy `GraphCanvas.jsx` via view toggle to ensure zero regression.

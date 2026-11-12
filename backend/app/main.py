@@ -144,6 +144,7 @@ from backend.app.services.ai.router import router as ai_router
 from backend.app.services.merge.router import router as merge_router
 from backend.app.api.export import router as export_router
 from backend.app.api.leads import router as leads_router
+from backend.app.api.graph_nodes import router as graph_nodes_router
 
 feature_routers = [
     (auth_router, "/auth", ["Auth"]),
@@ -161,6 +162,7 @@ feature_routers = [
     (merge_router, "", ["Unified Record Store & Merge Engine"]),
     (export_router, "", ["Excel Export"]),
     (leads_router, "", ["Top Leads"]),
+    (graph_nodes_router, "", ["Graph Nodes"]),
 ]
 
 for rtr, pfx, tags in feature_routers:

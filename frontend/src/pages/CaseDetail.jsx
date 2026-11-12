@@ -3,6 +3,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { casesApi, evidenceApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import GraphCanvas from '../components/GraphCanvas';
+import GraphExplorer from '../components/GraphExplorer';
 import MoneyTrailCanvas from '../components/MoneyTrailCanvas';
 import EntityReview from '../components/EntityReview';
 import ReportGenerator from '../components/ReportGenerator';
@@ -29,6 +30,7 @@ export default function CaseDetail({ caseId }) {
   const [evidenceList, setEvidenceList] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [useUpgradedGraph, setUseUpgradedGraph] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -598,9 +600,26 @@ export default function CaseDetail({ caseId }) {
         </div>
       )}
 
-      {/* Tab 2: Investigation Graph (Phase 4) */}
+      {/* Tab 2: Investigation Graph (Phase 4 Upgraded with Legacy Fallback) */}
       {activeTab === 'graph' && (
-        <GraphCanvas caseId={caseId} isViewer={isViewer} />
+        useUpgradedGraph ? (
+          <GraphExplorer
+            caseId={caseId}
+            onSwitchToLegacy={() => setUseUpgradedGraph(false)}
+          />
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setUseUpgradedGraph(true)}
+                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded text-xs font-medium transition"
+              >
+                Switch to Upgraded Graph Explorer
+              </button>
+            </div>
+            <GraphCanvas caseId={caseId} isViewer={isViewer} />
+          </div>
+        )
       )}
 
       {/* Tab 3: Money Trail Explorer (Phase 5) */}
