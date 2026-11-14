@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>I4C • CASECONNECT // UNIT-X Cyber Forensics Deep-Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#05070c",
+            "surface": "#07090e",
+            "surface-container-lowest": "#030407",
+            "surface-container-low": "#0a0e17",
+            "surface-container": "#0e1320",
+            "surface-container-high": "#131a2c",
+            "surface-container-highest": "#192238",
+            "surface-variant": "#111726",
+            "outline": "#1e293b",
+            "outline-variant": "#151e2e",
+            "primary": "#05df72",
+            "primary-container": "#002912",
+            "cyber-green": "#05df72",
+            "cyber-amber": "#fbbf24",
+            "cyber-crimson": "#f43f5e",
+            "cyber-cyan": "#38bdf8",
+            "on-surface": "#f1f5f9",
+            "on-surface-variant": "#94a3b8"
+          },
+          fontFamily: {
+            headline: ["Space Grotesk", "sans-serif"],
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    @layer base {
+      html {
+        scroll-behavior: smooth;
+        background-color: #05070c;
+        color: #f1f5f9;
+      }
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #05070c;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #192238;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #05df72;
+    }
+    .parallax-backdrop {
+      background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA3Hse6UKg3EywLYiGATt4p6TZ6zD5p2IIw4G502AFsqlVHRILlDEiTqBDh2ndNbMQ9OCpbx94VxISx7uIr8trq4qXfsRirTFQnx7ixDxtsM8cbo1BGn2y9883_31E44ytMliT0rwRuCMRTDyK4MSxNo2elp_lw_EVqGsGGkcqNj_NtIYMLG_mdMPhFs7gzUwScqDhQiU7NOY_pm9SJmsPojBGVwEREKs8KsNALJlY');
+      background-attachment: fixed;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    .tactical-glass {
+      background: rgba(10, 14, 23, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .tactical-panel {
+      background: rgba(13, 18, 29, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .tactical-border {
+      border: 1px solid rgba(28, 37, 56, 0.9);
+    }
+    .tactical-border-hover:hover {
+      border-color: rgba(5, 223, 114, 0.45);
+      box-shadow: 0 0 20px rgba(5, 223, 114, 0.08);
+    }
+    .radar-grid {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(28, 37, 56, 0.35) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(28, 37, 56, 0.35) 1px, transparent 1px);
+    }
+    .radar-radial {
+      background: radial-gradient(circle at 50% 50%, rgba(5, 223, 114, 0.06) 0%, rgba(5, 7, 12, 0.88) 80%);
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 0.1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .stream-item-new {
+      animation: flashIn 0.4s ease-out;
+    }
+    @keyframes flashIn {
+      0% { background-color: rgba(5, 223, 114, 0.2); transform: translateY(-3px); }
+      100% { background-color: rgba(14, 20, 33, 0.85); transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="relative text-[#f1f5f9] antialiased font-sans min-h-screen selection:bg-cyber-green/30 selection:text-white flex flex-col bg-[#05070c]">
+<!-- FIXED ULTRA-DARK MINIMALIST CYBER BACKDROP WITH SEAMLESS VIGNETTING -->
+<div class="fixed inset-0 pointer-events-none z-0 parallax-backdrop" id="parallaxBg"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-gradient-to-b from-[#05070c]/90 via-[#05070c]/80 to-[#030407]/95"></div>
+<div class="fixed inset-0 pointer-events-none z-0 shadow-[inset_0_0_120px_rgba(3,4,7,0.85)]"></div>
+<!-- TOP BAR & PERSISTENT NAVIGATION (STICKY) -->
+<header class="sticky top-0 z-50 h-14 w-full tactical-glass border-b border-[#1c2538] flex items-center justify-between px-6 select-none transition-all">
+<!-- Brand / Unit-X Identifier -->
+<div class="flex items-center gap-4 shrink-0">
+<div class="flex items-center gap-2.5">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green shadow-[0_0_10px_#05df72]"></span>
+</span>
+<span class="font-mono text-xs font-bold tracking-widest text-white uppercase">CASECONNECT <span class="text-cyber-green">//</span> UNIT-X</span>
+</div>
+<span class="text-[11px] text-slate-400 font-mono tracking-wider border-l border-[#1c2538] pl-3.5 uppercase hidden md:inline font-medium">FORENSIC COGNITION V4.2</span>
+</div>
+<!-- Center Navigation Sections Link (Minimalist & Spaced) -->
+<nav class="hidden lg:flex items-center gap-2" id="navLinks">
+<a class="nav-tab px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-white bg-[#0e1626] border border-cyber-green/40 font-semibold shadow-[0_0_12px_rgba(5,223,114,0.15)] flex items-center gap-2 rounded-sm transition-all" href="#section-topological-graph">
+<span class="w-1.5 h-1.5 rounded-full bg-cyber-green shadow-[0_0_6px_#05df72]"></span>
+<span>01 // TOPOLOGY GRAPH</span>
+</a>
+<a class="nav-tab px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-slate-400 hover:text-white hover:bg-[#0e1626]/80 border border-transparent hover:border-[#1c2538] rounded-sm transition-all" href="#section-financial-flow">02 // FINANCIAL LAYERING</a>
+<a class="nav-tab px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-slate-400 hover:text-white hover:bg-[#0e1626]/80 border border-transparent hover:border-[#1c2538] rounded-sm transition-all" href="#section-telecom-geofence">03 // GEOFENCE TELEMETRY</a>
+<a class="nav-tab px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-slate-400 hover:text-white hover:bg-[#0e1626]/80 border border-transparent hover:border-[#1c2538] rounded-sm transition-all" href="#section-bsa-admissibility">04 // BSA SEC 63 AUDIT</a>
+</nav>
+<!-- Right Telemetry & Docket Info -->
+<div class="flex items-center gap-3.5 shrink-0 text-[11px] font-mono">
+<div class="hidden sm:flex items-center gap-2 border border-[#1c2538] px-3 py-1 bg-[#090d16]/90 rounded-sm">
+<span class="text-slate-400 uppercase text-[10px]">Docket:</span>
+<span class="text-cyber-green font-bold tracking-wide">#I4C-CYBER-DEL-0412</span>
+</div>
+<div class="hidden xl:flex items-center gap-1.5 text-slate-300 text-[11px] font-medium border border-[#1c2538] px-3 py-1 bg-[#090d16]/70 rounded-sm">
+<span class="material-symbols-outlined text-[14px] text-cyber-green">shield</span>
+<span class="text-slate-300">BSA SEC 63 VERIFIED</span>
+</div>
+<div class="flex items-center gap-2 bg-[#090e18] border border-[#1c2538] px-3 py-1 rounded-sm shadow-sm">
+<span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
+<span class="text-white font-bold text-[10px] tracking-wide" id="liveNodePill">DEL-CYBER-09</span>
+</div>
+</div>
+</header>
+<!-- CASE HEADER / DOCKET TELEMETRY STRIP -->
+<section class="relative z-40 w-full tactical-glass border-b border-[#1c2538] px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shrink-0 sticky top-14 backdrop-blur-md">
+<div class="flex items-center gap-4 min-w-0">
+<div class="flex items-center gap-2.5">
+<span class="px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/50 rounded-sm">CRITICAL INTERCEPT</span>
+<h1 class="text-sm sm:text-base font-bold text-white font-headline tracking-wide truncate">Hawala Syndicate: North Corridor Intercept</h1>
+</div>
+<span class="text-[#1c2538] hidden md:inline font-bold">|</span>
+<!-- Metric Counters (Airy Minimalist Pills) -->
+<div class="hidden md:flex items-center gap-2.5 text-[11px] font-mono">
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] border border-[#1c2538] rounded-sm">
+<span class="text-slate-400">Vol:</span>
+<span class="text-cyber-green font-bold tracking-wide" id="metricVolume">₹1.84 Cr</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] border border-[#1c2538] rounded-sm">
+<span class="text-slate-400">CDR:</span>
+<span class="text-white font-bold" id="metricCdr">4,812</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] border border-[#1c2538] rounded-sm">
+<span class="text-slate-400">Entities:</span>
+<span class="text-white font-bold">28 Linked</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] border border-[#1c2538] rounded-sm">
+<span class="text-slate-400">Targets:</span>
+<span class="text-cyber-amber font-bold">3 Primary</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] border border-[#1c2538] rounded-sm">
+<span class="text-slate-400">ML Conf:</span>
+<span class="text-cyber-green font-bold">94.8%</span>
+</div>
+</div>
+</div>
+<!-- Quick Anchors & Live Hook -->
+<div class="flex items-center gap-3 shrink-0 text-xs font-mono">
+<a class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] hover:bg-[#111827] border border-[#1c2538] text-slate-200 hover:text-white transition-all rounded-sm" href="#section-financial-flow">
+<span class="material-symbols-outlined text-[14px] text-cyber-green">account_tree</span>
+<span class="hidden sm:inline font-medium">Flow Breakdown</span>
+</a>
+<a class="flex items-center gap-1.5 px-3 py-1 bg-[#090d16] hover:bg-[#111827] border border-[#1c2538] text-slate-200 hover:text-white transition-all rounded-sm" href="#section-bsa-admissibility">
+<span class="material-symbols-outlined text-[14px] text-cyber-cyan">verified</span>
+<span class="hidden sm:inline font-medium">BSA Dossier</span>
+</a>
+<div class="flex items-center gap-2 px-3 py-1 bg-cyber-green/10 border border-cyber-green/40 text-white font-semibold rounded-sm shadow-[0_0_10px_rgba(5,223,114,0.15)]">
+<span class="w-1.5 h-1.5 rounded-full bg-cyber-green animate-ping"></span>
+<span class="tracking-wider text-cyber-green font-mono text-[10px]" id="pingIndicator">WS STREAM: 12ms</span>
+</div>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- SECTION 1: INTERACTIVE TOPOLOGICAL GRAPH & LIVE TELEMETRY -->
+<!-- ======================================================== -->
+<section class="relative z-10 w-full py-8 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto flex flex-col gap-6" id="section-topological-graph">
+<!-- Module 1 Header Bar -->
+<div class="px-5 py-3 tactical-panel tactical-border rounded-sm flex flex-wrap items-center justify-between gap-3 shadow-md">
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 text-[9px] bg-cyber-green/20 border border-cyber-green/40 text-cyber-green font-bold uppercase tracking-wider font-mono rounded-sm">MODULE 01</span>
+<h2 class="text-xs sm:text-sm font-bold text-white tracking-wider uppercase font-headline">Interactive Network Graph &amp; Evidence Stream Triangulation</h2>
+</div>
+<div class="text-[11px] text-slate-400 font-mono flex items-center gap-4">
+<span class="hidden sm:inline">GRID: EPSG:4326 // [28.524, 77.206]</span>
+<span class="text-cyber-green font-semibold bg-cyber-green/10 border border-cyber-green/30 px-2 py-0.5 rounded-sm">NODES ACTIVE: 28</span>
+</div>
+</div>
+<!-- Spacious 3-Column Layout with generous gaps and clean glass panels -->
+<div class="w-full flex flex-col lg:flex-row gap-6 items-stretch min-h-[660px]">
+<!-- Left Column: Ingestion Stream & Risk Panel (Spacious floating panel) -->
+<aside class="w-full lg:w-[320px] xl:w-[340px] tactical-panel tactical-border rounded-sm flex flex-col shrink-0 overflow-hidden shadow-lg">
+<div class="h-11 px-4 border-b border-[#1c2538] bg-[#090d16]/90 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-cyber-green">data_exploration</span>
+<span class="text-[11px] font-bold tracking-widest uppercase text-white font-headline">Evidence Streams</span>
+</div>
+<span class="text-[9px] px-2 py-0.5 border border-cyber-green/40 bg-cyber-green/10 text-cyber-green font-mono font-semibold rounded-sm">AIR-GAP ACTIVE</span>
+</div>
+<!-- Filters with generous padding -->
+<div class="p-3 border-b border-[#1c2538] bg-[#070b14]/70 grid grid-cols-4 gap-2 text-[10px] font-mono">
+<button class="py-1.5 px-1 text-center bg-[#10192a] border border-cyber-green/50 text-white font-semibold rounded-sm shadow-sm stream-filter-btn" data-filter="cdr">CDR (2.4k)</button>
+<button class="py-1.5 px-1 text-center bg-[#090d16] border border-[#1c2538] text-slate-400 hover:text-white hover:border-slate-500 rounded-sm transition stream-filter-btn" data-filter="bank">BANK (18)</button>
+<button class="py-1.5 px-1 text-center bg-[#090d16] border border-[#1c2538] text-slate-400 hover:text-white hover:border-slate-500 rounded-sm transition stream-filter-btn" data-filter="fir">FIR (4)</button>
+<button class="py-1.5 px-1 text-center bg-[#090d16] border border-[#1c2538] text-slate-400 hover:text-white hover:border-slate-500 rounded-sm transition stream-filter-btn" data-filter="imei">IMEI (31)</button>
+</div>
+<!-- Syndicate Risk Gauges -->
+<div class="p-4 border-b border-[#1c2538] bg-[#070a12]/80 flex flex-col gap-3">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="uppercase tracking-wider text-slate-400 text-[10px]">Syndicate Risk Analysis</span>
+<span class="text-cyber-crimson font-bold text-[10px] tracking-wide">LEVEL-4 CRITICAL</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="p-3 bg-[#090d16] border border-[#1c2538] rounded-sm flex flex-col">
+<span class="text-[10px] text-slate-400 uppercase font-mono">Hawala Certainty</span>
+<span class="text-base font-bold text-[#f43f5e] font-headline mt-1">94.8%</span>
+<div class="w-full bg-[#121828] h-1.5 mt-2 overflow-hidden rounded-full">
+<div class="bg-[#f43f5e] h-full w-[94.8%] shadow-[0_0_8px_#f43f5e]"></div>
+</div>
+</div>
+<div class="p-3 bg-[#090d16] border border-[#1c2538] rounded-sm flex flex-col">
+<span class="text-[10px] text-slate-400 uppercase font-mono">Flight Risk</span>
+<span class="text-base font-bold text-[#fbbf24] font-headline mt-1">82.1%</span>
+<div class="w-full bg-[#121828] h-1.5 mt-2 overflow-hidden rounded-full">
+<div class="bg-[#fbbf24] h-full w-[82.1%] shadow-[0_0_8px_#fbbf24]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Stream Feed -->
+<div class="px-4 py-2.5 bg-[#080c16] border-b border-[#1c2538] flex items-center justify-between text-[11px]">
+<span class="uppercase tracking-wider text-white font-mono text-[10px] font-semibold flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse"></span>
+          Ingestion Telemetry
+        </span>
+<span class="text-cyber-green font-mono text-[9px] font-semibold tracking-wider bg-cyber-green/10 border border-cyber-green/30 px-1.5 py-0.5 rounded-sm">AUTO-SYNC</span>
+</div>
+<div class="flex-1 p-3 flex flex-col gap-2.5 overflow-y-auto max-h-[350px]" id="transactionStream">
+<div class="p-3 bg-[#090d16]/90 border border-[#1c2538] hover:border-cyber-green/40 transition-all rounded-sm flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-cyber-green font-semibold">₹12,40,000 Layering Flow</span>
+<span class="text-slate-400 text-[10px]">Just now</span>
+</div>
+<p class="text-[12px] text-slate-200 leading-tight">Shell Corp Alpha → OTC Dealer Telegram Gateway</p>
+<div class="flex items-center gap-2 mt-1 text-[10px] font-mono">
+<span class="px-1.5 py-0.5 bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/40 font-semibold rounded-sm">AML ALERT</span>
+<span class="text-slate-400">#88c2f1</span>
+</div>
+</div>
+<div class="p-3 bg-[#090d16]/90 border border-[#1c2538] hover:border-cyber-green/40 transition-all rounded-sm flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-cyber-cyan font-semibold">Tower Handover (Burner)</span>
+<span class="text-slate-400 text-[10px]">18s ago</span>
+</div>
+<p class="text-[12px] text-slate-200 leading-tight">Burner IMEI jumped to Tower Del-East-11 Sector 4</p>
+<div class="flex items-center gap-2 mt-1 text-[10px] font-mono">
+<span class="px-1.5 py-0.5 bg-cyber-cyan/20 text-[#bae6fd] border border-cyber-cyan/40 font-semibold rounded-sm">TRIANGULATED</span>
+<span class="text-slate-400">LAT: 28.524</span>
+</div>
+</div>
+<div class="p-3 bg-[#090d16]/90 border border-[#1c2538] hover:border-cyber-green/40 transition-all rounded-sm flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-cyber-amber font-semibold">₹3,10,000 UPI Sweep</span>
+<span class="text-slate-400 text-[10px]">1m ago</span>
+</div>
+<p class="text-[12px] text-slate-200 leading-tight">4x ₹77,500 split through Kotak mule node ring</p>
+<div class="flex items-center gap-2 mt-1 text-[10px] font-mono">
+<span class="px-1.5 py-0.5 bg-cyber-amber/20 text-[#fef08a] border border-cyber-amber/40 font-semibold rounded-sm">SMURFING</span>
+<span class="text-slate-400">UID #2910</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Column: Cyber Forensics Network Graph Canvas (Generous Canvas with Minimalist Chrome) -->
+<div class="flex-1 relative flex flex-col tactical-panel tactical-border rounded-sm radar-grid radar-radial overflow-hidden min-h-[580px] shadow-xl">
+<!-- Canvas HUD Status -->
+<div class="absolute top-4 left-5 z-10 text-[10px] text-slate-400 font-mono pointer-events-none select-none">
+        [+] X: 104.2 Y: 88.6 | RADAR: EPSG:4326 | FPS: <span class="text-cyber-green font-bold" id="fpsCounter">60</span>
+</div>
+<div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#090e18]/90 backdrop-blur-md px-4 py-1.5 border border-[#1c2538] text-[11px] font-mono rounded-sm shadow-md">
+<div class="flex items-center gap-2 text-white font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-cyber-green shadow-[0_0_8px_#05df72]"></span>
+<span>CLUSTER: HAWALA-DELHI-NORTH</span>
+</div>
+<span class="text-slate-600">|</span>
+<span class="text-slate-300" id="clusterEdgeCount">28 NODES // 64 EDGES</span>
+</div>
+<!-- Graph Toolbar Controls -->
+<div class="absolute top-4 right-5 z-10 flex items-center gap-2 bg-[#090e18]/90 backdrop-blur-md p-1 border border-[#1c2538] rounded-sm shadow-md font-mono text-[11px]">
+<button class="px-3 py-1 bg-cyber-green/15 text-cyber-green border border-cyber-green/40 rounded-sm flex items-center gap-1.5 transition-all font-semibold" id="btnPhysics">
+<span class="material-symbols-outlined text-[13px]">play_arrow</span>
+<span>Physics: ON</span>
+</button>
+<button class="px-3 py-1 bg-[#0d1320] hover:bg-[#141d30] text-slate-300 border border-[#1c2538] rounded-sm flex items-center gap-1.5 transition-all" id="btnHeatmap">
+<span class="material-symbols-outlined text-[13px] text-cyber-amber">local_fire_department</span>
+<span>Heatmap</span>
+</button>
+<button class="px-3 py-1 bg-[#0d1320] hover:bg-[#141d30] text-slate-300 border border-[#1c2538] rounded-sm flex items-center gap-1.5 transition-all" id="btnGeofenceOverlay">
+<span class="material-symbols-outlined text-[13px] text-cyber-cyan">radar</span>
+<span>Geofence</span>
+</button>
+</div>
+<!-- SVG Topological Visualization -->
+<div class="w-full h-full relative flex-1 min-h-[500px]" id="graphContainer">
+<svg class="w-full h-full select-none" id="networkSvg" preserveaspectratio="xMidYMid meet" viewbox="0 0 1000 620">
+<defs>
+<filter height="160%" id="glow-crimson" width="160%" x="-30%" y="-30%">
+<fedropshadow dx="0" dy="0" flood-color="#f43f5e" flood-opacity="0.75" stddeviation="6"></fedropshadow>
+</filter>
+<filter height="160%" id="glow-green" width="160%" x="-30%" y="-30%">
+<fedropshadow dx="0" dy="0" flood-color="#05df72" flood-opacity="0.65" stddeviation="5"></fedropshadow>
+</filter>
+<filter height="160%" id="glow-cyan" width="160%" x="-30%" y="-30%">
+<fedropshadow dx="0" dy="0" flood-color="#38bdf8" flood-opacity="0.65" stddeviation="5"></fedropshadow>
+</filter>
+<filter height="160%" id="glow-amber" width="160%" x="-30%" y="-30%">
+<fedropshadow dx="0" dy="0" flood-color="#fbbf24" flood-opacity="0.65" stddeviation="5"></fedropshadow>
+</filter>
+<marker id="arr-crimson" markerheight="6" markerwidth="6" orient="auto" refx="24" refy="3">
+<path d="M0,0 L0,6 L6,3 z" fill="#f43f5e"></path>
+</marker>
+<marker id="arr-green" markerheight="6" markerwidth="6" orient="auto" refx="24" refy="3">
+<path d="M0,0 L0,6 L6,3 z" fill="#05df72"></path>
+</marker>
+<marker id="arr-cyan" markerheight="6" markerwidth="6" orient="auto" refx="24" refy="3">
+<path d="M0,0 L0,6 L6,3 z" fill="#38bdf8"></path>
+</marker>
+</defs>
+<!-- Heatmap background overlay -->
+<g class="transition-opacity duration-300 opacity-0" id="heatmapGroup">
+<circle cx="500" cy="310" fill="#f43f5e" filter="url(#glow-crimson)" opacity="0.25" r="140"></circle>
+<circle cx="260" cy="185" fill="#fbbf24" filter="url(#glow-amber)" opacity="0.2" r="100"></circle>
+<circle cx="745" cy="195" fill="#38bdf8" filter="url(#glow-cyan)" opacity="0.2" r="90"></circle>
+<circle cx="500" cy="500" fill="#05df72" filter="url(#glow-green)" opacity="0.18" r="80"></circle>
+</g>
+<!-- Range circles & crosshairs -->
+<circle cx="500" cy="310" fill="none" r="260" stroke="#1c2538" stroke-dasharray="4 4" stroke-width="1"></circle>
+<circle cx="500" cy="310" fill="none" r="160" stroke="#1c2538" stroke-dasharray="3 4" stroke-width="1"></circle>
+<line stroke="#1c2538" stroke-dasharray="3 3" stroke-width="1" x1="500" x2="500" y1="50" y2="570"></line>
+<line stroke="#1c2538" stroke-dasharray="3 3" stroke-width="1" x1="240" x2="760" y1="310" y2="310"></line>
+<!-- EDGES -->
+<!-- Vikram -> Alpha Logistics -->
+<g>
+<path class="edge-path" d="M 485 295 Q 380 220 280 190" fill="none" id="path1" marker-end="url(#arr-crimson)" stroke="#f43f5e" stroke-dasharray="6 3" stroke-width="2.2">
+<animate attributename="stroke-dashoffset" dur="1.2s" repeatcount="indefinite" values="36;0"></animate>
+</path>
+<circle fill="#ffffff" r="3.5">
+<animatemotion dur="1.2s" path="M 485 295 Q 380 220 280 190" repeatcount="indefinite"></animatemotion>
+</circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#f43f5e" stroke-width="0.8" width="126" x="323" y="214"></rect>
+<text fill="#fda4af" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" x="386" y="226">₹98.0L HAWALA FLOW</text>
+</g>
+<!-- Vikram -> Hauz Khas Tower -->
+<g>
+<path class="edge-path" d="M 525 305 Q 640 240 730 200" fill="none" id="path2" marker-end="url(#arr-cyan)" stroke="#38bdf8" stroke-dasharray="5 3" stroke-width="2">
+<animate attributename="stroke-dashoffset" dur="1.8s" repeatcount="indefinite" values="32;0"></animate>
+</path>
+<circle fill="#38bdf8" r="3">
+<animatemotion dur="1.8s" path="M 525 305 Q 640 240 730 200" repeatcount="indefinite"></animatemotion>
+</circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#38bdf8" stroke-width="0.8" width="122" x="573" y="234"></rect>
+<text fill="#bae6fd" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" x="634" y="246">412 CALL INTERCEPTS</text>
+</g>
+<!-- Tariq Mir -> Vikram -->
+<g>
+<path class="edge-path" d="M 500 470 L 500 345" fill="none" id="path3" marker-end="url(#arr-green)" stroke="#05df72" stroke-dasharray="6 3" stroke-width="2.2">
+<animate attributename="stroke-dashoffset" dur="1.5s" repeatcount="indefinite" values="36;0"></animate>
+</path>
+<circle fill="#05df72" r="3.5">
+<animatemotion dur="1.5s" path="M 500 470 L 500 345" repeatcount="indefinite"></animatemotion>
+</circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#05df72" stroke-width="0.8" width="144" x="428" y="394"></rect>
+<text fill="#86efac" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" x="500" y="406">MULE COURIER (28 TX)</text>
+</g>
+<!-- Alpha Logistics -> Crypto OTC -->
+<g>
+<path class="edge-path" d="M 260 210 Q 210 320 170 440" fill="none" stroke="#fbbf24" stroke-dasharray="4 3" stroke-width="1.8">
+<animate attributename="stroke-dashoffset" dur="2s" repeatcount="indefinite" values="30;0"></animate>
+</path>
+<circle fill="#fbbf24" r="3">
+<animatemotion dur="2s" path="M 260 210 Q 210 320 170 440" repeatcount="indefinite"></animatemotion>
+</circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#fbbf24" stroke-width="0.8" width="128" x="143" y="324"></rect>
+<text fill="#fef08a" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" x="207" y="336">CRYPTO OTC GATEWAY</text>
+</g>
+<!-- Tariq -> Axis Bank Mule -->
+<g>
+<path class="edge-path" d="M 535 495 Q 650 520 750 490" fill="none" stroke="#05df72" stroke-dasharray="5 3" stroke-width="1.8">
+<animate attributename="stroke-dashoffset" dur="1.7s" repeatcount="indefinite" values="32;0"></animate>
+</path>
+<circle fill="#05df72" r="3">
+<animatemotion dur="1.7s" path="M 535 495 Q 650 520 750 490" repeatcount="indefinite"></animatemotion>
+</circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#05df72" stroke-width="0.8" width="120" x="607" y="494"></rect>
+<text fill="#86efac" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" x="667" y="506">₹34.2L AXIS MULE</text>
+</g>
+<!-- Cell Tower -> Burner IMEI -->
+<g>
+<path class="edge-path" d="M 755 215 Q 840 270 850 370" fill="none" stroke="#64748b" stroke-dasharray="3 3" stroke-width="1.4"></path>
+<rect fill="#080c16" height="15" rx="2" stroke="#334155" stroke-width="0.7" width="112" x="770" y="278"></rect>
+<text fill="#cbd5e1" font-family="JetBrains Mono" font-size="8.5" font-weight="500" text-anchor="middle" x="826" y="289">CO-LOCATED (60m)</text>
+</g>
+<!-- NODES -->
+<!-- 1. Central Suspect: Vikram S. -->
+<g class="cursor-pointer node-interactive group" data-node="vikram" id="nodeVikram" transform="translate(500, 310)">
+<circle cx="0" cy="0" fill="#0a0f1d" filter="url(#glow-crimson)" r="32" stroke="#f43f5e" stroke-width="2"></circle>
+<circle cx="0" cy="0" fill="#f43f5e" r="7"></circle>
+<circle cx="0" cy="0" fill="none" opacity="0.4" r="42" stroke="#f43f5e" stroke-width="1.2">
+<animate attributename="r" dur="2.2s" repeatcount="indefinite" values="32;54"></animate>
+<animate attributename="opacity" dur="2.2s" repeatcount="indefinite" values="0.6;0"></animate>
+</circle>
+<rect fill="#080c16" height="20" rx="2" stroke="#f43f5e" stroke-width="1" width="144" x="-72" y="-56"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="700" text-anchor="middle" x="0" y="-42">VIKRAM S. (LEAD)</text>
+<text fill="#f43f5e" font-family="JetBrains Mono" font-size="8" font-weight="600" text-anchor="middle" x="0" y="-30">TIER-1 TARGET</text>
+</g>
+<!-- 2. Shell Entity Alpha Logistics -->
+<g class="cursor-pointer node-interactive" data-node="alpha" id="nodeAlpha" transform="translate(260, 185)">
+<rect fill="#0a0f1d" filter="url(#glow-amber)" height="48" rx="3" stroke="#fbbf24" stroke-width="1.8" width="48" x="-24" y="-24"></rect>
+<circle cx="0" cy="0" fill="#fbbf24" r="5"></circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#fbbf24" stroke-width="0.8" width="150" x="-75" y="-44"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="9" font-weight="700" text-anchor="middle" x="0" y="-32">ALPHA LOGISTICS PVT</text>
+<text fill="#fbbf24" font-family="JetBrains Mono" font-size="8" font-weight="600" text-anchor="middle" x="0" y="38">SHELL CO (₹98.0L)</text>
+</g>
+<!-- 3. Cell Tower Hauz Khas -->
+<g class="cursor-pointer node-interactive" data-node="tower" id="nodeTower" transform="translate(745, 195)">
+<polygon fill="#0a0f1d" filter="url(#glow-cyan)" points="0,-22 20,16 -20,16" stroke="#38bdf8" stroke-width="1.8"></polygon>
+<circle cx="0" cy="3" fill="#38bdf8" r="4"></circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#38bdf8" stroke-width="0.8" width="144" x="-72" y="-42"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="9" font-weight="700" text-anchor="middle" x="0" y="-30">DEL-S-04 HAUZ KHAS</text>
+<text fill="#38bdf8" font-family="JetBrains Mono" font-size="8" font-weight="600" text-anchor="middle" x="0" y="34">412 PINGS // 28.524N</text>
+</g>
+<!-- 4. Mule Tariq Mir -->
+<g class="cursor-pointer node-interactive" data-node="tariq" id="nodeTariq" transform="translate(500, 500)">
+<circle cx="0" cy="0" fill="#0a0f1d" filter="url(#glow-green)" r="25" stroke="#05df72" stroke-width="1.8"></circle>
+<circle cx="0" cy="0" fill="#05df72" r="5"></circle>
+<rect fill="#080c16" height="17" rx="2" stroke="#05df72" stroke-width="0.8" width="140" x="-70" y="34"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="9" font-weight="700" text-anchor="middle" x="0" y="46">TARIQ MIR (MULE)</text>
+<text fill="#05df72" font-family="JetBrains Mono" font-size="8" font-weight="600" text-anchor="middle" x="0" y="60">28 TRANSACTIONS</text>
+</g>
+<!-- 5. OTC Crypto Gateway -->
+<g class="cursor-pointer node-interactive" data-node="crypto" id="nodeCrypto" transform="translate(160, 460)">
+<circle cx="0" cy="0" fill="#0a0f1d" filter="url(#glow-amber)" r="21" stroke="#fbbf24" stroke-width="1.6"></circle>
+<circle cx="0" cy="0" fill="#fbbf24" r="4.5"></circle>
+<rect fill="#080c16" height="15" rx="2" stroke="#fbbf24" stroke-width="0.8" width="154" x="-77" y="-34"></rect>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="8.5" font-weight="700" text-anchor="middle" x="0" y="-23">OTC TELEGRAM GATEWAY</text>
+<text fill="#fbbf24" font-family="JetBrains Mono" font-size="8" font-weight="500" text-anchor="middle" x="0" y="32">USDT BRIDGE OFF-RAMP</text>
+</g>
+<!-- 6. Axis Mule Account -->
+<g class="cursor-pointer node-interactive" data-node="axis" id="nodeAxis" transform="translate(770, 485)">
+<rect fill="#0a0f1d" filter="url(#glow-green)" height="36" rx="3" stroke="#05df72" stroke-width="1.6" width="36" x="-18" y="-18"></rect>
+<circle cx="0" cy="0" fill="#05df72" r="4.5"></circle>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="9" font-weight="700" text-anchor="middle" x="0" y="32">AXIS BANK #8812</text>
+<text fill="#05df72" font-family="JetBrains Mono" font-size="8" font-weight="500" text-anchor="middle" x="0" y="45">FAKE KYC IDENT</text>
+</g>
+<!-- 7. Burner IMEI -->
+<g class="cursor-pointer node-interactive" data-node="burner" id="nodeBurner" transform="translate(860, 385)">
+<circle cx="0" cy="0" fill="#0a0f1d" r="17" stroke="#64748b" stroke-width="1.4"></circle>
+<circle cx="0" cy="0" fill="#94a3b8" r="3.5"></circle>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="8.5" font-weight="500" text-anchor="middle" x="0" y="28">IMEI: 864920059910</text>
+</g>
+</svg>
+<!-- Floating Target HUD mini card (Spacious and translucent) -->
+<div class="absolute bottom-5 left-5 z-20 tactical-panel tactical-border p-4 max-w-xs shadow-2xl rounded-sm">
+<div class="flex items-center justify-between border-b border-[#1c2538] pb-2 mb-3">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#f43f5e] animate-pulse"></span>
+<span class="text-[12px] font-bold text-white uppercase tracking-wider font-headline" id="hudTitle">Vikram S. (Broker / Lead)</span>
+</div>
+<span class="text-[9px] px-1.5 py-0.5 bg-cyber-crimson/20 text-[#fda4af] font-mono border border-cyber-crimson/40 font-bold rounded-sm" id="hudBadge">TARGET</span>
+</div>
+<div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px] font-mono mb-3.5">
+<div>
+<span class="text-slate-400 block text-[9px] uppercase">KYC Match</span>
+<span class="text-white font-bold" id="hudKyc">PAN: *****9121K</span>
+</div>
+<div>
+<span class="text-slate-400 block text-[9px] uppercase">Tower Sector</span>
+<span class="text-cyber-cyan font-bold" id="hudTower">Hauz Khas Sec 3</span>
+</div>
+<div>
+<span class="text-slate-400 block text-[9px] uppercase">Layered Flow</span>
+<span class="text-[#f43f5e] font-bold" id="hudFlow">₹1,28,50,000</span>
+</div>
+<div>
+<span class="text-slate-400 block text-[9px] uppercase">Intercept Pings</span>
+<span class="text-white font-bold" id="hudPings">412 Events</span>
+</div>
+</div>
+<a class="w-full py-2 text-[11px] font-mono font-bold uppercase bg-cyber-green text-[#05070c] hover:bg-cyber-green/90 transition-all block text-center rounded-sm tracking-wider shadow-[0_0_12px_rgba(5,223,114,0.2)]" href="#section-financial-flow">
+            Inspect Flow Trail ↓
+          </a>
+</div>
+</div>
+</div>
+<!-- Right Column: Forensic Inspector Dossier (Separate airy panel) -->
+<aside class="w-full lg:w-[340px] xl:w-[370px] tactical-panel tactical-border rounded-sm flex flex-col shrink-0 overflow-hidden shadow-lg" id="dossierAside">
+<!-- Target Profile Header -->
+<div class="p-4 bg-[#090d16] border-b border-[#1c2538] flex items-start justify-between">
+<div class="flex items-center gap-3.5">
+<div class="relative w-12 h-12 border border-cyber-crimson/60 bg-[#070b14] overflow-hidden shrink-0 rounded-sm">
+<img alt="Surveillance suspect Vikram Sharma" class="w-full h-full object-cover filter grayscale contrast-125" id="dossierPhoto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUjcRzh-FCxCrWDrWhroqHqVhlLYknPzGn0-7Rx6wiDAztDQfWHEO8xhQ7kUqZzDHDaJsf8NEAbpklg2g-2eszjNxwT7SmXkz8UVgKJuNXU_OJaT8HVglf3eIbOUwU4mZ-h4QRfe16NL2FXTIZBdNObSbIbTXWBlBsp2_ZkOweJQ18iIF-a0BJAEccIErx-BDFmfrsvf2vaUOFW2NsIMVNMHaqLEEKb05odptR_Jk"/>
+<div class="absolute bottom-0 inset-x-0 h-1 bg-cyber-crimson"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold text-white font-headline" id="dossierName">Vikram S.</span>
+<span class="px-1.5 py-0.5 text-[9px] bg-cyber-crimson/20 border border-cyber-crimson/50 text-[#fda4af] font-mono font-bold uppercase rounded-sm" id="dossierTag">Tier-1 Target</span>
+</div>
+<span class="text-[11px] text-slate-400 mt-0.5" id="dossierRole">Broker / Layering Lead • Age 38</span>
+<span class="text-[11px] text-cyber-green font-mono font-semibold" id="dossierUid">UID: #DEL-LEO-991204</span>
+</div>
+</div>
+<span class="text-[9px] px-2 py-0.5 bg-cyber-green/15 text-cyber-green border border-cyber-green/40 font-mono font-bold tracking-wider rounded-sm">ACTIVE</span>
+</div>
+<!-- BSA Section 63 Legal Admissibility Watermark Card -->
+<div class="m-4 p-3.5 bg-[#070b14] border border-[#1c2538] rounded-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-cyber-green text-[11px] font-mono font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[15px]">verified</span>
+<span>SEC 63 BSA 2023 ADMISSIBILITY</span>
+</div>
+<span class="text-[9px] px-1.5 py-0.5 bg-cyber-green/15 text-cyber-green border border-cyber-green/40 font-mono font-semibold rounded-sm">VALIDATED</span>
+</div>
+<p class="text-[11px] text-slate-300 leading-relaxed">
+          Cryptographic chain-of-custody established. All call detail extractions match telecom operator signed certificates.
+        </p>
+<div class="p-2.5 bg-[#04060a] border border-[#151e2e] font-mono text-[9.5px] text-slate-400 break-all rounded-sm leading-relaxed">
+<span class="text-cyber-green font-semibold">SHA-256:</span> e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        </div>
+</div>
+<!-- AI Correlated Anomalies -->
+<div class="mx-4 mb-4 p-3.5 bg-[#070b14] border border-[#1c2538] rounded-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between border-b border-[#1c2538] pb-2">
+<div class="flex items-center gap-1.5 text-cyber-green text-[11px] font-mono font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[15px]">psychology</span>
+<span>UNIT-X Intelligence Copilot</span>
+</div>
+<span class="text-[9px] px-1.5 py-0.5 bg-cyber-amber/15 text-[#fde047] border border-cyber-amber/40 uppercase font-mono font-semibold rounded-sm">SYNTHESIZING</span>
+</div>
+<div class="p-3 bg-[#050810] border border-[#172033] rounded-sm flex flex-col gap-1.5">
+<div class="flex items-center gap-1.5 text-cyber-amber text-[11px] font-mono font-semibold">
+<span class="material-symbols-outlined text-[14px]">crisis_alert</span>
+<span id="dossierAnomalyTitle">Micro-Geofence Correlation</span>
+</div>
+<p class="text-[11px] text-slate-200 leading-snug" id="dossierAnomalyBody">
+            Discovered 3 unlinked SIM activations matching IMEI <code class="text-cyber-green font-mono font-semibold text-[10px]">864920059910</code> within 200m of South Delhi ATM cash drops.
+          </p>
+<div class="flex items-center justify-between mt-1 text-[10px] text-slate-400 font-mono">
+<span>Confidence Index</span>
+<span class="text-[#f43f5e] font-bold" id="dossierConfidence">91.4% Match</span>
+</div>
+</div>
+</div>
+<!-- Associated Link Nodes List -->
+<div class="px-4 mb-2 flex items-center justify-between text-[11px] font-mono text-slate-400">
+<span class="uppercase tracking-wider">Associated Link Nodes (8)</span>
+<span class="text-cyber-green text-[10px] uppercase font-semibold">Triangulation</span>
+</div>
+<div class="px-4 pb-4 flex flex-col gap-2">
+<div class="p-2.5 bg-[#070b14] border border-[#1c2538] hover:border-cyber-amber/50 rounded-sm transition-all flex items-center justify-between shadow-sm cursor-pointer" onclick="selectNode('alpha')">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-cyber-amber">apartment</span>
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-white">Alpha Logistics Pvt Ltd</span>
+<span class="text-[10px] text-slate-400">Shell Front (MCA Delhi)</span>
+</div>
+</div>
+<span class="text-[#f43f5e] font-mono text-[11px] font-bold">₹98.0L</span>
+</div>
+<div class="p-2.5 bg-[#070b14] border border-[#1c2538] hover:border-cyber-cyan/50 rounded-sm transition-all flex items-center justify-between shadow-sm cursor-pointer" onclick="selectNode('tower')">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-cyber-cyan">cell_tower</span>
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-white">DEL-S-04 Hauz Khas</span>
+<span class="text-[10px] text-slate-400">Primary Cell Base</span>
+</div>
+</div>
+<span class="text-cyber-cyan font-mono text-[11px] font-semibold">412 Pings</span>
+</div>
+</div>
+</aside>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- SECTION 2: FINANCIAL LAYERING & FUND FLOW BREAKDOWN -->
+<!-- ======================================================== -->
+<section class="relative z-10 w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-[#1c2538]" id="section-financial-flow">
+<div class="max-w-[1600px] mx-auto flex flex-col gap-8">
+<!-- Header of Section 2 -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#1c2538] pb-5">
+<div>
+<div class="flex items-center gap-2.5 mb-2">
+<span class="px-2 py-0.5 text-[9px] bg-cyber-amber/15 border border-cyber-amber/40 text-[#fbbf24] font-bold uppercase tracking-wider font-mono rounded-sm">MODULE 02</span>
+<span class="text-[11px] font-mono text-slate-400 uppercase tracking-widest font-semibold">FINANCIAL FORENSICS &amp; AML ENGINE</span>
+</div>
+<h2 class="text-lg sm:text-2xl font-bold text-white font-headline tracking-wide">Smurfing Flow &amp; Layering Topology [Hawala Syndicate Corridor]</h2>
+<p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">Chronological reconstruction of ₹1.84 Cr layered across fake MCA shells, fragmented UPI mule hops, and OTC USDT bridges.</p>
+</div>
+<div class="flex items-center gap-3 text-xs font-mono shrink-0">
+<div class="px-3.5 py-1.5 bg-[#090d16] border border-[#1c2538] rounded-sm text-white">
+<span class="text-slate-400">TOTAL VOLUME: </span>
+<span class="text-cyber-green font-bold tracking-wide" id="flowTotalVolume">₹1,84,30,000</span>
+</div>
+<div class="px-3.5 py-1.5 bg-[#090d16] border border-[#1c2538] rounded-sm text-white">
+<span class="text-slate-400">MULE HOPS: </span>
+<span class="text-cyber-amber font-bold">4 STAGES</span>
+</div>
+</div>
+</div>
+<!-- Generously Spaced 4 AML Stages with Flow Separation -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Stage 1 -->
+<div class="p-5 tactical-panel tactical-border tactical-border-hover rounded-sm transition-all relative shadow-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-[11px] font-mono mb-3">
+<span class="px-2 py-0.5 bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/40 font-bold uppercase rounded-sm">STAGE 1 // PLACEMENT</span>
+<span class="text-slate-400 text-[10px]">22 INGESTS</span>
+</div>
+<h3 class="text-sm font-bold text-white font-headline uppercase">Unexplained Cash Deposits</h3>
+<p class="text-[12px] text-slate-300 mt-2 leading-relaxed">Structured cash deposits across 18 South Delhi CDM kiosks (all sub-₹50,000 threshold to evade automated STR alerts).</p>
+</div>
+<div class="mt-5 pt-3 border-t border-[#1c2538] flex items-center justify-between text-xs font-mono">
+<span class="text-slate-400">Aggregated:</span>
+<span class="text-[#f43f5e] font-bold text-sm">₹1,84,30,000</span>
+</div>
+</div>
+<!-- Stage 2 -->
+<div class="p-5 tactical-panel tactical-border tactical-border-hover rounded-sm transition-all relative shadow-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-[11px] font-mono mb-3">
+<span class="px-2 py-0.5 bg-cyber-amber/20 text-[#fef08a] border border-cyber-amber/40 font-bold uppercase rounded-sm">STAGE 2 // ACCUMULATION</span>
+<span class="text-slate-400 text-[10px]">MCA VERIFIED</span>
+</div>
+<h3 class="text-sm font-bold text-white font-headline uppercase">Alpha Logistics Pvt Ltd</h3>
+<p class="text-[12px] text-slate-300 mt-2 leading-relaxed">Fake MCA shell incorporated 4 months prior. Zero GST filed; dummy invoicing for bogus computer hardware supplies.</p>
+</div>
+<div class="mt-5 pt-3 border-t border-[#1c2538] flex items-center justify-between text-xs font-mono">
+<span class="text-slate-400">Hold Balance:</span>
+<span class="text-[#fbbf24] font-bold text-sm">₹98,00,000</span>
+</div>
+</div>
+<!-- Stage 3 -->
+<div class="p-5 tactical-panel tactical-border tactical-border-hover rounded-sm transition-all relative shadow-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-[11px] font-mono mb-3">
+<span class="px-2 py-0.5 bg-cyber-cyan/20 text-[#bae6fd] border border-cyber-cyan/40 font-bold uppercase rounded-sm">STAGE 3 // UPI SMURFING</span>
+<span class="text-slate-400 text-[10px]">FAST RE-SPLIT</span>
+</div>
+<h3 class="text-sm font-bold text-white font-headline uppercase">Tariq Mir &amp; Mule Rings</h3>
+<p class="text-[12px] text-slate-300 mt-2 leading-relaxed">Rapid UPI splitting through 14 compromised student KYC accounts (Kotak, Axis, ICICI) within 180 seconds.</p>
+</div>
+<div class="mt-5 pt-3 border-t border-[#1c2538] flex items-center justify-between text-xs font-mono">
+<span class="text-slate-400">Smurfed Sum:</span>
+<span class="text-cyber-cyan font-bold text-sm">₹54,20,000</span>
+</div>
+</div>
+<!-- Stage 4 -->
+<div class="p-5 tactical-panel tactical-border tactical-border-hover rounded-sm transition-all relative shadow-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-[11px] font-mono mb-3">
+<span class="px-2 py-0.5 bg-cyber-green/20 text-[#bbf7d0] border border-cyber-green/40 font-bold uppercase rounded-sm">STAGE 4 // INTEGRATION</span>
+<span class="text-slate-400 text-[10px]">OFF-RAMPED</span>
+</div>
+<h3 class="text-sm font-bold text-white font-headline uppercase">OTC Crypto Bridge (USDT)</h3>
+<p class="text-[12px] text-slate-300 mt-2 leading-relaxed">Direct Telegram OTC broker transactions converting INR fiat into Tron TRC-20 USDT wallets registered in Dubai gateway.</p>
+</div>
+<div class="mt-5 pt-3 border-t border-[#1c2538] flex items-center justify-between text-xs font-mono">
+<span class="text-slate-400">Converted USDT:</span>
+<span class="text-cyber-green font-bold text-sm">$188,400</span>
+</div>
+</div>
+</div>
+<!-- Generously Separated Transaction Ledger Table -->
+<div class="mt-4 tactical-panel tactical-border rounded-sm shadow-xl overflow-hidden">
+<div class="p-4 bg-[#090d16] border-b border-[#1c2538] flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-cyber-green">receipt_long</span>
+<span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-white font-mono">Correlated Bank &amp; UPI Smurfing Ledger</span>
+</div>
+<div class="flex items-center gap-3 text-[11px] font-mono">
+<span class="px-3 py-1 bg-[#05070c] border border-[#1c2538] text-slate-400 rounded-sm">FILTER: HIGH-VELOCITY ONLY</span>
+<span class="text-cyber-green font-bold" id="tableDetectedCount">14 ENTRIES DETECTED</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs font-mono">
+<thead class="bg-[#050810] text-[11px] uppercase text-slate-400 border-b border-[#1c2538]">
+<tr>
+<th class="py-3.5 px-4 font-semibold">Timestamp (IST)</th>
+<th class="py-3.5 px-4 font-semibold">Transaction Reference</th>
+<th class="py-3.5 px-4 font-semibold">Source Node / Entity</th>
+<th class="py-3.5 px-4 font-semibold">Destination Node</th>
+<th class="py-3.5 px-4 font-semibold">Amount (₹)</th>
+<th class="py-3.5 px-4 font-semibold">KYC Verification</th>
+<th class="py-3.5 px-4 font-semibold">Anomaly Tag</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#151e2e] text-[12px]" id="ledgerTbody">
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3 px-4 text-slate-400 whitespace-nowrap">2023-11-04 14:22:18</td>
+<td class="py-3 px-4 text-cyber-cyan font-bold">UPI/330819201482</td>
+<td class="py-3 px-4 text-white font-medium">Alpha Logistics Pvt Ltd</td>
+<td class="py-3 px-4 text-slate-300">Tariq Mir (Kotak #9901)</td>
+<td class="py-3 px-4 text-[#f43f5e] font-bold">₹49,990</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/40 font-semibold rounded-sm">FORGED PAN</span></td>
+<td class="py-3 px-4"><span class="text-[#fbbf24] text-[11px] font-medium">Structuring Sub-50k</span></td>
+</tr>
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3 px-4 text-slate-400 whitespace-nowrap">2023-11-04 14:22:54</td>
+<td class="py-3 px-4 text-cyber-cyan font-bold">UPI/330819201490</td>
+<td class="py-3 px-4 text-white font-medium">Alpha Logistics Pvt Ltd</td>
+<td class="py-3 px-4 text-slate-300">Mule Node (Axis #8812)</td>
+<td class="py-3 px-4 text-[#f43f5e] font-bold">₹49,500</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/40 font-semibold rounded-sm">DORMANT UNFREEZE</span></td>
+<td class="py-3 px-4"><span class="text-[#fbbf24] text-[11px] font-medium">Burst Layering</span></td>
+</tr>
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3 px-4 text-slate-400 whitespace-nowrap">2023-11-04 14:23:40</td>
+<td class="py-3 px-4 text-cyber-cyan font-bold">IMPS/00291485721</td>
+<td class="py-3 px-4 text-white font-medium">CDM Cash Deposit Kiosk S-09</td>
+<td class="py-3 px-4 text-slate-300">Alpha Logistics Pvt Ltd</td>
+<td class="py-3 px-4 text-[#f43f5e] font-bold">₹12,40,000</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-amber/20 text-[#fef08a] border border-cyber-amber/40 font-semibold rounded-sm">CASH DEPOSIT</span></td>
+<td class="py-3 px-4"><span class="text-[#f43f5e] text-[11px] font-medium">High AML Velocity</span></td>
+</tr>
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3 px-4 text-slate-400 whitespace-nowrap">2023-11-04 14:26:11</td>
+<td class="py-3 px-4 text-cyber-cyan font-bold">TRX/TRC20-9902a7b</td>
+<td class="py-3 px-4 text-slate-300">OTC Telegram Gateway #4</td>
+<td class="py-3 px-4 text-cyber-green font-bold">Wallet TKr8X...qN3L</td>
+<td class="py-3 px-4 text-cyber-green font-bold">₹34,20,000 ($41,500)</td>
+<td class="py-3 px-4"><span class="px-2 py-0.5 text-[10px] bg-slate-800 text-slate-300 border border-slate-700 font-semibold rounded-sm">UNHOSTED WALLET</span></td>
+<td class="py-3 px-4"><span class="text-cyber-cyan text-[11px] font-medium">Offshore Outflow</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- SECTION 3: TELECOM & GEOFENCE CORRELATION ANALYTICS -->
+<!-- ======================================================== -->
+<section class="relative z-10 w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-[#1c2538]" id="section-telecom-geofence">
+<div class="max-w-[1600px] mx-auto flex flex-col gap-8">
+<!-- Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#1c2538] pb-5">
+<div>
+<div class="flex items-center gap-2.5 mb-2">
+<span class="px-2 py-0.5 text-[9px] bg-cyber-cyan/15 border border-cyber-cyan/40 text-[#38bdf8] font-bold uppercase tracking-wider font-mono rounded-sm">MODULE 03</span>
+<span class="text-[11px] font-mono text-slate-400 uppercase tracking-widest font-semibold">SIGINT &amp; CELLULAR CORRELATION</span>
+</div>
+<h2 class="text-lg sm:text-2xl font-bold text-white font-headline tracking-wide">Telecom Intercepts &amp; Micro-Geofence Proximity Radar</h2>
+<p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">Triangulated co-location telemetry between target handsets, burner IMEI hops, and South Delhi cash-drop sites.</p>
+</div>
+<div class="flex items-center gap-2.5 text-xs font-mono shrink-0">
+<span class="px-3.5 py-1.5 bg-[#090d16] border border-cyber-cyan/40 text-white font-bold rounded-sm shadow-sm" id="cdrDigestedPill">4,812 CDR RECORDS DIGESTED</span>
+</div>
+</div>
+<!-- Generously Spaced 2-Column Dual Cards (gap-8) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+<!-- CDR Timeline Sequence (7 Cols) -->
+<div class="lg:col-span-7 tactical-panel tactical-border rounded-sm p-6 flex flex-col gap-5 shadow-lg">
+<div class="flex items-center justify-between border-b border-[#1c2538] pb-3">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[17px] text-cyber-cyan">timeline</span>
+<span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-white font-mono">Chronological Tower Handover Timeline</span>
+</div>
+<span class="text-[11px] font-mono text-slate-400">TOWER: DEL-S-04 &amp; ADJACENT</span>
+</div>
+<div class="relative pl-6 border-l border-[#1c2538] space-y-6 text-xs font-mono mt-2">
+<!-- Ping 1 -->
+<div class="relative">
+<span class="absolute -left-[30px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#f43f5e] ring-4 ring-[#0a0e17] shadow-[0_0_8px_#f43f5e]"></span>
+<div class="flex flex-wrap items-center justify-between text-[11px]">
+<span class="text-[#fda4af] font-bold">13:48:12 IST • INCOMING VOIP ENCRYPTED CALL</span>
+<span class="text-slate-400">DUR: 42 SECONDS</span>
+</div>
+<p class="text-slate-200 font-sans text-xs mt-1.5 leading-relaxed">Vikram S. receives voice handshake from Dubai SIP Gateway (+971-4-882****) on burner device.</p>
+<div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1.5">
+<span>Tower: DEL-S-04 Hauz Khas Sec 3</span>
+<span>•</span>
+<span>Azimuth: 140°</span>
+<span>•</span>
+<span class="text-cyber-green font-semibold">Signal: -74 dBm</span>
+</div>
+</div>
+<!-- Ping 2 -->
+<div class="relative">
+<span class="absolute -left-[30px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#fbbf24] ring-4 ring-[#0a0e17] shadow-[0_0_8px_#fbbf24]"></span>
+<div class="flex flex-wrap items-center justify-between text-[11px]">
+<span class="text-[#fef08a] font-bold">14:02:45 IST • IMEI BURNER SWAP DETECTED</span>
+<span class="text-slate-400">SAME CELL SECTOR</span>
+</div>
+<p class="text-slate-200 font-sans text-xs mt-1.5 leading-relaxed">SIM detached from primary handset; newly initialized on Nokia 105 (IMEI: <code class="text-cyber-green font-mono font-semibold">864920059910</code>).</p>
+<div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1.5">
+<span>Tower: DEL-S-04 Hauz Khas Sec 3</span>
+<span>•</span>
+<span class="text-cyber-amber font-semibold">SIM Cloned Alert</span>
+</div>
+</div>
+<!-- Ping 3 -->
+<div class="relative">
+<span class="absolute -left-[30px] top-1.5 w-2.5 h-2.5 rounded-full bg-cyber-cyan ring-4 ring-[#0a0e17] shadow-[0_0_8px_#38bdf8]"></span>
+<div class="flex flex-wrap items-center justify-between text-[11px]">
+<span class="text-[#bae6fd] font-bold">14:15:30 IST • CO-LOCATION WITH MULE COURIER</span>
+<span class="text-slate-400">PROXIMITY: &lt; 35M</span>
+</div>
+<p class="text-slate-200 font-sans text-xs mt-1.5 leading-relaxed">Simultaneous tower lock on DEL-S-08 (Green Park Extension) with Tariq Mir's verified handset.</p>
+<div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1.5">
+<span>Geo-Convergence Window: 18 mins</span>
+<span>•</span>
+<span class="text-cyber-green font-semibold">ATM Cash Drop Window</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Geofence & Radar Telemetry (5 Cols) -->
+<div class="lg:col-span-5 tactical-panel tactical-border rounded-sm p-6 flex flex-col justify-between shadow-lg">
+<div>
+<div class="flex items-center justify-between border-b border-[#1c2538] pb-3 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-cyber-green">radar</span>
+<span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-white font-mono">200m Micro-Geofence Telemetry</span>
+</div>
+<span class="text-[9px] px-2 py-0.5 bg-cyber-crimson/20 text-[#fda4af] border border-cyber-crimson/40 font-mono font-bold rounded-sm">TRIGGER ACTIVE</span>
+</div>
+<!-- Tactical Radar Graphic -->
+<div class="h-52 w-full bg-[#050810] border border-[#1c2538] rounded-sm relative flex items-center justify-center overflow-hidden shadow-inner" id="radarMiniCanvas">
+<div class="absolute w-44 h-44 rounded-full border border-[#1c2538]"></div>
+<div class="absolute w-32 h-32 rounded-full border border-cyber-green/30"></div>
+<div class="absolute w-16 h-16 rounded-full border border-cyber-crimson/40"></div>
+<div class="absolute w-full h-px bg-[#151f30]"></div>
+<div class="absolute h-full w-px bg-[#151f30]"></div>
+<div class="absolute inset-0 pointer-events-none origin-center" style="animation: spin 6s linear infinite; background: conic-gradient(from 0deg at 50% 50%, rgba(5,223,114,0.14) 0deg, transparent 60deg, transparent 360deg);"></div>
+<!-- Target marker -->
+<div class="absolute flex flex-col items-center top-14 left-24 z-10 cursor-pointer" onclick="selectNode('vikram')">
+<span class="w-3 h-3 rounded-full bg-[#f43f5e] animate-ping shadow-[0_0_8px_#f43f5e]"></span>
+<span class="text-[9px] font-mono text-[#fda4af] font-bold mt-1">TARGET (VIKRAM)</span>
+</div>
+<!-- ATM marker -->
+<div class="absolute flex flex-col items-center bottom-12 right-24 z-10">
+<span class="w-2.5 h-2.5 bg-[#fbbf24] shadow-[0_0_6px_#fbbf24]"></span>
+<span class="text-[9px] font-mono text-[#fef08a] font-medium mt-1">ATM DROP S-09</span>
+</div>
+<!-- Mule marker -->
+<div class="absolute flex flex-col items-center top-16 right-20 z-10 cursor-pointer" onclick="selectNode('tariq')">
+<span class="w-2.5 h-2.5 rounded-full bg-cyber-green shadow-[0_0_6px_#05df72]"></span>
+<span class="text-[9px] font-mono text-cyber-green font-medium mt-1">MULE (TARIQ)</span>
+</div>
+</div>
+<div class="mt-5 space-y-2.5 text-[12px] font-mono">
+<div class="flex justify-between text-slate-300">
+<span class="text-slate-400">ATM Kiosk Co-location:</span>
+<span class="text-cyber-green font-bold">184 Meters (Direct LOS)</span>
+</div>
+<div class="flex justify-between text-slate-300">
+<span class="text-slate-400">Carrier Extractions:</span>
+<span class="text-white font-semibold">Airtel 5G + Jio VoNR</span>
+</div>
+<div class="flex justify-between text-slate-300">
+<span class="text-slate-400">Operator Certificate:</span>
+<span class="text-cyber-cyan font-bold">SIGNED &amp; VERIFIED</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-[#1c2538] mt-4">
+<button class="w-full py-2.5 bg-[#090d16] hover:bg-[#111827] border border-cyber-cyan/40 text-cyber-cyan hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all rounded-sm shadow-sm">
+<span class="material-symbols-outlined text-[16px]">map</span>
+<span>Export Cell Tower Heatmap (KML)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- SECTION 4: STATUTORY ADMISSIBILITY LEDGER & FORENSIC EXPORT -->
+<!-- ======================================================== -->
+<section class="relative z-10 w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-[#1c2538]" id="section-bsa-admissibility">
+<div class="max-w-[1600px] mx-auto flex flex-col gap-8">
+<!-- Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#1c2538] pb-5">
+<div>
+<div class="flex items-center gap-2.5 mb-2">
+<span class="px-2 py-0.5 text-[9px] bg-cyber-green/15 border border-cyber-green/40 text-cyber-green font-bold uppercase tracking-wider font-mono rounded-sm">MODULE 04</span>
+<span class="text-[11px] font-mono text-slate-400 uppercase tracking-widest font-semibold">LEGAL EVIDENCE ADMISSIBILITY</span>
+</div>
+<h2 class="text-lg sm:text-2xl font-bold text-white font-headline tracking-wide">Section 63 BSA 2023 Cryptographic Chain-of-Custody</h2>
+<p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">Statutory compliance ledger certifying electronic record integrity, hardware hash validation, and judicial export readiness.</p>
+</div>
+<div class="flex items-center gap-2 text-xs font-mono shrink-0">
+<span class="px-3.5 py-1.5 bg-cyber-green/15 border border-cyber-green/40 text-white font-semibold flex items-center gap-2 rounded-sm shadow-[0_0_10px_rgba(5,223,114,0.15)]">
+<span class="material-symbols-outlined text-[15px] text-cyber-green">verified</span>
+<span>CERTIFICATE READY FOR MAGISTRATE</span>
+</span>
+</div>
+</div>
+<!-- SHA-256 Ledger & Digital Signatures -->
+<div class="tactical-panel tactical-border rounded-sm shadow-xl overflow-hidden">
+<div class="p-4 bg-[#090d16] border-b border-[#1c2538] flex flex-wrap items-center justify-between gap-2.5 font-mono">
+<span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">Evidence Block Hash Verification Table</span>
+<span class="text-[11px] text-slate-400">STANDARDS: ISO/IEC 27037:2012 &amp; BSA SEC 63(4)</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs font-mono">
+<thead class="bg-[#050810] text-[11px] uppercase text-slate-400 border-b border-[#1c2538]">
+<tr>
+<th class="py-3.5 px-4 font-semibold">Evidence ID</th>
+<th class="py-3.5 px-4 font-semibold">Extraction Source</th>
+<th class="py-3.5 px-4 font-semibold">Cryptographic SHA-256 Hash Digest</th>
+<th class="py-3.5 px-4 font-semibold">Operator Cert. Signature</th>
+<th class="py-3.5 px-4 font-semibold">Admissibility</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#151e2e] text-[12px]">
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3.5 px-4 text-cyber-green font-bold">EVD-CDR-0412-A</td>
+<td class="py-3.5 px-4 text-white font-medium">Airtel Switch Core Hauz Khas</td>
+<td class="py-3.5 px-4 text-slate-400 font-mono break-all text-[11px]">7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069</td>
+<td class="py-3.5 px-4 text-cyber-cyan font-bold text-[11px]">RSA-4096 (DoT-VALIDATED)</td>
+<td class="py-3.5 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-green/15 text-cyber-green border border-cyber-green/40 font-bold rounded-sm">ADMISSIBLE</span></td>
+</tr>
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3.5 px-4 text-cyber-green font-bold">EVD-BNK-9912-B</td>
+<td class="py-3.5 px-4 text-white font-medium">NPCI UPI Gateway Central Log</td>
+<td class="py-3.5 px-4 text-slate-400 font-mono break-all text-[11px]">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</td>
+<td class="py-3.5 px-4 text-cyber-cyan font-bold text-[11px]">SHA256withRSA (NPCI-PKI)</td>
+<td class="py-3.5 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-green/15 text-cyber-green border border-cyber-green/40 font-bold rounded-sm">ADMISSIBLE</span></td>
+</tr>
+<tr class="hover:bg-[#090e18] transition-colors">
+<td class="py-3.5 px-4 text-cyber-green font-bold">EVD-SIG-2023-C</td>
+<td class="py-3.5 px-4 text-white font-medium">VoIP Session Intercept Gateway</td>
+<td class="py-3.5 px-4 text-slate-400 font-mono break-all text-[11px]">cb8379ac2098aa165029e3938a51da0bcecfc008b679d4400c79e6124c327a19</td>
+<td class="py-3.5 px-4 text-cyber-cyan font-bold text-[11px]">ECDSA-P384 (LEA KEY #09)</td>
+<td class="py-3.5 px-4"><span class="px-2 py-0.5 text-[10px] bg-cyber-green/15 text-cyber-green border border-cyber-green/40 font-bold rounded-sm">ADMISSIBLE</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Generously Spaced Legal Action CTA Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-4">
+<!-- Lookout Circular -->
+<div class="p-6 tactical-panel border border-cyber-crimson/40 rounded-sm flex flex-col justify-between shadow-xl tactical-border-hover transition-all">
+<div>
+<div class="flex items-center justify-between mb-3 font-mono">
+<span class="text-xs sm:text-sm font-bold text-[#f43f5e] uppercase tracking-wider flex items-center gap-1.5 font-headline">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+              LEA Emergency Action
+            </span>
+<span class="text-[10px] bg-cyber-crimson/20 text-[#fda4af] px-2 py-0.5 font-bold border border-cyber-crimson/40 rounded-sm">BUREAU OF IMMIGRATION</span>
+</div>
+<h3 class="text-base font-bold text-white font-headline">Issue Immediate BSA Lookout Circular (LOC)</h3>
+<p class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">Dispatches automated flight-risk alert to all Indian international departure ports, Seaports, and Land Checkposts for Vikram S. &amp; key syndicate mules.</p>
+</div>
+<button class="mt-6 w-full py-3 bg-[#f43f5e] hover:bg-[#e11d48] text-white text-xs sm:text-sm font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-sm shadow-[0_0_20px_rgba(244,63,94,0.3)]" onclick="alert('BSA Emergency LOC Alert broadcasted to Bureau of Immigration nodes.')">
+<span class="material-symbols-outlined text-[18px]">emergency_home</span>
+<span>Transmit Formal Lookout Circular (LOC)</span>
+</button>
+</div>
+<!-- Legal Dossier PDF -->
+<div class="p-6 tactical-panel border border-cyber-green/40 rounded-sm flex flex-col justify-between shadow-xl tactical-border-hover transition-all">
+<div>
+<div class="flex items-center justify-between mb-3 font-mono">
+<span class="text-xs sm:text-sm font-bold text-cyber-green uppercase tracking-wider flex items-center gap-1.5 font-headline">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+              Judicial Admissibility Export
+            </span>
+<span class="text-[10px] bg-cyber-green/15 text-cyber-green px-2 py-0.5 font-bold border border-cyber-green/40 rounded-sm">SECTION 63 COMPLIANT</span>
+</div>
+<h3 class="text-base font-bold text-white font-headline">Download Complete Forensic Dossier (PDF/SHA-256)</h3>
+<p class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">Generates signed, court-admissible forensic compilation package bundled with all 4,812 CDR call logs, bank statements, and cryptographically verified network topology diagrams.</p>
+</div>
+<button class="mt-6 w-full py-3 bg-cyber-green hover:bg-[#04c965] text-[#05070c] text-xs sm:text-sm font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-sm shadow-[0_0_20px_rgba(5,223,114,0.3)]" onclick="alert('Compiling Section 63 BSA Forensic Dossier package with SHA-256 validation...')">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download Complete Legal Dossier (PDF)</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================== -->
+<!-- UNIFIED TACTICAL FOOTER MATCHING INTAKE SCREEN -->
+<!-- ======================================================== -->
+<footer class="relative z-10 w-full bg-[#03050a] border-t border-[#1c2538] px-6 py-4 text-[11px] text-slate-400 font-mono">
+<div class="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex flex-wrap items-center gap-3 text-slate-400">
+<div class="flex items-center gap-1.5 text-cyber-green">
+<span class="material-symbols-outlined text-[14px]">terminal</span>
+<span class="font-bold tracking-wider uppercase text-white">CASECONNECT // UNIT-X FORENSIC ENGINE</span>
+</div>
+<span class="text-[#1c2538]">|</span>
+<span>CYBER CRIME &amp; INTELLIGENCE CELL</span>
+<span class="text-[#1c2538] hidden md:inline">|</span>
+<span class="hidden md:inline text-cyber-green font-medium">AIR-GAPPED ENCLAVE</span>
+<span class="text-[#1c2538] hidden sm:inline">|</span>
+<span class="hidden sm:inline">SEC 63 BSA 2023 VALIDATED</span>
+<span class="text-[#1c2538] hidden lg:inline">|</span>
+<span class="hidden lg:inline">DPDP ACT 2023 COMPLIANT</span>
+</div>
+<div class="flex items-center gap-3 shrink-0 text-slate-400">
+<span class="text-cyber-green font-bold">DEL-CYBER-09 ONLINE</span>
+<span>•</span>
+<span class="font-medium" id="clockIst">UTC+5:30 IST</span>
+</div>
+</div>
+</footer>
+<script>
+  // Node Profiles Data for Interactive Dossier Inspection
+  const nodeProfiles = {
+    vikram: {
+      name: "Vikram S.",
+      role: "Broker / Layering Lead • Age 38",
+      uid: "UID: #DEL-LEO-991204",
+      tag: "Tier-1 Target",
+      tagColor: "bg-cyber-crimson/20 text-[#fda4af] border-cyber-crimson/40",
+      photo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCUjcRzh-FCxCrWDrWhroqHqVhlLYknPzGn0-7Rx6wiDAztDQfWHEO8xhQ7kUqZzDHDaJsf8NEAbpklg2g-2eszjNxwT7SmXkz8UVgKJuNXU_OJaT8HVglf3eIbOUwU4mZ-h4QRfe16NL2FXTIZBdNObSbIbTXWBlBsp2_ZkOweJQ18iIF-a0BJAEccIErx-BDFmfrsvf2vaUOFW2NsIMVNMHaqLEEKb05odptR_Jk",
+      kyc: "PAN: *****9121K",
+      tower: "Hauz Khas Sec 3",
+      flow: "₹1,28,50,000",
+      pings: "412 Events",
+      badge: "TARGET",
+      anomalyTitle: "Micro-Geofence Correlation",
+      anomalyBody: "Discovered 3 unlinked SIM activations matching IMEI 864920059910 within 200m of South Delhi ATM cash drops.",
+      confidence: "91.4% AI Match"
+    },
+    alpha: {
+      name: "Alpha Logistics Pvt Ltd",
+      role: "MCA Shell Front • Delhi Reg",
+      uid: "CIN: U72900DL2023PTC88190",
+      tag: "Shell Entity",
+      tagColor: "bg-cyber-amber/20 text-[#fef08a] border-cyber-amber/40",
+      photo: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&auto=format&fit=crop&q=80",
+      kyc: "GSTIN: 07AAACA9910Q1Z8",
+      tower: "Connaught Place Hub",
+      flow: "₹98,00,000",
+      pings: "18 Wire Ingests",
+      badge: "SHELL CO",
+      anomalyTitle: "Zero Revenue Anomaly",
+      anomalyBody: "MCA declared zero sales operations despite ₹98 Lakhs cyclic clearing inflows and outgoing crypto conversion.",
+      confidence: "98.2% AI Match"
+    },
+    tariq: {
+      name: "Tariq Mir",
+      role: "Cash Smurf Mule Courier • Age 26",
+      uid: "UID: #DEL-MULE-4819",
+      tag: "Mule Operator",
+      tagColor: "bg-cyber-green/20 text-[#86efac] border-cyber-green/40",
+      photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      kyc: "Aadhaar: ********4812",
+      tower: "Green Park Ext S-08",
+      flow: "₹54,20,000",
+      pings: "28 UPI Swarms",
+      badge: "COURIER",
+      anomalyTitle: "High-Frequency Burst Smurfing",
+      anomalyBody: "Dispatched 28 rapid sub-₹50,000 transactions across Kotak and Axis mules within 180 seconds of ATM withdrawals.",
+      confidence: "95.6% AI Match"
+    },
+    tower: {
+      name: "DEL-S-04 Hauz Khas",
+      role: "Telecom Cell Core BTS Sector 3",
+      uid: "BTS-ID: #AIR-DEL-9081",
+      tag: "BTS Anchor",
+      tagColor: "bg-cyber-cyan/20 text-[#bae6fd] border-cyber-cyan/40",
+      photo: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80",
+      kyc: "DoT Reg: #DLI-281-S",
+      tower: "Hauz Khas Sec 3 (140°)",
+      flow: "4,812 Packets",
+      pings: "412 Targets Intercepted",
+      badge: "TELECOM",
+      anomalyTitle: "Cell Co-location Triangulation",
+      anomalyBody: "Multiple burner IMEI devices observed locking simultaneous handover azimuth within 60 meters radius.",
+      confidence: "99.1% Confirmed"
+    },
+    crypto: {
+      name: "OTC Telegram Gateway #4",
+      role: "Crypto Off-Ramp Broker",
+      uid: "TG-ID: @DubaiCashOTC_bot",
+      tag: "USDT Gateway",
+      tagColor: "bg-cyber-amber/20 text-[#fef08a] border-cyber-amber/40",
+      photo: "https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=150&auto=format&fit=crop&q=80",
+      kyc: "TRON: TKr8X...qN3L",
+      tower: "Virtual / Dubai Proxy",
+      flow: "$188,400 USDT",
+      pings: "12 Hash Confirmations",
+      badge: "OFF-RAMP",
+      anomalyTitle: "TRC-20 Fast Swapping",
+      anomalyBody: "Layered funds converted directly into unhosted USDT addresses escaping traditional FIU banking freezes.",
+      confidence: "94.0% Confirmed"
+    }
+  };
+
+  // Node selection function
+  function selectNode(nodeKey) {
+    const data = nodeProfiles[nodeKey] || nodeProfiles.vikram;
+    const nameEl = document.getElementById('dossierName');
+    const roleEl = document.getElementById('dossierRole');
+    const uidEl = document.getElementById('dossierUid');
+    const tagEl = document.getElementById('dossierTag');
+    const photoEl = document.getElementById('dossierPhoto');
+    const hudTitle = document.getElementById('hudTitle');
+    const hudBadge = document.getElementById('hudBadge');
+    const hudKyc = document.getElementById('hudKyc');
+    const hudTower = document.getElementById('hudTower');
+    const hudFlow = document.getElementById('hudFlow');
+    const hudPings = document.getElementById('hudPings');
+    const anomalyTitle = document.getElementById('dossierAnomalyTitle');
+    const anomalyBody = document.getElementById('dossierAnomalyBody');
+    const confEl = document.getElementById('dossierConfidence');
+
+    if (nameEl) nameEl.textContent = data.name;
+    if (roleEl) roleEl.textContent = data.role;
+    if (uidEl) uidEl.textContent = data.uid;
+    if (tagEl) {
+      tagEl.textContent = data.tag;
+      tagEl.className = "px-1.5 py-0.5 text-[9px] border font-mono font-bold uppercase rounded-sm " + data.tagColor;
+    }
+    if (photoEl) photoEl.src = data.photo;
+    if (hudTitle) hudTitle.textContent = data.name;
+    if (hudBadge) hudBadge.textContent = data.badge;
+    if (hudKyc) hudKyc.textContent = data.kyc;
+    if (hudTower) hudTower.textContent = data.tower;
+    if (hudFlow) hudFlow.textContent = data.flow;
+    if (hudPings) hudPings.textContent = data.pings;
+    if (anomalyTitle) anomalyTitle.textContent = data.anomalyTitle;
+    if (anomalyBody) anomalyBody.innerHTML = data.anomalyBody;
+    if (confEl) confEl.textContent = data.confidence;
+
+    const dossier = document.getElementById('dossierAside');
+    if (dossier) {
+      dossier.classList.add('ring-1', 'ring-cyber-green');
+      setTimeout(() => dossier.classList.remove('ring-1', 'ring-cyber-green'), 500);
+    }
+  }
+
+  // Interactive Node clicks
+  document.querySelectorAll('.node-interactive').forEach(node => {
+    node.addEventListener('click', () => {
+      const nodeKey = node.getAttribute('data-node');
+      if (nodeKey) selectNode(nodeKey);
+    });
+  });
+
+  // Parallax subtle moving depth effect on scroll
+  const parallaxBg = document.getElementById('parallaxBg');
+  window.addEventListener('scroll', () => {
+    if (parallaxBg) {
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      parallaxBg.style.transform = `translateY(${scrollY * 0.08}px)`;
+    }
+  }, { passive: true });
+
+  // Physics button toggle
+  const btnPhysics = document.getElementById('btnPhysics');
+  let physicsActive = true;
+  if (btnPhysics) {
+    btnPhysics.addEventListener('click', () => {
+      physicsActive = !physicsActive;
+      btnPhysics.innerHTML = physicsActive 
+        ? '<span class="material-symbols-outlined text-[13px]">play_arrow</span><span>Physics: ON</span>'
+        : '<span class="material-symbols-outlined text-[13px]">pause</span><span>Physics: PAUSED</span>';
+      btnPhysics.classList.toggle('bg-cyber-green/15', physicsActive);
+      btnPhysics.classList.toggle('text-cyber-green', physicsActive);
+      btnPhysics.classList.toggle('border-cyber-green/40', physicsActive);
+      btnPhysics.classList.toggle('bg-[#0d1320]', !physicsActive);
+      btnPhysics.classList.toggle('text-slate-400', !physicsActive);
+      btnPhysics.classList.toggle('border-[#1c2538]', !physicsActive);
+      
+      const edgePaths = document.querySelectorAll('.edge-path');
+      edgePaths.forEach(p => {
+        p.style.animationPlayState = physicsActive ? 'running' : 'paused';
+      });
+    });
+  }
+
+  // Heatmap button toggle
+  const btnHeatmap = document.getElementById('btnHeatmap');
+  const heatmapGroup = document.getElementById('heatmapGroup');
+  let heatmapActive = false;
+  if (btnHeatmap && heatmapGroup) {
+    btnHeatmap.addEventListener('click', () => {
+      heatmapActive = !heatmapActive;
+      heatmapGroup.classList.toggle('opacity-100', heatmapActive);
+      heatmapGroup.classList.toggle('opacity-0', !heatmapActive);
+      btnHeatmap.classList.toggle('bg-cyber-amber/20', heatmapActive);
+      btnHeatmap.classList.toggle('text-[#fbbf24]', heatmapActive);
+    });
+  }
+
+  // Geofence overlay button toggle
+  const btnGeofenceOverlay = document.getElementById('btnGeofenceOverlay');
+  let geofenceOverlay = false;
+  if (btnGeofenceOverlay) {
+    btnGeofenceOverlay.addEventListener('click', () => {
+      geofenceOverlay = !geofenceOverlay;
+      btnGeofenceOverlay.classList.toggle('bg-cyber-cyan/20', geofenceOverlay);
+      btnGeofenceOverlay.classList.toggle('text-cyber-cyan', geofenceOverlay);
+      const targetSec = document.getElementById('section-telecom-geofence');
+      if (targetSec && geofenceOverlay) {
+        targetSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
+  // Live WebSocket Simulation ticker
+  const transactionStream = document.getElementById('transactionStream');
+  const simulatedFeed = [
+    { title: "₹48,500 UPI Quick-Split", time: "Just now", desc: "ICICI Mule #4901 → Tariq Mir Sweep Account", tag: "SMURFING", color: "text-cyber-amber", badge: "bg-cyber-amber/20 text-[#fef08a] border-cyber-amber/40" },
+    { title: "Tower Ping Handover", time: "4s ago", desc: "Burner IMEI 864920059910 Azimuth 140° at DEL-S-04", tag: "TRIANGULATED", color: "text-cyber-cyan", badge: "bg-cyber-cyan/20 text-[#bae6fd] border-cyber-cyan/40" },
+    { title: "₹8,50,000 Hawala Cash Drop", time: "9s ago", desc: "South Delhi CDM Kiosk S-12 structured deposit", tag: "CASH LAYER", color: "text-cyber-crimson", badge: "bg-cyber-crimson/20 text-[#fda4af] border-cyber-crimson/40" },
+    { title: "TRC-20 Transfer", time: "14s ago", desc: "32,000 USDT bridged to Dubai Telegram OTC", tag: "OFFSHORE", color: "text-cyber-green", badge: "bg-cyber-green/20 text-[#86efac] border-cyber-green/40" }
+  ];
+
+  let feedIdx = 0;
+  setInterval(() => {
+    if (!transactionStream) return;
+    const item = simulatedFeed[feedIdx % simulatedFeed.length];
+    feedIdx++;
+
+    const newDiv = document.createElement('div');
+    newDiv.className = "p-3 bg-[#090d16]/90 border border-[#1c2538] stream-item-new rounded-sm flex flex-col gap-1.5 shadow-sm";
+    newDiv.innerHTML = `
+      <div class="flex items-center justify-between text-[11px] font-mono">
+        <span class="${item.color} font-semibold">${item.title}</span>
+        <span class="text-slate-400 text-[10px]">${item.time}</span>
+      </div>
+      <p class="text-[12px] text-slate-200 leading-tight">${item.desc}</p>
+      <div class="flex items-center gap-2 mt-1 text-[10px] font-mono">
+        <span class="px-1.5 py-0.5 border font-semibold rounded-sm ${item.badge}">${item.tag}</span>
+        <span class="text-slate-400">#${Math.random().toString(16).substr(2, 6)}</span>
+      </div>
+    `;
+
+    transactionStream.insertBefore(newDiv, transactionStream.firstChild);
+    if (transactionStream.children.length > 5) {
+      transactionStream.removeChild(transactionStream.lastChild);
+    }
+
+    const pingIndicator = document.getElementById('pingIndicator');
+    if (pingIndicator) {
+      const ms = Math.floor(10 + Math.random() * 8);
+      pingIndicator.textContent = `WS STREAM: ${ms}ms`;
+    }
+  }, 4500);
+
+  // Evidence stream button filter feedback
+  const filterBtns = document.querySelectorAll('.stream-filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.className = "py-1.5 px-1 text-center bg-[#090d16] border border-[#1c2538] text-slate-400 hover:text-white hover:border-slate-500 rounded-sm transition stream-filter-btn";
+      });
+      btn.className = "py-1.5 px-1 text-center bg-[#10192a] border border-cyber-green/50 text-white font-semibold rounded-sm shadow-sm stream-filter-btn";
+    });
+  });
+
+  // IST clock in footer
+  function updateTime() {
+    const clockEl = document.getElementById('clockIst');
+    if (clockEl) {
+      const now = new Date();
+      clockEl.textContent = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }) + " IST";
+    }
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
+</script>
+</body></html>

@@ -56,9 +56,9 @@ function MainRouter() {
     );
   }
 
-  // Direct access: If on /login or not yet authenticated, fallback cleanly to root upload screen
+  // Direct access to /login
   if (currentPath === '/login') {
-    window.history.replaceState(null, '', '/');
+    return <Login />;
   }
 
   // Handle /cases/:id
@@ -74,7 +74,7 @@ function MainRouter() {
         onOpenSavedCases={() => setSavedCasesOpen(true)}
       />
 
-      <main className="flex-1 flex flex-col relative z-10">
+      <main className="flex-1 flex flex-col relative z-10 pt-16">
         {caseMatch ? (
           <CaseDetail caseId={caseMatch[1]} />
         ) : currentPath === '/audit' ? (
